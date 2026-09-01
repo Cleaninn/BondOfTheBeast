@@ -1,0 +1,17 @@
+{
+  "display": {
+    "icon": { "item": "bondofthebeast:fidelity_contract" },
+    "title": { "translate": "advancement.bondofthebeast.owner_root.title" },
+    "description": { "translate": "advancement.bondofthebeast.owner_root.desc" },
+    "background": "minecraft:textures/block/red_nether_bricks.png",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "has_contract": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [ { "items": [ "bondofthebeast:fidelity_contract" ] } ] }
+    }
+  }
+}

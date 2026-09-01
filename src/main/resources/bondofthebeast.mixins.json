@@ -1,0 +1,22 @@
+{
+	"required": true,
+	"package": "com.bondofthebeast.mixin",
+	"compatibilityLevel": "JAVA_17",
+	"mixins": [
+		"EntityMixin",
+		"ServerPlayerEntityMixin",
+		"ServerPlayNetworkHandlerMixin",
+		"LivingEntityMixin",
+		"PlayerEntityMixin",
+		"BlockStateMixin",
+		"ItemEntityMixin"
+	],
+	"client": [
+		"KeyboardInputMixin",
+		"PlayerEntityRendererMixin",
+		"BookOfShapeShifterScreenMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

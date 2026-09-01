@@ -1,0 +1,12 @@
+{
+  "parent": "bondofthebeast:owner_story/root",
+  "display": {
+    "icon": { "item": "bondofthebeast:collar" },
+    "title": { "translate": "advancement.bondofthebeast.tame_pet.title" },
+    "description": { "translate": "advancement.bondofthebeast.tame_pet.desc" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } }
+}

@@ -1,0 +1,44 @@
+{
+	"schemaVersion": 1,
+	"id": "bondofthebeast",
+	"version": "1.0.0",
+	"name": "Bond of the Beast - Shape Shifter Curse Addon",
+	"description": "An add-on for Shape Shifter Curse. Introduces taming mechanics, obedience contracts, pet commands, and the powerful Grimoire of Domination to control feral players.",
+	"authors": [
+		"Cleanin"
+	],
+	"contact": {
+		"homepage": "https://modrinth.com/mod/bond-of-the-beast",
+		"sources": ""
+	},
+	"license": "MIT",
+	"icon": "assets/bondofthebeast/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.bondofthebeast.BondOfTheBeast"
+		],
+		"client": [
+			"com.bondofthebeast.BondOfTheBeastClient"
+		],
+		"cardinal-components-entity": [
+			"com.bondofthebeast.component.ModComponents"
+		]
+	},
+	"mixins": [
+		"bondofthebeast.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.15.11",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*",
+		"trinkets": "*",
+		"shape-shifter-curse": "*"
+	},
+	"custom": {
+		"cardinal-components": [
+			"bondofthebeast:player_bond"
+		]
+	}
+}

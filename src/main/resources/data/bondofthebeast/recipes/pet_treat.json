@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "FBM",
+    "C  "
+  ],
+  "key": {
+    "F": { "tag": "minecraft:fishes" },
+    "B": { "item": "minecraft:beef" },
+    "M": { "item": "minecraft:sweet_berries" },
+    "C": { "item": "minecraft:cookie" }
+  },
+  "result": { "item": "bondofthebeast:pet_treat", "count": 1 }
+}

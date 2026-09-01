@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "shape-shifter-curse:book_of_shape_shifter" },
+    { "item": "bondofthebeast:collar" }
+  ],
+  "result": { "item": "bondofthebeast:command_scepter", "count": 1 }
+}

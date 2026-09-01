@@ -1,0 +1,12 @@
+{
+  "display": {
+    "icon": { "item": "bondofthebeast:collar" },
+    "title": { "translate": "advancement.bondofthebeast.pet_root.title" },
+    "description": { "translate": "advancement.bondofthebeast.pet_root.desc" },
+    "background": "minecraft:textures/block/blue_ice.png",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } }
+}

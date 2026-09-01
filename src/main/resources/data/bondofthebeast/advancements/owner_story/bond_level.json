@@ -1,0 +1,12 @@
+{
+  "parent": "bondofthebeast:owner_story/grimoire",
+  "display": {
+    "icon": { "item": "minecraft:lead" },
+    "title": { "translate": "advancement.bondofthebeast.owner_bond.title" },
+    "description": { "translate": "advancement.bondofthebeast.owner_bond.desc" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } }
+}

@@ -1,0 +1,12 @@
+{
+  "parent": "bondofthebeast:owner_story/grimoire",
+  "display": {
+    "icon": { "item": "minecraft:book" },
+    "title": { "translate": "advancement.bondofthebeast.unlock_skill.title" },
+    "description": { "translate": "advancement.bondofthebeast.unlock_skill.desc" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } }
+}

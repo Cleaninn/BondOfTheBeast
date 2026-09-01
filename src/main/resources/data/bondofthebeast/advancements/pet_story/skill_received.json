@@ -1,0 +1,12 @@
+{
+  "parent": "bondofthebeast:pet_story/root",
+  "display": {
+    "icon": { "item": "minecraft:book" },
+    "title": { "translate": "advancement.bondofthebeast.skill_received.title" },
+    "description": { "translate": "advancement.bondofthebeast.skill_received.desc" },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } }
+}

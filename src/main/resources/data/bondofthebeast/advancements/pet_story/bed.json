@@ -1,0 +1,12 @@
+{
+  "parent": "bondofthebeast:pet_story/treat",
+  "display": {
+    "icon": { "item": "bondofthebeast:pet_bed" },
+    "title": { "translate": "advancement.bondofthebeast.pet_bed.title" },
+    "description": { "translate": "advancement.bondofthebeast.pet_bed.desc" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "WWW",
+    "SSS"
+  ],
+  "key": {
+    "W": { "tag": "minecraft:wool" },
+    "S": { "tag": "minecraft:wooden_slabs" }
+  },
+  "result": { "item": "bondofthebeast:pet_bed", "count": 1 }
+}

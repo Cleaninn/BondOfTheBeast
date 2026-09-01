@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": { "recipes": ["bondofthebeast:command_scepter"] },
+  "criteria": {
+    "has_book": { "trigger": "minecraft:inventory_changed", "conditions": { "items": [{ "item": "shape-shifter-curse:book_of_shape_shifter" }] } },
+    "has_the_recipe": { "trigger": "minecraft:recipe_unlocked", "conditions": { "recipe": "bondofthebeast:command_scepter" } }
+  },
+  "requirements": [["has_book", "has_the_recipe"]]
+}

@@ -1,0 +1,17 @@
+{
+  "parent": "bondofthebeast:owner_story/tame_pet",
+  "display": {
+    "icon": { "item": "bondofthebeast:whistle" },
+    "title": { "translate": "advancement.bondofthebeast.owner_whistle.title" },
+    "description": { "translate": "advancement.bondofthebeast.owner_whistle.desc" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "has_item": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [ { "items": [ "bondofthebeast:whistle" ] } ] }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "parent": "bondofthebeast:owner_story/tame_pet",
+  "display": {
+    "icon": { "item": "bondofthebeast:command_scepter" },
+    "title": { "translate": "advancement.bondofthebeast.grimoire.title" },
+    "description": { "translate": "advancement.bondofthebeast.grimoire.desc" },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_item": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [ { "items": [ "bondofthebeast:command_scepter" ] } ] }
+    }
+  }
+}

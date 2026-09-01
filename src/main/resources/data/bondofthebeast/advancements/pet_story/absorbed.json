@@ -1,0 +1,12 @@
+{
+  "parent": "bondofthebeast:pet_story/skill_received",
+  "display": {
+    "icon": { "item": "minecraft:ender_pearl" },
+    "title": { "translate": "advancement.bondofthebeast.absorbed.title" },
+    "description": { "translate": "advancement.bondofthebeast.absorbed.desc" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } }
+}

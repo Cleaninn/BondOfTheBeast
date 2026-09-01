@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": { "recipes": ["bondofthebeast:pet_treat"] },
+  "criteria": {
+    "has_cookie": { "trigger": "minecraft:inventory_changed", "conditions": { "items": [{ "item": "minecraft:cookie" }] } },
+    "has_the_recipe": { "trigger": "minecraft:recipe_unlocked", "conditions": { "recipe": "bondofthebeast:pet_treat" } }
+  },
+  "requirements": [["has_cookie", "has_the_recipe"]]
+}

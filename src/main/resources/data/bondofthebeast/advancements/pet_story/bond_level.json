@@ -1,0 +1,12 @@
+{
+  "parent": "bondofthebeast:pet_story/root",
+  "display": {
+    "icon": { "item": "minecraft:apple" },
+    "title": { "translate": "advancement.bondofthebeast.pet_bond.title" },
+    "description": { "translate": "advancement.bondofthebeast.pet_bond.desc" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } }
+}

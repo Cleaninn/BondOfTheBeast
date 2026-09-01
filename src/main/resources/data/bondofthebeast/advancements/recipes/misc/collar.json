@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": { "recipes": ["bondofthebeast:collar"] },
+  "criteria": {
+    "has_leather": { "trigger": "minecraft:inventory_changed", "conditions": { "items": [{ "item": "minecraft:leather" }] } },
+    "has_the_recipe": { "trigger": "minecraft:recipe_unlocked", "conditions": { "recipe": "bondofthebeast:collar" } }
+  },
+  "requirements": [["has_leather", "has_the_recipe"]]
+}
