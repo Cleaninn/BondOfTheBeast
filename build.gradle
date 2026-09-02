@@ -121,6 +121,7 @@ java {
 	}
 	withSourcesJar()
 }
+
 publishMods {
 	file = remapJar.archiveFile
 	changelog = file("CHANGELOG.md").text
@@ -142,5 +143,18 @@ publishMods {
 		accessToken = providers.gradleProperty("GITHUB_TOKEN")
 		commitish = "master"
 		tagName = "v${project.mod_version}"
+	}
+
+	curseforge {
+		projectId = "1666459"
+		accessToken = providers.gradleProperty("CURSEFORGE_TOKEN")
+		minecraftVersions.add(project.minecraft_version)
+
+		clientRequired = true
+		serverRequired = true
+
+		requires("fabric-api")
+		requires("shape-shifter-curse")
+		requires("trinkets")
 	}
 }
