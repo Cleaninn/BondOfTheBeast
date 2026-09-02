@@ -1,6 +1,7 @@
 plugins {
 	id 'fabric-loom' version '1.9-SNAPSHOT'
 	id 'maven-publish'
+	id "me.modmuss50.mod-publish-plugin" version "0.5.1"
 }
 
 version = project.mod_version
@@ -119,4 +120,27 @@ java {
 		toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
 	}
 	withSourcesJar()
+}
+publishMods {
+	file = remapJar.archiveFile
+	changelog = file("CHANGELOG.md").text
+	type = STABLE
+	modLoaders.add("fabric")
+
+	modrinth {
+		projectId = "MuoFWV6F"
+		accessToken = providers.gradleProperty("MODRINTH_TOKEN")
+		minecraftVersions.add(project.minecraft_version)
+
+		requires("fabric-api")
+		requires("shape-shifter-curse")
+		requires("trinkets")
+	}
+
+	github {
+		repository = "Cleaninn/BondOfTheBeast"
+		accessToken = providers.gradleProperty("GITHUB_TOKEN")
+		commitish = "master"
+		tagName = "v${project.mod_version}"
+	}
 }
