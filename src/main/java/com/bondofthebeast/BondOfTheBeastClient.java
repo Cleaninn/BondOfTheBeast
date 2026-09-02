@@ -51,6 +51,8 @@ public class BondOfTheBeastClient implements ClientModInitializer {
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             var bond = ModComponents.PLAYER_BOND.get(player);
             if (bond.hasOwner()) {
+                if (pos.equals(bond.getBedPos())) return ActionResult.FAIL;
+
                 String blockId = Registries.BLOCK.getId(world.getBlockState(pos).getBlock()).toString();
                 if (bond.getBlacklistedBlocks().contains(blockId)) return ActionResult.FAIL;
                 if (bond.isNoBreakMode() && !bond.getWhitelistedBlocks().contains(blockId)) return ActionResult.FAIL;
@@ -67,12 +69,9 @@ public class BondOfTheBeastClient implements ClientModInitializer {
         int level = b.readInt(); int exp = b.readInt(); boolean collar = b.readBoolean();
         int skillPoints = b.readInt(); int skillsSize = b.readInt();
         Set<String> unlockedSkills = new HashSet<>(); for (int i = 0; i < skillsSize; i++) unlockedSkills.add(b.readString());
-
         int blackSize = b.readInt(); Set<String> black = new HashSet<>(); for (int i = 0; i < blackSize; i++) black.add(b.readString());
         int whiteSize = b.readInt(); Set<String> white = new HashSet<>(); for (int i = 0; i < whiteSize; i++) white.add(b.readString());
-
         boolean isOnline = b.readBoolean();
-
         return new StaffMainScreen.PetData(uuid, name, sitting, tp, prot, aura, pacifist, vampiric, noBreak, absorbed, noInteract, level, exp, collar, skillPoints, unlockedSkills, black, white, isOnline);
     }
 }

@@ -261,8 +261,10 @@
   "text.bondofthebeast.must_be_bound_by_master": "The Master must bind you to this bed first.",
   "text.bondofthebeast.contract_destroyed_owner": "The contract was destroyed! Your bond with %s has been broken.",
   "text.bondofthebeast.contract_destroyed_pet": "The contract was destroyed! The magic fades, you are free.",
-  "text.bondofthebeast.owner_too_wild_to_command": "You have given in to the beast too much to command the Grimoire!",
+  "text.bondofthebeast.owner_too_wild_to_command": "You have given into the beast too much to command the Grimoire!",
   "text.bondofthebeast.pet_not_wild_enough": "The pet's mind is not wild enough to obey commands!",
   "text.bondofthebeast.owner_went_feral_pet": "The Master has become completely feral. The bond is broken!",
-  "text.bondofthebeast.owner_went_feral_owner": "You have lost your mind to the beast. Your pets no longer obey you!"
+  "text.bondofthebeast.owner_went_feral_owner": "You have lost your mind to the beast. Your pets no longer obey you!",
+  "text.bondofthebeast.packet.pet_offline_chain": "You cannot enable the chain for a pet that is offline!",
+  "text.bondofthebeast.packet.pet_too_far_for_chain": "The pet is too far from the bed to be chained!"
 }

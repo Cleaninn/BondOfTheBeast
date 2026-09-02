@@ -264,5 +264,7 @@
   "text.bondofthebeast.owner_too_wild_to_command": "Вы слишком поддались зверю, чтобы управлять Гримуаром!",
   "text.bondofthebeast.pet_not_wild_enough": "Разум питомца недостаточно дикий, приказы не действуют!",
   "text.bondofthebeast.owner_went_feral_pet": "Хозяин окончательно одичал. Связь разорвана!",
-  "text.bondofthebeast.owner_went_feral_owner": "Разум зверя поглотил вас. Питомцы больше вам не подчиняются!"
+  "text.bondofthebeast.owner_went_feral_owner": "Разум зверя поглотил вас. Питомцы больше вам не подчиняются!",
+  "text.bondofthebeast.packet.pet_offline_chain": "Нельзя включить цепь для питомца, которого нет на сервере!",
+  "text.bondofthebeast.packet.pet_too_far_for_chain": "Питомец находится слишком далеко, чтобы пристегнуть цепь!"
 }

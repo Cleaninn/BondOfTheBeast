@@ -1,41 +1,64 @@
 package com.bondofthebeast;
 
-import com.bondofthebeast.block.PetBedBlock;
 import com.bondofthebeast.block.PetBedBlockEntity;
 import com.bondofthebeast.component.ModComponents;
 import com.bondofthebeast.component.PlayerBondComponent;
 import dev.emi.trinkets.api.TrinketsApi;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.event.player.*;
-import net.minecraft.block.BedBlock;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.player.PlayerEntity;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.item.ItemStack;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.Registries;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Hand;
-import net.minecraft.util.ActionResult;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.random.Random;
 import net.minecraft.world.GameMode;
-import java.util.ArrayList;
+
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
-public class ModEvents {
-    private static int tickCounter = 0;
-    private static int expTickCounter = 0;
-    private static int chainTickCounter = 0;
+public class ModPackets {
+    public static final Identifier OPEN_OWNER_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_owner_gui");
+    public static final Identifier OPEN_PET_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_pet_gui");
+    public static final Identifier OPEN_MANAGEMENT_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_management_gui");
+    public static final Identifier OPEN_PET_STATS_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_pet_stats_gui");
+    public static final Identifier OPEN_BED_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_bed_gui");
+    public static final Identifier SIGN_CONTRACT_C2S = new Identifier(BondOfTheBeast.MOD_ID, "sign_contract_c2s");
+    public static final Identifier UNLOCK_SKILL_C2S = new Identifier(BondOfTheBeast.MOD_ID, "unlock_skill_c2s");
+    public static final Identifier UPDATE_BED_C2S = new Identifier(BondOfTheBeast.MOD_ID, "update_bed_c2s");
+    public static final Identifier TOGGLE_PET_STATE_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_pet_state_c2s");
+    public static final Identifier TOGGLE_TELEPORT_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_teleport_c2s");
+    public static final Identifier TOGGLE_PROTECTION_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_protection_c2s");
+    public static final Identifier TOGGLE_AURA_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_aura_c2s");
+    public static final Identifier TOGGLE_PACIFIST_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_pacifist_c2s");
+    public static final Identifier TOGGLE_VAMPIRIC_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_vampiric_c2s");
+    public static final Identifier TOGGLE_NO_BREAK_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_no_break_c2s");
+    public static final Identifier TOGGLE_ABSORB_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_absorb_c2s");
+    public static final Identifier TOGGLE_NO_INTERACT_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_no_interact_c2s");
+    public static final Identifier UPDATE_BLOCK_LISTS_C2S = new Identifier(BondOfTheBeast.MOD_ID, "update_block_lists_c2s");
 
-    public static boolean canPetObey(PlayerEntity pet) {
+    private static boolean hasActiveChain(PlayerBondComponent bond, ServerPlayerEntity pet) {
+        BlockPos bedPos = bond.getBedPos();
+        if (bedPos != null && pet.getWorld().getBlockEntity(bedPos) instanceof PetBedBlockEntity bed) {
+            return bed.getChainRadius() > 0 && pet.getUuidAsString().equals(bed.getBoundPetUUID());
+        }
+        return false;
+    }
+
+    private static boolean canOwnerCommand(ServerPlayerEntity owner) {
+        try {
+            var sscComp = net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(owner);
+            if (sscComp != null && sscComp.getCurrentForm() != null) {
+                if (sscComp.getCurrentForm().FormID != null && sscComp.getCurrentForm().FormID.getPath().toLowerCase().contains("allay")) return true;
+                return sscComp.getCurrentForm().getIndex() < 2;
+            }
+        } catch (Exception ignored) {}
+        return true;
+    }
+
+    private static boolean canPetObey(ServerPlayerEntity pet) {
         try {
             var sscComp = net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(pet);
             if (sscComp != null && sscComp.getCurrentForm() != null) {
@@ -48,317 +71,223 @@ public class ModEvents {
         return false;
     }
 
-    public static void registerEvents() {
-        UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (!(entity instanceof PlayerEntity pet)) return ActionResult.PASS;
-            if (hand != Hand.MAIN_HAND) return ActionResult.PASS;
+    public static void registerC2SPackets() {
+        ServerPlayNetworking.registerGlobalReceiver(SIGN_CONTRACT_C2S, (s, p, h, b, rs) -> s.execute(() -> {
+            ItemStack stack = p.getMainHandStack();
+            if (stack.getItem() instanceof ContractItem item) item.finalizeContract(stack, p);
+        }));
 
-            var bond = ModComponents.PLAYER_BOND.get(pet);
-            if (bond.hasOwner() && bond.getOwnerUUID().equals(player.getUuidAsString())) {
-                ItemStack foodStack = player.getStackInHand(hand);
-
-                if (player.isSneaking() && foodStack.isEmpty()) {
-                    if (world.isClient) return ActionResult.SUCCESS;
-                    return TrinketsApi.getTrinketComponent(pet).map(c -> {
-                        boolean rem = false;
-                        for (var g : c.getInventory().values()) for (var inv : g.values()) for (int i = 0; i < inv.size(); i++) {
-                            if (inv.getStack(i).getItem() instanceof CollarItem) {
-                                ItemStack droppedCollar = inv.getStack(i).copy();
-                                if (droppedCollar.hasNbt()) droppedCollar.getNbt().remove("OwnerName");
-                                player.getInventory().offerOrDrop(droppedCollar);
-                                inv.setStack(i, ItemStack.EMPTY);
-                                rem = true;
-                            }
-                        }
-                        if (rem) {
-                            if (bond.isAbsorbed() && pet instanceof ServerPlayerEntity sp) {
-                                sp.changeGameMode(GameMode.SURVIVAL);
-                                bond.setAbsorbed(false);
-                            }
-                            bond.setBedPos(null);
-                            bond.setPetNickname(null);
-                            player.sendMessage(Text.translatable("text.bondofthebeast.collar_removed_owner", pet.getName().getString()).formatted(Formatting.AQUA), true);
-                            pet.sendMessage(Text.translatable("text.bondofthebeast.collar_removed_pet", player.getName().getString()).formatted(Formatting.AQUA), true);
-                            return ActionResult.SUCCESS;
-                        }
-                        return ActionResult.PASS;
-                    }).orElse(ActionResult.PASS);
+        ServerPlayNetworking.registerGlobalReceiver(UNLOCK_SKILL_C2S, (s, p, h, buf, rs) -> {
+            UUID petUuid = buf.readUuid(); String skill = buf.readString();
+            s.execute(() -> {
+                if (!canOwnerCommand(p)) {
+                    p.sendMessage(Text.translatable("text.bondofthebeast.owner_too_wild_to_command").formatted(Formatting.RED), true);
+                    return;
                 }
-
-                if (!foodStack.isEmpty() && foodStack.isOf(ModItems.PET_TREAT)) {
-                    if (world.isClient) return ActionResult.SUCCESS;
-                    if (!player.getAbilities().creativeMode) foodStack.decrement(1);
-
-                    pet.getHungerManager().add(6, 0.6f);
-                    bond.addBondExperience(50);
-                    ModComponents.PLAYER_BOND.sync(pet);
-                    ModComponents.PLAYER_BOND.sync(player);
-
-                    world.playSound(null, pet.getX(), pet.getY(), pet.getZ(), SoundEvents.ENTITY_GENERIC_EAT, SoundCategory.PLAYERS, 1.0f, 1.1f);
-                    if (pet instanceof ServerPlayerEntity sp) sp.getServerWorld().spawnParticles(ParticleTypes.HEART, pet.getX(), pet.getY() + 1.2, pet.getZ(), 12, 0.4, 0.4, 0.4, 0.15);
-
-                    String petName = bond.getPetNickname() != null ? bond.getPetNickname() : pet.getGameProfile().getName();
-                    player.sendMessage(Text.translatable("text.bondofthebeast.event.feed_treat_owner", petName).formatted(Formatting.AQUA), true);
-                    pet.sendMessage(Text.translatable("text.bondofthebeast.event.feed_treat_pet", player.getGameProfile().getName()).formatted(Formatting.AQUA), true);
-
-                    if (player instanceof ServerPlayerEntity sp) BondOfTheBeast.grantAdvancement(sp, "owner_story/treat");
-                    if (pet instanceof ServerPlayerEntity sp) BondOfTheBeast.grantAdvancement(sp, "pet_story/treat");
-                    return ActionResult.SUCCESS;
-                }
-
-                if (!foodStack.isEmpty() && foodStack.getItem().isFood()) {
-                    if (!pet.getHungerManager().isNotFull()) {
-                        if (!world.isClient) player.sendMessage(Text.translatable("text.bondofthebeast.event.pet_not_hungry").formatted(Formatting.YELLOW), true);
-                        return ActionResult.SUCCESS;
-                    }
-                    if (world.isClient) return ActionResult.SUCCESS;
-
-                    var foodComponent = foodStack.getItem().getFoodComponent();
-                    if (foodComponent != null) {
-                        int hungerValue = foodComponent.getHunger();
-                        int xpGained = Math.max(5, hungerValue * 4);
-
-                        if (!player.getAbilities().creativeMode) foodStack.decrement(1);
-                        pet.getHungerManager().add(hungerValue, foodComponent.getSaturationModifier());
-                        bond.addBondExperience(xpGained);
-                        ModComponents.PLAYER_BOND.sync(pet);
-                        ModComponents.PLAYER_BOND.sync(player);
-
-                        world.playSound(null, pet.getX(), pet.getY(), pet.getZ(), SoundEvents.ENTITY_GENERIC_EAT, SoundCategory.PLAYERS, 1.0f, 1.0f);
-                        world.playSound(null, pet.getX(), pet.getY(), pet.getZ(), SoundEvents.ENTITY_PLAYER_BURP, SoundCategory.PLAYERS, 0.5f, 1.0f);
-                        if (pet instanceof ServerPlayerEntity sp) sp.getServerWorld().spawnParticles(ParticleTypes.HEART, pet.getX(), pet.getY() + 1.2, pet.getZ(), 6, 0.3, 0.3, 0.3, 0.1);
-
-                        String petName = bond.getPetNickname() != null ? bond.getPetNickname() : pet.getGameProfile().getName();
-                        player.sendMessage(Text.translatable("text.bondofthebeast.event.feed_food_owner", petName, xpGained).formatted(Formatting.GREEN), true);
-                        pet.sendMessage(Text.translatable("text.bondofthebeast.event.feed_food_pet", player.getGameProfile().getName(), xpGained).formatted(Formatting.GOLD), true);
-
-                        if (player instanceof ServerPlayerEntity sp) BondOfTheBeast.grantAdvancement(sp, "owner_story/treat");
-                        if (pet instanceof ServerPlayerEntity sp) BondOfTheBeast.grantAdvancement(sp, "pet_story/treat");
-                        return ActionResult.SUCCESS;
-                    }
-                }
-            }
-            return ActionResult.PASS;
-        });
-
-        AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (world.isClient || !(player instanceof ServerPlayerEntity sp)) return ActionResult.PASS;
-            var bond = ModComponents.PLAYER_BOND.get(sp);
-
-            if (entity instanceof PlayerEntity targetPlayer) {
-                if (bond.hasOwner() && bond.getOwnerUUID().equals(targetPlayer.getUuidAsString())) {
-                    sp.sendMessage(Text.translatable("text.bondofthebeast.damage_blocked_pet").formatted(Formatting.RED), true);
-                    return ActionResult.FAIL;
-                }
-                var targetBond = ModComponents.PLAYER_BOND.get(targetPlayer);
-                if (targetBond.hasOwner() && targetBond.getOwnerUUID().equals(sp.getUuidAsString())) {
-                    sp.sendMessage(Text.translatable("text.bondofthebeast.damage_blocked_owner").formatted(Formatting.RED), true);
-                    return ActionResult.FAIL;
-                }
-            }
-
-            if (bond.hasOwner() && bond.isPacifistMode() && canPetObey(sp)) {
-                sp.sendMessage(Text.translatable("text.bondofthebeast.command.pacifist_warning").formatted(Formatting.RED), true);
-                return ActionResult.FAIL;
-            }
-
-            if (!(entity instanceof LivingEntity targetLiving)) return ActionResult.PASS;
-
-            for (ServerPlayerEntity p : sp.getServer().getPlayerManager().getPlayerList()) {
-                PlayerBondComponent pBond = ModComponents.PLAYER_BOND.get(p);
-                if (pBond.hasOwner() && pBond.getOwnerUUID().equals(sp.getUuidAsString()) && pBond.isProtectionMode() && pBond.getBondLevel() >= 3 && canPetObey(p)) {
-                    targetLiving.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 100, 0, false, false));
-                }
-            }
-            return ActionResult.PASS;
-        });
-
-        AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
-            var bond = ModComponents.PLAYER_BOND.get(player);
-            if (!bond.hasOwner() || !canPetObey(player)) return ActionResult.PASS;
-
-            String blockId = Registries.BLOCK.getId(world.getBlockState(pos).getBlock()).toString();
-
-            if (bond.getBlacklistedBlocks().contains(blockId)) {
-                if (!world.isClient) player.sendMessage(Text.translatable("text.bondofthebeast.blacklisted_warning").formatted(Formatting.DARK_RED), true);
-                return ActionResult.FAIL;
-            }
-
-            if (bond.isNoBreakMode() && !bond.getWhitelistedBlocks().contains(blockId)) {
-                if (!world.isClient) player.sendMessage(Text.translatable("text.bondofthebeast.soft_paws_warning").formatted(Formatting.RED), true);
-                return ActionResult.FAIL;
-            }
-
-            return ActionResult.PASS;
-        });
-
-        PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, entity) -> {
-            var bond = ModComponents.PLAYER_BOND.get(player);
-            if (!bond.hasOwner() || !canPetObey(player)) return true;
-
-            String blockId = Registries.BLOCK.getId(state.getBlock()).toString();
-            if (bond.getBlacklistedBlocks().contains(blockId)) return false;
-            if (bond.isNoBreakMode() && !bond.getWhitelistedBlocks().contains(blockId)) return false;
-
-            return true;
-        });
-
-        UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-            var bond = ModComponents.PLAYER_BOND.get(player);
-
-            if (bond.hasOwner() && world.getBlockState(hitResult.getBlockPos()).getBlock() instanceof BedBlock) {
-                if (!world.isClient) player.sendMessage(Text.translatable("text.bondofthebeast.cannot_sleep_here_human").formatted(Formatting.YELLOW), true);
-                return ActionResult.FAIL;
-            }
-
-            if (!bond.hasOwner() || !canPetObey(player)) return ActionResult.PASS;
-
-            String blockId = Registries.BLOCK.getId(world.getBlockState(hitResult.getBlockPos()).getBlock()).toString();
-
-            if (bond.getBlacklistedBlocks().contains(blockId)) {
-                if (!world.isClient) player.sendMessage(Text.translatable("text.bondofthebeast.blacklisted_interact_warning").formatted(Formatting.DARK_RED), true);
-                return ActionResult.FAIL;
-            }
-
-            if (bond.isNoInteractMode()) {
-                if (!world.isClient) player.sendMessage(Text.translatable("text.bondofthebeast.event.interact_blocked").formatted(Formatting.RED), true);
-                return ActionResult.FAIL;
-            }
-
-            return ActionResult.PASS;
-        });
-
-        ServerTickEvents.END_SERVER_TICK.register(server -> {
-            if (++chainTickCounter >= 1) {
-                chainTickCounter = 0;
-                for (ServerPlayerEntity pet : server.getPlayerManager().getPlayerList()) {
+                ServerPlayerEntity pet = s.getPlayerManager().getPlayer(petUuid);
+                if (pet != null) {
                     var bond = ModComponents.PLAYER_BOND.get(pet);
-                    if (!bond.hasOwner() || !canPetObey(pet)) continue;
-
-                    BlockPos bedPos = bond.getBedPos();
-                    if (bedPos != null && pet.getWorld().getBlockState(bedPos).getBlock() instanceof PetBedBlock) {
-                        var be = pet.getWorld().getBlockEntity(bedPos);
-                        if (be instanceof PetBedBlockEntity bed) {
-                            int radius = bed.getChainRadius();
-                            if (radius > 0) {
-                                Vec3d bedVec = bedPos.toCenterPos();
-                                double dx = pet.getX() - bedVec.x;
-                                double dz = pet.getZ() - bedVec.z;
-                                double dist = Math.sqrt(dx * dx + dz * dz);
-
-                                if (dist > radius) {
-                                    if (pet.age % 2 == 0) {
-                                        Vec3d petChainAnchor = pet.getPos().add(0, 0.7, 0);
-                                        Vec3d bedChainAnchor = bedVec.add(0, -0.3, 0);
-                                        double distance = petChainAnchor.distanceTo(bedChainAnchor);
-                                        int pCount = (int) (distance * 2.5);
-
-                                        if (pCount > 0) {
-                                            for (int i = 0; i <= pCount; i++) {
-                                                double t = (double) i / pCount;
-                                                double px = bedChainAnchor.x + (petChainAnchor.x - bedChainAnchor.x) * t;
-                                                double py = bedChainAnchor.y + (petChainAnchor.y - bedChainAnchor.y) * t;
-                                                double pz = bedChainAnchor.z + (petChainAnchor.z - bedChainAnchor.z) * t;
-                                                pet.getServerWorld().spawnParticles(ParticleTypes.CRIT, px, py, pz, 1, 0, 0, 0, 0);
-                                            }
-                                        }
-                                    }
-
-                                    Vec3d dir = new Vec3d(dx, 0, dz).normalize();
-                                    if (dist <= radius + 5.0) {
-                                        double pullFactor = (dist - radius) * 0.15;
-                                        Vec3d currentVel = pet.getVelocity();
-                                        pet.setVelocity(currentVel.x - dir.x * pullFactor, currentVel.y, currentVel.z - dir.z * pullFactor);
-                                        pet.velocityModified = true;
-                                    } else {
-                                        double targetX = bedVec.x + dir.x * radius;
-                                        double targetZ = bedVec.z + dir.z * radius;
-                                        pet.teleport(pet.getServerWorld(), targetX, pet.getY(), targetZ, pet.getYaw(), pet.getPitch());
-                                    }
-
-                                    if (pet.age % 50 == 0) {
-                                        pet.sendMessage(Text.translatable("text.bondofthebeast.event.chain_pull").formatted(Formatting.GRAY), true);
-                                    }
-                                }
-                            }
-                        }
+                    if (bond.hasOwner() && bond.getOwnerUUID().equals(p.getUuidAsString()) && !bond.isSkillUnlocked(skill) && bond.getSkillPoints() > 0) {
+                        bond.addSkillPoints(-1); bond.unlockSkill(skill);
+                        BondOfTheBeast.grantAdvancement(p, "owner_story/unlock_skill");
+                        BondOfTheBeast.grantAdvancement(pet, "pet_story/skill_received");
                     }
                 }
-            }
+            });
+        });
 
-            if (++tickCounter >= 20) {
-                tickCounter = 0;
-                for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-                    var ownerBond = ModComponents.PLAYER_BOND.get(player);
-                    if (!ownerBond.hasOwner() || !canPetObey(player)) continue;
-
-                    ServerPlayerEntity owner = server.getPlayerManager().getPlayer(UUID.fromString(ownerBond.getOwnerUUID()));
-                    if (owner == null || owner.getWorld() != player.getWorld()) continue;
-
-                    if (ownerBond.isAbsorbed()) {
-                        if (player.interactionManager.getGameMode() != GameMode.SPECTATOR) player.changeGameMode(GameMode.SPECTATOR);
-                        if (player.getCameraEntity() != owner) player.setCameraEntity(owner);
-                        continue;
-                    }
-
-                    double d = player.squaredDistanceTo(owner);
-
-                    if (!ownerBond.isSitting() && ownerBond.isTeleportEnabled() && ownerBond.getBondLevel() >= 2 && d > 400.0 && d <= 10000.0) {
-                        tryTeleportPet(player, owner);
-                    }
-
-                    if (d <= 144.0 && ownerBond.getBondLevel() >= 4 && ownerBond.isAuraEnabled()) {
-                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, 60, 0, true, false, true));
-                        owner.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 60, 0, true, false, true));
-                    }
-
-                    if (ownerBond.getBondLevel() >= 3 && ownerBond.isProtectionMode()) {
-                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 60, 0, true, false, true));
-                    }
+        ServerPlayNetworking.registerGlobalReceiver(UPDATE_BLOCK_LISTS_C2S, (s, p, h, buf, rs) -> {
+            UUID petUuid = buf.readUuid();
+            int listType = buf.readInt();
+            int size = buf.readInt();
+            Set<String> list = new HashSet<>();
+            for (int i = 0; i < size; i++) list.add(buf.readString());
+            s.execute(() -> {
+                if (!canOwnerCommand(p)) {
+                    p.sendMessage(Text.translatable("text.bondofthebeast.owner_too_wild_to_command").formatted(Formatting.RED), true);
+                    return;
                 }
-            }
-
-            if (++expTickCounter >= 200) {
-                expTickCounter = 0;
-                for (ServerPlayerEntity pet : server.getPlayerManager().getPlayerList()) {
+                ServerPlayerEntity pet = s.getPlayerManager().getPlayer(petUuid);
+                if (pet != null) {
                     var bond = ModComponents.PLAYER_BOND.get(pet);
-                    if (!bond.hasOwner()) continue;
-                    ServerPlayerEntity owner = server.getPlayerManager().getPlayer(UUID.fromString(bond.getOwnerUUID()));
-                    if (owner != null && owner.getWorld() == pet.getWorld() && pet.squaredDistanceTo(owner) <= 256.0) bond.addBondExperience(5);
+                    if (bond.hasOwner() && bond.getOwnerUUID().equals(p.getUuidAsString())) {
+                        if (listType == 0) bond.setBlacklistedBlocks(list);
+                        else if (listType == 1) bond.setWhitelistedBlocks(list);
+                    }
                 }
+            });
+        });
+
+        ServerPlayNetworking.registerGlobalReceiver(UPDATE_BED_C2S, (s, p, h, buf, rs) -> {
+            BlockPos pos = buf.readBlockPos();
+            String petUUIDStr = buf.readString();
+            int radius = buf.readInt();
+
+            s.execute(() -> {
+                if (!canOwnerCommand(p)) {
+                    p.sendMessage(Text.translatable("text.bondofthebeast.owner_too_wild_to_command").formatted(Formatting.RED), true);
+                    return;
+                }
+
+                ServerPlayerEntity pet = null;
+                if (!petUUIDStr.isEmpty()) {
+                    try {
+                        pet = s.getPlayerManager().getPlayer(UUID.fromString(petUUIDStr));
+                    } catch (Exception ignored) {}
+                }
+
+                // ПРОВЕРКА ЦЕПИ: если включают цепь, питомец обязан быть онлайн и стоять в этом радиусе
+                if (radius > 0) {
+                    if (pet == null) {
+                        p.sendMessage(Text.translatable("text.bondofthebeast.packet.pet_offline_chain").formatted(Formatting.RED), true);
+                        return;
+                    }
+                    double distToBed = pet.getPos().distanceTo(pos.toCenterPos());
+                    if (distToBed > radius) {
+                        p.sendMessage(Text.translatable("text.bondofthebeast.packet.pet_too_far_for_chain").formatted(Formatting.RED), true);
+                        return;
+                    }
+                }
+
+                if (pet != null) {
+                    if (!canPetObey(pet)) {
+                        p.sendMessage(Text.translatable("text.bondofthebeast.pet_not_wild_enough").formatted(Formatting.RED), true);
+                        return;
+                    }
+                    double distance = p.getPos().distanceTo(pet.getPos());
+                    if (distance > 50.0) {
+                        p.sendMessage(Text.translatable("text.bondofthebeast.packet.bed_too_far").formatted(Formatting.RED), true);
+                        return;
+                    }
+                    boolean hasCollar = TrinketsApi.getTrinketComponent(pet).map(c -> c.isEquipped(st -> st.getItem() instanceof CollarItem)).orElse(false);
+                    if (!hasCollar) {
+                        p.sendMessage(Text.translatable("text.bondofthebeast.packet.no_collar_bed").formatted(Formatting.RED), true);
+                        return;
+                    }
+                    var bond = ModComponents.PLAYER_BOND.get(pet);
+                    if (radius > 0 && (bond.isTeleportEnabled() || bond.isAbsorbed())) {
+                        p.sendMessage(Text.translatable("text.bondofthebeast.conflict_teleport_absorb").formatted(Formatting.RED), true);
+                        return;
+                    }
+                    BlockPos oldPos = bond.getBedPos();
+                    if (oldPos != null && oldPos.equals(pos)) {
+                        pet.sendMessage(Text.translatable("text.bondofthebeast.packet.bed_rebound").formatted(Formatting.GOLD), false);
+                    } else {
+                        if (oldPos != null) {
+                            var oldBe = p.getServerWorld().getBlockEntity(oldPos);
+                            if (oldBe instanceof PetBedBlockEntity oldBed) oldBed.setBoundPetUUID("");
+                        }
+                        pet.sendMessage(Text.translatable("text.bondofthebeast.packet.bound_to_new_bed").formatted(Formatting.GOLD), false);
+                    }
+                    bond.setBedPos(pos);
+                    pet.setSpawnPoint(p.getServerWorld().getRegistryKey(), pos.up(), 0.0f, true, true);
+                }
+
+                var be = p.getServerWorld().getBlockEntity(pos);
+                if (be instanceof PetBedBlockEntity bed) {
+                    bed.setBoundPetUUID(petUUIDStr);
+                    bed.setChainRadius(radius);
+                    bed.markDirty();
+                    p.getServerWorld().updateListeners(pos, p.getServerWorld().getBlockState(pos), p.getServerWorld().getBlockState(pos), 3);
+                    p.sendMessage(Text.translatable("text.bondofthebeast.packet.bed_setup_success").formatted(Formatting.GREEN), true);
+                }
+            });
+        });
+
+        registerToggle(TOGGLE_PET_STATE_C2S, (b, p, pet) -> b.setSitting(!b.isSitting()));
+        registerToggle(TOGGLE_PACIFIST_C2S, (b, p, pet) -> b.setPacifistMode(!b.isPacifistMode()));
+        registerToggle(TOGGLE_NO_BREAK_C2S, (b, p, pet) -> {
+            boolean newState = !b.isNoBreakMode();
+            b.setNoBreakMode(newState);
+            if (!newState) {
+                b.setNoInteractMode(false);
+                b.setPacifistMode(false);
             }
         });
-    }
-
-    private static void tryTeleportPet(ServerPlayerEntity pet, ServerPlayerEntity owner) {
-        ServerWorld world = owner.getServerWorld();
-        BlockPos ownerPos = owner.getBlockPos();
-        Random random = pet.getRandom();
-
-        for (int i = 0; i < 10; i++) {
-            int dx = random.nextBetween(-2, 2);
-            int dy = random.nextBetween(-1, 1);
-            int dz = random.nextBetween(-2, 2);
-            BlockPos targetPos = ownerPos.add(dx, dy, dz);
-
-            if (canTeleportTo(targetPos, world)) {
-                pet.teleport(world, targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5, pet.getYaw(), pet.getPitch());
-                pet.setVelocity(Vec3d.ZERO);
-                pet.fallDistance = 0.0f;
-                world.spawnParticles(ParticleTypes.PORTAL, targetPos.getX() + 0.5, targetPos.getY() + 1, targetPos.getZ() + 0.5, 10, 0.2, 0.5, 0.2, 0.1);
+        registerToggle(TOGGLE_TELEPORT_C2S, (b, p, pet) -> {
+            if (!b.isTeleportEnabled() && hasActiveChain(b, pet)) {
+                p.sendMessage(Text.translatable("text.bondofthebeast.conflict_chain").formatted(Formatting.RED), true);
                 return;
             }
-        }
+            b.setTeleportEnabled(!b.isTeleportEnabled());
+        });
+        registerToggle(TOGGLE_PROTECTION_C2S, (b, p, pet) -> b.setProtectionMode(!b.isProtectionMode()));
+        registerToggle(TOGGLE_AURA_C2S, (b, p, pet) -> b.setAuraEnabled(!b.isAuraEnabled()));
+        registerToggle(TOGGLE_VAMPIRIC_C2S, (b, p, pet) -> b.setVampiricMode(!b.isVampiricMode()));
+        registerToggle(TOGGLE_NO_INTERACT_C2S, (b, p, pet) -> b.setNoInteractMode(!b.isNoInteractMode()));
+        registerToggle(TOGGLE_ABSORB_C2S, (b, p, pet) -> {
+            if (!b.isSkillUnlocked("absorb")) return;
+            boolean st = !b.isAbsorbed();
+            if (st) {
+                if (hasActiveChain(b, pet)) {
+                    p.sendMessage(Text.translatable("text.bondofthebeast.conflict_chain").formatted(Formatting.RED), true);
+                    return;
+                }
+                if (pet.squaredDistanceTo(p) > 25.0) return;
+                b.setAbsorbed(true); b.setSitting(false);
+                pet.changeGameMode(GameMode.SPECTATOR); pet.setCameraEntity(p);
+                BondOfTheBeast.grantAdvancement(p, "owner_story/absorb");
+                BondOfTheBeast.grantAdvancement(pet, "pet_story/absorbed");
+            } else {
+                b.setAbsorbed(false); pet.changeGameMode(GameMode.SURVIVAL);
+                pet.teleport(p.getServerWorld(), p.getX(), p.getY(), p.getZ(), p.getYaw(), p.getPitch());
+            }
+        });
     }
 
-    private static boolean canTeleportTo(BlockPos pos, ServerWorld world) {
-        net.minecraft.block.BlockState floor = world.getBlockState(pos.down());
-        net.minecraft.block.BlockState feet = world.getBlockState(pos);
-        net.minecraft.block.BlockState head = world.getBlockState(pos.up());
-        if (floor.getCollisionShape(world, pos.down()).isEmpty()) return false;
-        if (!feet.getCollisionShape(world, pos).isEmpty() || !head.getCollisionShape(world, pos.up()).isEmpty()) return false;
-        if (!feet.getFluidState().isEmpty() || !head.getFluidState().isEmpty()) return false;
-        if (floor.getBlock() == net.minecraft.block.Blocks.MAGMA_BLOCK || floor.getBlock() == net.minecraft.block.Blocks.CAMPFIRE) return false;
-        return true;
+    private static void registerToggle(Identifier id, ToggleHandler handler) {
+        ServerPlayNetworking.registerGlobalReceiver(id, (s, p, h, b, rs) -> {
+            UUID uuid = b.readUuid();
+            s.execute(() -> {
+                if (!canOwnerCommand(p)) {
+                    p.sendMessage(Text.translatable("text.bondofthebeast.owner_too_wild_to_command").formatted(Formatting.RED), true);
+                    return;
+                }
+                ServerPlayerEntity pet = s.getPlayerManager().getPlayer(uuid);
+                if (pet != null) {
+                    if (!canPetObey(pet)) {
+                        p.sendMessage(Text.translatable("text.bondofthebeast.pet_not_wild_enough").formatted(Formatting.RED), true);
+                        return;
+                    }
+                    var bond = ModComponents.PLAYER_BOND.get(pet);
+                    if (bond.hasOwner() && bond.getOwnerUUID().equals(p.getUuidAsString())) handler.handle(bond, p, pet);
+                }
+            });
+        });
+    }
+
+    private interface ToggleHandler { void handle(PlayerBondComponent bond, ServerPlayerEntity player, ServerPlayerEntity pet); }
+
+    public static void writePetData(PacketByteBuf buf, UUID petUuid, String fallbackName, MinecraftServer server) {
+        ServerPlayerEntity onlinePet = server.getPlayerManager().getPlayer(petUuid);
+        buf.writeUuid(petUuid);
+        if (onlinePet != null) {
+            PlayerBondComponent petBond = ModComponents.PLAYER_BOND.get(onlinePet);
+            boolean hasCollar = TrinketsApi.getTrinketComponent(onlinePet).map(c -> c.isEquipped(s -> s.getItem() instanceof CollarItem)).orElse(false);
+            String nickname = petBond.getPetNickname();
+            String username = onlinePet.getGameProfile().getName();
+            buf.writeString((nickname != null && !nickname.isEmpty()) ? nickname + "|" + username : username + "|" + username);
+            buf.writeBoolean(petBond.isSitting()); buf.writeBoolean(petBond.isTeleportEnabled()); buf.writeBoolean(petBond.isProtectionMode());
+            buf.writeBoolean(petBond.isAuraEnabled()); buf.writeBoolean(petBond.isPacifistMode()); buf.writeBoolean(petBond.isVampiricMode());
+            buf.writeBoolean(petBond.isNoBreakMode()); buf.writeBoolean(petBond.isAbsorbed()); buf.writeBoolean(petBond.isNoInteractMode());
+            buf.writeInt(petBond.getBondLevel()); buf.writeInt(petBond.getBondExperience()); buf.writeBoolean(hasCollar);
+            buf.writeInt(petBond.getSkillPoints());
+            Set<String> skills = petBond.getUnlockedSkills(); buf.writeInt(skills.size()); for(String s : skills) buf.writeString(s);
+            Set<String> black = petBond.getBlacklistedBlocks(); buf.writeInt(black.size()); for(String s : black) buf.writeString(s);
+            Set<String> white = petBond.getWhitelistedBlocks(); buf.writeInt(white.size()); for(String s : white) buf.writeString(s);
+            buf.writeBoolean(true);
+        } else {
+            buf.writeString(fallbackName + "|" + fallbackName);
+            buf.writeBoolean(false); buf.writeBoolean(false); buf.writeBoolean(false);
+            buf.writeBoolean(false); buf.writeBoolean(false); buf.writeBoolean(false);
+            buf.writeBoolean(false); buf.writeBoolean(false); buf.writeBoolean(false);
+            buf.writeInt(1); buf.writeInt(0);
+            buf.writeBoolean(true); // Фейково говорим GUI, что ошейник есть (чтобы пустить в меню выбора)
+            buf.writeInt(0);
+            buf.writeInt(1); buf.writeString("sit");
+            buf.writeInt(0);
+            buf.writeInt(0);
+            buf.writeBoolean(false);
+        }
     }
 }

@@ -43,7 +43,6 @@ public class BookOfShapeShifterScreenMixin extends Screen {
                     public void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
                         boolean hovered = this.isHovered();
 
-                        // Если навели мышку, рисуем легкую подсветку (как было раньше)
                         if (hovered) {
                             context.fill(this.getX() - 2, this.getY() - 2, this.getX() + this.width + 2, this.getY() + this.height + 2, 0x44FFD700);
                         }
@@ -51,7 +50,6 @@ public class BookOfShapeShifterScreenMixin extends Screen {
                         // Рисуем саму твою новую кнопку
                         context.drawTexture(buttonTexture, this.getX(), this.getY(), 0, 0, this.width, this.height, this.width, this.height);
 
-                        // Показываем переведенный текст при наведении
                         if (hovered) {
                             context.drawTooltip(MinecraftClient.getInstance().textRenderer, Text.translatable("gui.bondofthebeast.pet_diary.title"), mouseX, mouseY);
                         }

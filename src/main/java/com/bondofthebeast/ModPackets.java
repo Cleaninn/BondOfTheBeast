@@ -14,6 +14,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.GameMode;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -24,11 +25,9 @@ public class ModPackets {
     public static final Identifier OPEN_MANAGEMENT_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_management_gui");
     public static final Identifier OPEN_PET_STATS_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_pet_stats_gui");
     public static final Identifier OPEN_BED_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_bed_gui");
-
     public static final Identifier SIGN_CONTRACT_C2S = new Identifier(BondOfTheBeast.MOD_ID, "sign_contract_c2s");
     public static final Identifier UNLOCK_SKILL_C2S = new Identifier(BondOfTheBeast.MOD_ID, "unlock_skill_c2s");
     public static final Identifier UPDATE_BED_C2S = new Identifier(BondOfTheBeast.MOD_ID, "update_bed_c2s");
-
     public static final Identifier TOGGLE_PET_STATE_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_pet_state_c2s");
     public static final Identifier TOGGLE_TELEPORT_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_teleport_c2s");
     public static final Identifier TOGGLE_PROTECTION_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_protection_c2s");
@@ -128,6 +127,7 @@ public class ModPackets {
                     p.sendMessage(Text.translatable("text.bondofthebeast.owner_too_wild_to_command").formatted(Formatting.RED), true);
                     return;
                 }
+
                 if (!petUUIDStr.isEmpty()) {
                     try {
                         ServerPlayerEntity pet = s.getPlayerManager().getPlayer(UUID.fromString(petUUIDStr));
@@ -162,10 +162,11 @@ public class ModPackets {
                                 pet.sendMessage(Text.translatable("text.bondofthebeast.packet.bound_to_new_bed").formatted(Formatting.GOLD), false);
                             }
                             bond.setBedPos(pos);
-                            pet.setSpawnPoint(p.getServerWorld().getRegistryKey(), pos, 0.0f, true, true);
+                            pet.setSpawnPoint(p.getServerWorld().getRegistryKey(), pos.up(), 0.0f, true, true);
                         }
                     } catch (Exception ignored) {}
                 }
+
                 var be = p.getServerWorld().getBlockEntity(pos);
                 if (be instanceof PetBedBlockEntity bed) {
                     bed.setBoundPetUUID(petUUIDStr);
@@ -244,21 +245,17 @@ public class ModPackets {
     public static void writePetData(PacketByteBuf buf, UUID petUuid, String fallbackName, MinecraftServer server) {
         ServerPlayerEntity onlinePet = server.getPlayerManager().getPlayer(petUuid);
         buf.writeUuid(petUuid);
-
         if (onlinePet != null) {
             PlayerBondComponent petBond = ModComponents.PLAYER_BOND.get(onlinePet);
             boolean hasCollar = TrinketsApi.getTrinketComponent(onlinePet).map(c -> c.isEquipped(s -> s.getItem() instanceof CollarItem)).orElse(false);
             String nickname = petBond.getPetNickname();
             String username = onlinePet.getGameProfile().getName();
-
             buf.writeString((nickname != null && !nickname.isEmpty()) ? nickname + "|" + username : username + "|" + username);
             buf.writeBoolean(petBond.isSitting()); buf.writeBoolean(petBond.isTeleportEnabled()); buf.writeBoolean(petBond.isProtectionMode());
             buf.writeBoolean(petBond.isAuraEnabled()); buf.writeBoolean(petBond.isPacifistMode()); buf.writeBoolean(petBond.isVampiricMode());
             buf.writeBoolean(petBond.isNoBreakMode()); buf.writeBoolean(petBond.isAbsorbed()); buf.writeBoolean(petBond.isNoInteractMode());
-
             buf.writeInt(petBond.getBondLevel()); buf.writeInt(petBond.getBondExperience()); buf.writeBoolean(hasCollar);
             buf.writeInt(petBond.getSkillPoints());
-
             Set<String> skills = petBond.getUnlockedSkills(); buf.writeInt(skills.size()); for(String s : skills) buf.writeString(s);
             Set<String> black = petBond.getBlacklistedBlocks(); buf.writeInt(black.size()); for(String s : black) buf.writeString(s);
             Set<String> white = petBond.getWhitelistedBlocks(); buf.writeInt(white.size()); for(String s : white) buf.writeString(s);
@@ -268,7 +265,8 @@ public class ModPackets {
             buf.writeBoolean(false); buf.writeBoolean(false); buf.writeBoolean(false);
             buf.writeBoolean(false); buf.writeBoolean(false); buf.writeBoolean(false);
             buf.writeBoolean(false); buf.writeBoolean(false); buf.writeBoolean(false);
-            buf.writeInt(1); buf.writeInt(0); buf.writeBoolean(false);
+            buf.writeInt(1); buf.writeInt(0);
+            buf.writeBoolean(true); // Теперь фейково говорим GUI, что ошейник есть (чтобы пустить в меню выбора)
             buf.writeInt(0);
             buf.writeInt(1); buf.writeString("sit");
             buf.writeInt(0);

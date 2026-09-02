@@ -13,15 +13,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(AbstractBlock.AbstractBlockState.class)
 public class BlockStateMixin {
+
     @Inject(method = "calcBlockBreakingDelta", at = @At("HEAD"), cancellable = true)
     private void makeBlocksUnbreakableForPet(PlayerEntity player, BlockView world, BlockPos pos, CallbackInfoReturnable<Float> cir) {
         if (player != null) {
             try {
                 var bond = ModComponents.PLAYER_BOND.get(player);
                 if (bond.hasOwner()) {
-                    String blockId = Registries.BLOCK.getId(((AbstractBlock.AbstractBlockState)(Object)this).getBlock()).toString();
+                    if (pos.equals(bond.getBedPos())) {
+                        cir.setReturnValue(0.0F);
+                        return;
+                    }
 
-                    // Если блок запрещен — делаем скорость ломания равной нулю (как у бедрока)
+                    String blockId = Registries.BLOCK.getId(((AbstractBlock.AbstractBlockState)(Object)this).getBlock()).toString();
                     if (bond.getBlacklistedBlocks().contains(blockId)) {
                         cir.setReturnValue(0.0F);
                     } else if (bond.isNoBreakMode() && !bond.getWhitelistedBlocks().contains(blockId)) {

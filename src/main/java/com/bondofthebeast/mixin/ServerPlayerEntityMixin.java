@@ -28,6 +28,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -69,6 +70,7 @@ public abstract class ServerPlayerEntityMixin {
     private void preventHumanBedSleep(BlockPos pos, CallbackInfoReturnable<Either<PlayerEntity.SleepFailureReason, Unit>> cir) {
         ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
         var bond = ModComponents.PLAYER_BOND.get(player);
+
         if (bond.hasOwner()) {
             int formCategory = getPlayerFormCategory(player);
             if (formCategory == 2) {
@@ -79,6 +81,14 @@ public abstract class ServerPlayerEntityMixin {
                 player.sendMessage(Text.translatable("text.bondofthebeast.cannot_sleep_here_human").formatted(Formatting.RED), true);
                 cir.setReturnValue(Either.left(PlayerEntity.SleepFailureReason.OTHER_PROBLEM));
             }
+        }
+    }
+
+    @Inject(method = "sleep", at = @At("RETURN"))
+    private void botb$onSleepStartPetBed(BlockPos pos, CallbackInfo ci) {
+        ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
+        if (player.getWorld().getBlockState(pos).getBlock() instanceof PetBedBlock) {
+            player.setSpawnPoint(player.getWorld().getRegistryKey(), pos.up(), player.getYaw(), true, false);
         }
     }
 
@@ -113,7 +123,6 @@ public abstract class ServerPlayerEntityMixin {
             if (player.getSleepTimer() < 100) {
                 return;
             }
-
             long currentDay = world.getTime() / 12000;
             if (this.botb$lastSleepDay == currentDay) {
                 return;
@@ -144,8 +153,8 @@ public abstract class ServerPlayerEntityMixin {
                     if (world.getBlockEntity(checkPos) instanceof PetBedBlockEntity bed) {
                         String petUUIDStr = bed.getBoundPetUUID();
                         if (petUUIDStr.isEmpty()) continue;
-                        ServerPlayerEntity pet = world.getServer().getPlayerManager().getPlayer(UUID.fromString(petUUIDStr));
 
+                        ServerPlayerEntity pet = world.getServer().getPlayerManager().getPlayer(UUID.fromString(petUUIDStr));
                         if (pet != null && pet.isSleeping()) {
                             var petComponent = ModComponents.PLAYER_BOND.get(pet);
                             if (player.getUuid().equals(petComponent.getOwnerUUID())) {
@@ -181,7 +190,6 @@ public abstract class ServerPlayerEntityMixin {
 
             if (!bond.getRegisteredPets().isEmpty() && (index >= 3 || isFeral)) {
                 List<String> petsToRemove = new ArrayList<>(bond.getRegisteredPets().keySet());
-
                 for (String petUuidStr : petsToRemove) {
                     try {
                         ServerPlayerEntity pet = player.getServer().getPlayerManager().getPlayer(UUID.fromString(petUuidStr));
@@ -214,6 +222,7 @@ public abstract class ServerPlayerEntityMixin {
                         bond.removePetFromRegistry(petUuidStr);
                     } catch (Exception ignored) {}
                 }
+
                 if (!petsToRemove.isEmpty()) {
                     ModComponents.PLAYER_BOND.sync(player);
                     player.sendMessage(Text.translatable("text.bondofthebeast.owner_went_feral_owner").formatted(Formatting.DARK_RED), false);
