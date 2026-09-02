@@ -1,9 +1,4 @@
-# Example Mod
+# 
+Bond of the Beast - Shape Shifter Curse Addon
 
-## Setup
-
-For setup instructions, please see the [Fabric Documentation page](https://docs.fabricmc.net/develop/getting-started/creating-a-project#setting-up) related to the IDE that you are using.
-
-## License
-
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+An addon for Shape Shifter Curse that introduces player taming mechanics! Turn your friend into a pet, put a collar on them, and control them. Or become a loyal pet yourself!
