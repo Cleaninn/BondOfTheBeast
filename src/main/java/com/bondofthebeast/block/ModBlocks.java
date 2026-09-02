@@ -12,9 +12,8 @@ import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.util.Identifier;
 
 public class ModBlocks {
-
     public static final Block PET_BED = registerBlock("pet_bed",
-            new PetBedBlock(FabricBlockSettings.create().nonOpaque().strength(1.0f).sounds(BlockSoundGroup.WOOL)));
+            new PetBedBlock(FabricBlockSettings.create().nonOpaque().strength(0.2f).sounds(BlockSoundGroup.WOOD)));
 
     private static Block registerBlock(String name, Block block) {
         registerBlockItem(name, block);

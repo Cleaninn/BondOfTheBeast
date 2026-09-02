@@ -80,17 +80,14 @@ public class PetBedBlock extends BlockWithEntity {
     @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (world.isClient) return ActionResult.SUCCESS;
-
         BlockPos headPos = state.get(PART) == BedPart.HEAD ? pos : pos.offset(state.get(FACING));
 
         if (world.getBlockEntity(headPos) instanceof PetBedBlockEntity bed) {
             String petId = bed.getBoundPetUUID();
             boolean isBound = petId != null && !petId.isEmpty();
-
             var bond = ModComponents.PLAYER_BOND.get(player);
             boolean isMaster = !bond.getRegisteredPets().isEmpty();
             boolean isPet = bond.hasOwner();
-
             int formCategory = getPlayerFormCategory(player);
 
             if (isBound && petId.equals(player.getUuidAsString())) {
@@ -108,21 +105,18 @@ public class PetBedBlock extends BlockWithEntity {
                     player.sendMessage(Text.translatable("text.bondofthebeast.bed_not_yours").formatted(net.minecraft.util.Formatting.RED), true);
                     return ActionResult.FAIL;
                 }
-
                 var pets = bond.getRegisteredPets();
                 PacketByteBuf buf = PacketByteBufs.create();
                 buf.writeBlockPos(headPos);
                 buf.writeString(petId == null ? "" : petId);
                 buf.writeInt(bed.getChainRadius());
                 buf.writeInt(pets.size());
-
                 for (var entry : pets.entrySet()) {
                     buf.writeString(entry.getKey());
                     buf.writeString(entry.getValue());
                     ServerPlayerEntity petEntity = world.getServer().getPlayerManager().getPlayer(UUID.fromString(entry.getKey()));
                     buf.writeBoolean(petEntity != null && TrinketsApi.getTrinketComponent(petEntity).map(c -> c.isEquipped(ModItems.COLLAR)).orElse(false));
                 }
-
                 ServerPlayNetworking.send((ServerPlayerEntity) player, ModPackets.OPEN_BED_GUI, buf);
                 return ActionResult.CONSUME;
             }
@@ -170,6 +164,11 @@ public class PetBedBlock extends BlockWithEntity {
             BlockPos otherPos = part == BedPart.FOOT ? pos.offset(facing) : pos.offset(facing.getOpposite());
             BlockState otherState = world.getBlockState(otherPos);
 
+            // Дропаем блок в виде предмета, если сломали не в креативе
+            if (!player.isCreative()) {
+                Block.dropStack(world, pos, new ItemStack(this));
+            }
+
             if (otherState.isOf(this) && otherState.get(PART) != part) {
                 world.setBlockState(otherPos, Blocks.AIR.getDefaultState(), 35);
                 world.syncWorldEvent(player, 2001, otherPos, Block.getRawIdFromState(otherState));
@@ -197,7 +196,6 @@ public class PetBedBlock extends BlockWithEntity {
         BlockPos blockPos = ctx.getBlockPos();
         BlockPos blockPos2 = blockPos.offset(direction);
         World world = ctx.getWorld();
-
         if (world.getBlockState(blockPos2).canReplace(ctx) && world.getWorldBorder().contains(blockPos2)) {
             return this.getDefaultState().with(FACING, direction);
         }

@@ -20,12 +20,19 @@ public class BlockStateMixin {
             try {
                 var bond = ModComponents.PLAYER_BOND.get(player);
                 if (bond.hasOwner()) {
-                    if (pos.equals(bond.getBedPos())) {
-                        cir.setReturnValue(0.0F);
-                        return;
+                    net.minecraft.block.BlockState state = world.getBlockState(pos);
+
+                    if (state.getBlock() instanceof com.bondofthebeast.block.PetBedBlock) {
+                        BlockPos headPos = state.get(com.bondofthebeast.block.PetBedBlock.PART) == net.minecraft.block.enums.BedPart.HEAD ? pos : pos.offset(state.get(com.bondofthebeast.block.PetBedBlock.FACING));
+                        if (world.getBlockEntity(headPos) instanceof com.bondofthebeast.block.PetBedBlockEntity bed) {
+                            if (player.getUuidAsString().equals(bed.getBoundPetUUID())) {
+                                cir.setReturnValue(0.0F);
+                                return;
+                            }
+                        }
                     }
 
-                    String blockId = Registries.BLOCK.getId(((AbstractBlock.AbstractBlockState)(Object)this).getBlock()).toString();
+                    String blockId = Registries.BLOCK.getId(state.getBlock()).toString();
                     if (bond.getBlacklistedBlocks().contains(blockId)) {
                         cir.setReturnValue(0.0F);
                     } else if (bond.isNoBreakMode() && !bond.getWhitelistedBlocks().contains(blockId)) {

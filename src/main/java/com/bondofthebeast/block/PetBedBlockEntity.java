@@ -19,28 +19,30 @@ import java.util.UUID;
 public class PetBedBlockEntity extends BlockEntity {
     private String boundPetUUID = "";
     private int chainRadius = 0;
-    private boolean isWaitingForPet = false; // Наша оптимизирующая переменная
+    private boolean isWaitingForPet = false;
 
     public PetBedBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PET_BED_BLOCK_ENTITY, pos, state);
     }
 
     public static void tick(World world, BlockPos pos, BlockState state, PetBedBlockEntity be) {
-        // СЕРВЕР: Легкая проверка раз в 2 секунды ТОЛЬКО если мы ждем входа питомца
         if (!world.isClient && be.isWaitingForPet && world.getTime() % 40 == 0) {
             try {
                 PlayerEntity pet = world.getPlayerByUuid(UUID.fromString(be.boundPetUUID));
                 if (pet instanceof ServerPlayerEntity sp) {
                     var bond = com.bondofthebeast.component.ModComponents.PLAYER_BOND.get(sp);
 
-                    // Если питомец зашел и у него всё еще есть хозяин
                     if (bond.hasOwner()) {
-                        bond.setBedPos(pos);
-                        sp.setSpawnPoint(world.getRegistryKey(), pos.up(), 0.0f, true, true);
-                        sp.sendMessage(net.minecraft.text.Text.translatable("text.bondofthebeast.packet.bound_to_new_bed").formatted(net.minecraft.util.Formatting.GOLD), false);
+                        BlockPos currentBed = bond.getBedPos();
+
+                        // Проверяем, не была ли эта лежанка уже привязана через пакет из меню
+                        if (currentBed == null || !currentBed.equals(pos)) {
+                            bond.setBedPos(pos);
+                            sp.setSpawnPoint(world.getRegistryKey(), pos.up(), 0.0f, true, true);
+                            sp.sendMessage(net.minecraft.text.Text.translatable("text.bondofthebeast.packet.bound_to_new_bed").formatted(net.minecraft.util.Formatting.GOLD), false);
+                        }
                     }
 
-                    // Питомец обработан! Навсегда отключаем таймер для этой лежанки.
                     be.isWaitingForPet = false;
                     be.markDirty();
                 }
@@ -112,7 +114,7 @@ public class PetBedBlockEntity extends BlockEntity {
 
     public void setBoundPetUUID(String uuid) {
         this.boundPetUUID = uuid;
-        this.isWaitingForPet = !uuid.isEmpty(); // Запускаем режим ожидания при новой привязке
+        this.isWaitingForPet = !uuid.isEmpty();
         markDirty();
         world.updateListeners(pos, getCachedState(), getCachedState(), 3);
     }

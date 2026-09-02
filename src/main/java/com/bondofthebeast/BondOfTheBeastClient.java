@@ -51,9 +51,17 @@ public class BondOfTheBeastClient implements ClientModInitializer {
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             var bond = ModComponents.PLAYER_BOND.get(player);
             if (bond.hasOwner()) {
-                if (pos.equals(bond.getBedPos())) return ActionResult.FAIL;
+                net.minecraft.block.BlockState state = world.getBlockState(pos);
 
-                String blockId = Registries.BLOCK.getId(world.getBlockState(pos).getBlock()).toString();
+                // Проверяем, не бьет ли питомец любую из частей своей лежанки
+                if (state.getBlock() instanceof com.bondofthebeast.block.PetBedBlock) {
+                    BlockPos headPos = state.get(com.bondofthebeast.block.PetBedBlock.PART) == net.minecraft.block.enums.BedPart.HEAD ? pos : pos.offset(state.get(com.bondofthebeast.block.PetBedBlock.FACING));
+                    if (world.getBlockEntity(headPos) instanceof com.bondofthebeast.block.PetBedBlockEntity bed) {
+                        if (player.getUuidAsString().equals(bed.getBoundPetUUID())) return ActionResult.FAIL;
+                    }
+                }
+
+                String blockId = Registries.BLOCK.getId(state.getBlock()).toString();
                 if (bond.getBlacklistedBlocks().contains(blockId)) return ActionResult.FAIL;
                 if (bond.isNoBreakMode() && !bond.getWhitelistedBlocks().contains(blockId)) return ActionResult.FAIL;
             }
