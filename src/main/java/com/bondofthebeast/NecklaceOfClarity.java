@@ -6,4 +6,5 @@ public class NecklaceOfClarity extends TrinketItem {
     public NecklaceOfClarity(Settings settings) {
         super(settings);
     }
+
 }
