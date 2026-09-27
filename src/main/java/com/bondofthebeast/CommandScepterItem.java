@@ -1,6 +1,7 @@
 package com.bondofthebeast;
 
 import com.bondofthebeast.component.ModComponents;
+import dev.emi.trinkets.api.TrinketsApi;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.player.PlayerEntity;
@@ -36,8 +37,8 @@ public class CommandScepterItem extends Item {
                     }
                 }
             } catch (Exception ignored) {}
-
-            if (formIndex >= 2) {
+            boolean ClearMindUser = TrinketsApi.getTrinketComponent(user).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
+            if (((formIndex >= 2) && !ClearMindUser) || (formIndex >= 3)) {
                 user.sendMessage(Text.translatable("text.bondofthebeast.owner_too_wild_to_command").formatted(Formatting.RED), true);
                 return TypedActionResult.fail(user.getStackInHand(hand));
             }

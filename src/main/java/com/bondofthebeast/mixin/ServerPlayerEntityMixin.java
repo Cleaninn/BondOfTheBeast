@@ -1,6 +1,7 @@
 package com.bondofthebeast.mixin;
 
 import com.bondofthebeast.CollarItem;
+import com.bondofthebeast.NecklaceOfClarity;
 import com.bondofthebeast.block.PetBedBlock;
 import com.bondofthebeast.block.PetBedBlockEntity;
 import com.bondofthebeast.component.ModComponents;
@@ -50,17 +51,17 @@ public abstract class ServerPlayerEntityMixin {
                 }
             }
         } catch (Exception ignored) {}
-
+        boolean ClearMind = TrinketsApi.getTrinketComponent(player).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
         if (formIdStr.contains("original_before_enable") || formIdStr.contains("original_shifter") || formIdStr.contains("allay")) {
             return -1;
         }
         if (formIdStr.contains("_sp") || stage == 3) {
             return 3;
         }
-        if (stage == 0 || stage == 1) {
+        if (stage == 0 || stage == 1 || (stage == 2 && ClearMind)) {
             return 0;
         }
-        if (stage == 2) {
+        if (stage == 2 && !ClearMind) {
             return 2;
         }
         return -1;

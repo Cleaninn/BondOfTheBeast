@@ -50,12 +50,14 @@ public class ContractItem extends Item {
         }
 
         int userIndex = getFormIndex(user);
-        boolean isUserPet = isPlayerFeral(user) || userIndex >= 2;
-        boolean isUserOwner = userIndex < 2;
+        boolean ClearMindUser = TrinketsApi.getTrinketComponent(user).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
+        boolean isUserPet = isPlayerFeral(user) || userIndex >= 2 && !ClearMindUser;
+        boolean isUserOwner = userIndex < 2 || userIndex == 2 && ClearMindUser;
 
         int targetIndex = getFormIndex(targetPlayer);
-        boolean isTargetPet = isPlayerFeral(targetPlayer) || targetIndex >= 2;
-        boolean isTargetOwner = targetIndex < 2;
+        boolean ClearMindTarget = TrinketsApi.getTrinketComponent(user).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
+        boolean isTargetPet = isPlayerFeral(targetPlayer) || targetIndex >= 2 && !ClearMindTarget;
+        boolean isTargetOwner = targetIndex < 2 || targetIndex == 2 && ClearMindTarget;
 
         PlayerBondComponent userBond = ModComponents.PLAYER_BOND.get(user);
         PlayerBondComponent targetBond = ModComponents.PLAYER_BOND.get(targetPlayer);

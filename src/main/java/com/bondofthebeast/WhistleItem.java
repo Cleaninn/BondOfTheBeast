@@ -35,17 +35,39 @@ public class WhistleItem extends Item {
 
                 if (bond.hasOwner() && bond.getOwnerUUID().equals(ownerUuid)) {
                     anyPetsOnline = true;
+                    if (bond.getBondLevel() > 30) {
+                        if (bond.getBondLevel() > 60) {
+                            potentialPet.teleport((ServerWorld) world, user.getX(), user.getY(), user.getZ(), user.getYaw(), user.getPitch());
+                            ((ServerWorld) world).spawnParticles(ParticleTypes.HEART, potentialPet.getX(), potentialPet.getY() + 1, potentialPet.getZ(), 5, 0.5, 0.5, 0.5, 0.1);
 
-                    if (user.getWorld().getRegistryKey() == potentialPet.getWorld().getRegistryKey()
-                            && user.squaredDistanceTo(potentialPet) <= maxDistanceSq) {
+                            potentialPet.sendMessage(Text.translatable("text.bondofthebeast.recalled_by_owner").formatted(Formatting.GOLD), true);
+                            foundAny = true;
+                        }
+                        else{
+                            if (user.getWorld().getRegistryKey() == potentialPet.getWorld().getRegistryKey()) {
+                                potentialPet.teleport((ServerWorld) world, user.getX(), user.getY(), user.getZ(), user.getYaw(), user.getPitch());
+                                ((ServerWorld) world).spawnParticles(ParticleTypes.HEART, potentialPet.getX(), potentialPet.getY() + 1, potentialPet.getZ(), 5, 0.5, 0.5, 0.5, 0.1);
 
-                        potentialPet.teleport((ServerWorld) world, user.getX(), user.getY(), user.getZ(), user.getYaw(), user.getPitch());
-                        ((ServerWorld) world).spawnParticles(ParticleTypes.HEART, potentialPet.getX(), potentialPet.getY() + 1, potentialPet.getZ(), 5, 0.5, 0.5, 0.5, 0.1);
+                                potentialPet.sendMessage(Text.translatable("text.bondofthebeast.recalled_by_owner").formatted(Formatting.GOLD), true);
+                                foundAny = true;
+                            } else {
+                                tooFar = true;
+                            }
+                        }
+                    }
+                    else {
+                        maxDistanceSq = (10*bond.getBondLevel()+32)*(10*bond.getBondLevel()+32);
+                        if (user.getWorld().getRegistryKey() == potentialPet.getWorld().getRegistryKey()
+                                && user.squaredDistanceTo(potentialPet) <= maxDistanceSq) {
 
-                        potentialPet.sendMessage(Text.translatable("text.bondofthebeast.recalled_by_owner").formatted(Formatting.GOLD), true);
-                        foundAny = true;
-                    } else {
-                        tooFar = true;
+                            potentialPet.teleport((ServerWorld) world, user.getX(), user.getY(), user.getZ(), user.getYaw(), user.getPitch());
+                            ((ServerWorld) world).spawnParticles(ParticleTypes.HEART, potentialPet.getX(), potentialPet.getY() + 1, potentialPet.getZ(), 5, 0.5, 0.5, 0.5, 0.1);
+
+                            potentialPet.sendMessage(Text.translatable("text.bondofthebeast.recalled_by_owner").formatted(Formatting.GOLD), true);
+                            foundAny = true;
+                        } else {
+                            tooFar = true;
+                        }
                     }
                 }
             }

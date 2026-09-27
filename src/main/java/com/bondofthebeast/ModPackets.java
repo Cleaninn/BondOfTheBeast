@@ -49,10 +49,11 @@ public class ModPackets {
 
     private static boolean canOwnerCommand(ServerPlayerEntity owner) {
         try {
+            boolean ClearMindUser = TrinketsApi.getTrinketComponent(owner).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
             var sscComp = net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(owner);
             if (sscComp != null && sscComp.getCurrentForm() != null) {
                 if (sscComp.getCurrentForm().FormID != null && sscComp.getCurrentForm().FormID.getPath().toLowerCase().contains("allay")) return true;
-                return sscComp.getCurrentForm().getIndex() < 2;
+                return sscComp.getCurrentForm().getIndex() < 2 || (ClearMindUser && sscComp.getCurrentForm().getIndex() == 2);
             }
         } catch (Exception ignored) {}
         return true;

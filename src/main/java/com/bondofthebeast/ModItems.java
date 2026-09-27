@@ -13,6 +13,7 @@ public class ModItems {
     public static final Item WHISTLE = registerItem("whistle", new WhistleItem(new FabricItemSettings().maxCount(1)));
 
     public static final Item PET_TREAT = registerItem("pet_treat", new Item(new FabricItemSettings().maxCount(64)));
+    public static final Item NECKLACE_OF_CLARITY = registerItem("necklace_of_clarity", new NecklaceOfClarity(new FabricItemSettings().maxCount(1)));
 
     public static final Item COMMAND_SCEPTER = registerItem("command_scepter",
             new CommandScepterItem(new FabricItemSettings().maxCount(1)));
