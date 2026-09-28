@@ -21,10 +21,15 @@ import org.jetbrains.annotations.Nullable;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.UUID;
 
 public class ContractItem extends Item {
+    private static final Logger log = LoggerFactory.getLogger(ContractItem.class);
+
     public ContractItem(Settings settings) {
         super(settings);
     }
@@ -51,13 +56,13 @@ public class ContractItem extends Item {
 
         int userIndex = getFormIndex(user);
         boolean ClearMindUser = TrinketsApi.getTrinketComponent(user).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
-        boolean isUserPet = isPlayerFeral(user) || userIndex >= 2 && !ClearMindUser;
-        boolean isUserOwner = userIndex < 2 || userIndex == 2 && ClearMindUser;
+        boolean isUserPet = isPlayerFeral(user) || (userIndex >= 2 && !ClearMindUser);
+        boolean isUserOwner = !isUserPet;
 
         int targetIndex = getFormIndex(targetPlayer);
-        boolean ClearMindTarget = TrinketsApi.getTrinketComponent(user).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
-        boolean isTargetPet = isPlayerFeral(targetPlayer) || targetIndex >= 2 && !ClearMindTarget;
-        boolean isTargetOwner = targetIndex < 2 || targetIndex == 2 && ClearMindTarget;
+        boolean ClearMindTarget = TrinketsApi.getTrinketComponent(targetPlayer).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
+        boolean isTargetPet = isPlayerFeral(targetPlayer) || (targetIndex == 2 && !ClearMindTarget) || targetIndex > 2;
+        boolean isTargetOwner = !isTargetPet;
 
         PlayerBondComponent userBond = ModComponents.PLAYER_BOND.get(user);
         PlayerBondComponent targetBond = ModComponents.PLAYER_BOND.get(targetPlayer);
