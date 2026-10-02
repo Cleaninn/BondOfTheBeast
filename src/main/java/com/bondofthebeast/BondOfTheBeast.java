@@ -26,6 +26,7 @@ public class BondOfTheBeast implements ModInitializer {
         ModPackets.registerC2SPackets();
         ModEvents.registerEvents();
         EntityConditions.register();
+        BientityConditions.register();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             ModCommands.registerCommands(dispatcher);

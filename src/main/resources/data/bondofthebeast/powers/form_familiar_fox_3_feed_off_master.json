@@ -11,10 +11,6 @@
                         {
                             "type": "apoli:execute_command",
                             "command": "particle soul_fire_flame ~ ~0.5 ~ 0.3 0.3 0.3 0.009 10 normal @a"
-                        },
-                        {
-                            "type": "apoli:play_sound",
-                            "sound": "minecraft:entity.evoker.cast_spell"
                         }
                     ]
                 }
@@ -25,12 +21,17 @@
                     "type": "apoli:and",
                     "actions": [
                         {
-                            "type": "apoli:execute_command",
-                            "command": "/give @p minecraft:splash_potion{Potion:\"shape-shifter-curse:feed_potion\"}"
+                            "type": "apoli:feed",
+                            "food": 11,
+                            "saturation": 0.7
                         },
                         {
                             "type": "apoli:trigger_cooldown",
                             "power": "shape-shifter-curse:form_familiar_fox_use_entity_cooldown"
+                        },
+                        {
+                            "type": "shape-shifter-curse:gain_mana",
+                            "mana": 70
                         }
                     ]
                 }
@@ -41,11 +42,7 @@
         "type": "apoli:and",
         "conditions": [
             {
-                "type": "apoli:target_condition",
-                "condition": {
-                    "type": "apoli:in_tag",
-                    "tag": "shape-shifter-curse:familiar_illager_target"
-                }
+                "type": "bondofthebeast:is_owner"
             },
             {
                 "type": "apoli:actor_condition",
@@ -59,14 +56,7 @@
         ]
     },
     "item_condition": {
-        "type": "apoli:ingredient",
-        "ingredient": {
-            "item": "minecraft:glass_bottle"
-        }
-    },
-    "held_item_action": {
-        "type": "apoli:consume",
-        "amount": 1
+        "type": "apoli:empty"
     },
     "hands": [
         "main_hand"

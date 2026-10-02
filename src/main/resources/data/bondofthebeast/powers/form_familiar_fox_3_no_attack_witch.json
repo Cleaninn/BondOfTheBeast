@@ -24,6 +24,12 @@
                 "type": "apoli:in_tag",
                 "tag": "shape-shifter-curse:illager"
             }
+        },{
+            "type": "apoli:actor_condition",
+            "condition": {
+                "type": "bondofthebeast:has_owner",
+                "inverted": true
+            }
         }
         ]
     },
