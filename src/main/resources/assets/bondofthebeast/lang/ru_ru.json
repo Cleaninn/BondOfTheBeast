@@ -266,5 +266,16 @@
   "text.bondofthebeast.owner_went_feral_pet": "Хозяин окончательно одичал. Связь разорвана!",
   "text.bondofthebeast.owner_went_feral_owner": "Разум зверя поглотил вас. Питомцы больше вам не подчиняются!",
   "text.bondofthebeast.packet.pet_offline_chain": "Нельзя включить цепь для питомца, которого нет на сервере!",
-  "text.bondofthebeast.packet.pet_too_far_for_chain": "Питомец находится слишком далеко, чтобы пристегнуть цепь!"
+  "text.bondofthebeast.packet.pet_too_far_for_chain": "Питомец находится слишком далеко, чтобы пристегнуть цепь!",
+  "text.bondofthebeast.recall_cooldown_long": "Свисток перегрелся из-за призыва через пространство. Требуется время на восстановление...",
+  "item.bondofthebeast.lunar_oblivion_dust": "Одурманивающая лунная пыль",
+  "item.bondofthebeast.infused_collar": "Пропитанный ошейник",
+  "text.bondofthebeast.target_too_strong": "Цель сопротивляется! Используйте лунную пыль.",
+  "text.bondofthebeast.already_tamed": "Эта цель уже привязана к кому-то.",
+  "text.bondofthebeast.taming_started": "Процесс подавления воли запущен.",
+  "text.bondofthebeast.will_breaking": "Ваш разум затуманивается... Воля подчинена.",
+  "text.bondofthebeast.taming_leash_snap": "Вас притянуло обратно! Воля хозяина непреодолима.",
+  "text.bondofthebeast.taming_leash_pull": "Ошейник душит вас, не давая уйти...",
+  "text.bondofthebeast.taming_lost_without_master": "Без присутствия хозяина ваш разум погружается во тьму...",
+  "text.bondofthebeast.taming_escaped": "Волшебное яблоко разбило цепи проклятия! Ваша воля снова свободна!"
 }
