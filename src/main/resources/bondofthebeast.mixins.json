@@ -9,7 +9,8 @@
 		"LivingEntityMixin",
 		"PlayerEntityMixin",
 		"BlockStateMixin",
-		"ItemEntityMixin"
+		"ItemEntityMixin",
+		"PlayerStunMixin"
 	],
 	"client": [
 		"KeyboardInputMixin",

@@ -18,6 +18,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     private final PlayerEntity provider;
     private String ownerUUID = "";
     private String ownerName = "";
+    private int tamingState = 0; // 0 = Свободен, 1 = Ломается воля, 2 = Полноценный питомец
     private String petNickname = null;
     private int bondLevel = 1;
     private int bondExperience = 0;
@@ -53,6 +54,13 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     public void readFromNbt(NbtCompound tag) {
         this.ownerUUID = tag.getString("OwnerUUID");
         this.ownerName = tag.getString("OwnerName");
+
+        if (tag.contains("TamingState")) {
+            this.tamingState = tag.getInt("TamingState");
+        } else {
+            this.tamingState = this.ownerUUID.isEmpty() ? 0 : 2;
+        }
+
         this.petNickname = tag.contains("PetNickname") ? tag.getString("PetNickname") : null;
         this.bondLevel = Math.max(1, tag.getInt("BondLevel"));
         this.bondExperience = tag.getInt("BondExperience");
@@ -94,6 +102,8 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     public void writeToNbt(NbtCompound tag) {
         tag.putString("OwnerUUID", this.ownerUUID);
         tag.putString("OwnerName", this.ownerName);
+        tag.putInt("TamingState", this.tamingState);
+
         if (this.petNickname != null) tag.putString("PetNickname", this.petNickname);
         tag.putInt("BondLevel", this.bondLevel);
         tag.putInt("BondExperience", this.bondExperience);
@@ -133,12 +143,23 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     }
 
     @Override public boolean hasOwner() { return !ownerUUID.isEmpty(); }
+
+    @Override public int getTamingState() { return this.tamingState; }
+
+    @Override public void setTamingState(int state) {
+        this.tamingState = state;
+        ModComponents.PLAYER_BOND.sync(this.provider);
+    }
+
+    @Override public boolean isFullPet() { return this.tamingState == 2; }
+
     @Override public String getOwnerUUID() { return ownerUUID; }
     @Override public String getOwnerName() { return ownerName; }
 
     @Override public void setOwner(String uuid, String name) {
         this.ownerUUID = uuid;
         this.ownerName = name;
+        this.tamingState = 2; // При стандартном контракте сразу ставим стадию полного подчинения
         ModComponents.PLAYER_BOND.sync(this.provider);
     }
 
@@ -146,6 +167,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
         this.ownerUUID = "";
         this.ownerName = "";
         this.petNickname = null;
+        this.tamingState = 0; // Сбрасываем стадию при разрыве связи
         ModComponents.PLAYER_BOND.sync(this.provider);
     }
 

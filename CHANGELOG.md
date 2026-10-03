@@ -1,1 +1,1 @@
-Allay now not counting as a beast according to lore from book of shapeshifters. Fixed some translation issues.
+Allay now not counting as a beast according to lore from book of shapeshifters. Fixed some translation issues. Fixed pet bed logic.

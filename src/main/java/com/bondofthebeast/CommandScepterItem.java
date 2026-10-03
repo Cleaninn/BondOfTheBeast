@@ -38,7 +38,7 @@ public class CommandScepterItem extends Item {
                 }
             } catch (Exception ignored) {}
             boolean ClearMindUser = TrinketsApi.getTrinketComponent(user).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
-            if (((formIndex >= 2) && !ClearMindUser) || (formIndex >= 3)) {
+            if (((formIndex == 2) && !ClearMindUser) || (formIndex >= 3)) {
                 user.sendMessage(Text.translatable("text.bondofthebeast.owner_too_wild_to_command").formatted(Formatting.RED), true);
                 return TypedActionResult.fail(user.getStackInHand(hand));
             }
