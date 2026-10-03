@@ -35,6 +35,7 @@ public class ModEvents {
     private static int tickCounter = 0;
     private static int expTickCounter = 0;
     private static int chainTickCounter = 0;
+    private static int tamingTickCounter = 0; // Новый счетчик для системы подавления воли
 
     public static boolean canPetObey(PlayerEntity pet) {
         try {
@@ -55,6 +56,7 @@ public class ModEvents {
             if (hand != Hand.MAIN_HAND) return ActionResult.PASS;
 
             var bond = ModComponents.PLAYER_BOND.get(pet);
+
             if (bond.hasOwner() && bond.getOwnerUUID().equals(player.getUuidAsString())) {
                 ItemStack foodStack = player.getStackInHand(hand);
 
@@ -136,7 +138,6 @@ public class ModEvents {
         AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
             if (world.isClient || !(player instanceof ServerPlayerEntity sp)) return ActionResult.PASS;
             var bond = ModComponents.PLAYER_BOND.get(sp);
-
             if (entity instanceof PlayerEntity targetPlayer) {
                 if (bond.hasOwner() && bond.getOwnerUUID().equals(targetPlayer.getUuidAsString())) {
                     sp.sendMessage(Text.translatable("text.bondofthebeast.damage_blocked_pet").formatted(Formatting.RED), true);
@@ -148,12 +149,10 @@ public class ModEvents {
                     return ActionResult.FAIL;
                 }
             }
-
             if (bond.hasOwner() && bond.isPacifistMode() && canPetObey(sp)) {
                 sp.sendMessage(Text.translatable("text.bondofthebeast.command.pacifist_warning").formatted(Formatting.RED), true);
                 return ActionResult.FAIL;
             }
-
             if (!(entity instanceof LivingEntity targetLiving)) return ActionResult.PASS;
             for (ServerPlayerEntity p : sp.getServer().getPlayerManager().getPlayerList()) {
                 PlayerBondComponent pBond = ModComponents.PLAYER_BOND.get(p);
@@ -167,7 +166,6 @@ public class ModEvents {
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             var bond = ModComponents.PLAYER_BOND.get(player);
             if (!bond.hasOwner() || !canPetObey(player)) return ActionResult.PASS;
-
             net.minecraft.block.BlockState state = world.getBlockState(pos);
             if (state.getBlock() instanceof PetBedBlock) {
                 BlockPos headPos = state.get(PetBedBlock.PART) == net.minecraft.block.enums.BedPart.HEAD ? pos : pos.offset(state.get(PetBedBlock.FACING));
@@ -178,7 +176,6 @@ public class ModEvents {
                     }
                 }
             }
-
             String blockId = Registries.BLOCK.getId(state.getBlock()).toString();
             if (bond.getBlacklistedBlocks().contains(blockId)) {
                 if (!world.isClient) player.sendMessage(Text.translatable("text.bondofthebeast.blacklisted_warning").formatted(Formatting.DARK_RED), true);
@@ -194,7 +191,6 @@ public class ModEvents {
         PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, entity) -> {
             var bond = ModComponents.PLAYER_BOND.get(player);
             if (!bond.hasOwner() || !canPetObey(player)) return true;
-
             if (state.getBlock() instanceof PetBedBlock) {
                 BlockPos headPos = state.get(PetBedBlock.PART) == net.minecraft.block.enums.BedPart.HEAD ? pos : pos.offset(state.get(PetBedBlock.FACING));
                 if (world.getBlockEntity(headPos) instanceof PetBedBlockEntity bed) {
@@ -204,7 +200,6 @@ public class ModEvents {
                     }
                 }
             }
-
             String blockId = Registries.BLOCK.getId(state.getBlock()).toString();
             if (bond.getBlacklistedBlocks().contains(blockId)) return false;
             if (bond.isNoBreakMode() && !bond.getWhitelistedBlocks().contains(blockId)) return false;
@@ -218,7 +213,6 @@ public class ModEvents {
                 return ActionResult.FAIL;
             }
             if (!bond.hasOwner() || !canPetObey(player)) return ActionResult.PASS;
-
             String blockId = Registries.BLOCK.getId(world.getBlockState(hitResult.getBlockPos()).getBlock()).toString();
             if (bond.getBlacklistedBlocks().contains(blockId)) {
                 if (!world.isClient) player.sendMessage(Text.translatable("text.bondofthebeast.blacklisted_interact_warning").formatted(Formatting.DARK_RED), true);
@@ -232,13 +226,78 @@ public class ModEvents {
         });
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
+
+            // --- 1. НОВАЯ ЛОГИКА: СИСТЕМА ПОДАВЛЕНИЯ ВОЛИ (Срабатывает 2 раза в секунду) ---
+            if (++tamingTickCounter >= 10) {
+                tamingTickCounter = 0;
+                for (ServerPlayerEntity victim : server.getPlayerManager().getPlayerList()) {
+                    var bond = ModComponents.PLAYER_BOND.get(victim);
+
+                    if (bond.getTamingState() == 1) { // 1 = Воля ломается
+                        ServerPlayerEntity master = server.getPlayerManager().getPlayer(UUID.fromString(bond.getOwnerUUID()));
+
+                        // А) Пассивная накачка инстинктов (каждые 10 секунд)
+                        if (victim.age % 200 == 0) {
+                            try {
+                                // TODO: Вызов API Shape Shifter Curse для пассивного увеличения инстинкта
+                                // Например: net.onixary.shapeShifterCurseFabric.player_form.instinct.InstinctManager.addInstinct(victim, 1.0f);
+                            } catch (Exception ignored) {}
+                        }
+
+                        // Б) Невидимая цепь (Поводок воли)
+                        double maxDistance = 25.0; // Дальше 25 блоков не уйти
+
+                        if (master != null && master.getWorld() == victim.getWorld()) {
+                            double distance = victim.distanceTo(master);
+
+                            if (distance > maxDistance) {
+                                Vec3d mPos = master.getPos();
+                                Vec3d vPos = victim.getPos();
+                                Vec3d dir = mPos.subtract(vPos).normalize();
+
+                                // Мрачные партиклы вокруг жертвы
+                                if (victim.age % 10 == 0) {
+                                    ((ServerWorld) victim.getWorld()).spawnParticles(ParticleTypes.SQUID_INK, victim.getX(), victim.getY() + 1, victim.getZ(), 10, 0.3, 0.5, 0.3, 0.01);
+                                }
+
+                                if (distance > maxDistance + 15.0) {
+                                    // Телепорт, если как-то умудрился убежать слишком далеко
+                                    victim.teleport((ServerWorld) master.getWorld(), master.getX() - dir.x * 2, master.getY(), master.getZ() - dir.z * 2, victim.getYaw(), victim.getPitch());
+                                    victim.sendMessage(Text.translatable("text.bondofthebeast.taming_leash_snap").formatted(Formatting.DARK_RED), true);
+                                    victim.getWorld().playSound(null, victim.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 0.5f);
+                                } else {
+                                    // Векторная тяга назад (как у лежанок)
+                                    double pull = (distance - maxDistance) * 0.15;
+                                    Vec3d vel = victim.getVelocity();
+                                    victim.setVelocity(vel.x + dir.x * pull, vel.y, vel.z + dir.z * pull);
+                                    victim.velocityModified = true;
+
+                                    if (victim.age % 40 == 0) {
+                                        victim.sendMessage(Text.translatable("text.bondofthebeast.taming_leash_pull").formatted(Formatting.RED), true);
+                                        victim.getWorld().playSound(null, victim.getBlockPos(), SoundEvents.ITEM_ARMOR_EQUIP_CHAIN, SoundCategory.PLAYERS, 0.5f, 0.8f);
+                                    }
+                                }
+                            }
+                        } else {
+                            // В) Наказание, если попытался сбежать, пока хозяин оффлайн или в другом измерении
+                            if (victim.age % 100 == 0) {
+                                victim.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 140, 2, false, false));
+                                victim.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 140, 0, false, false));
+                                victim.sendMessage(Text.translatable("text.bondofthebeast.taming_lost_without_master").formatted(Formatting.DARK_GRAY), true);
+                            }
+                        }
+                    }
+                }
+            }
+            // -------------------------------------------------------------------------------
+
             if (++chainTickCounter >= 1) {
                 chainTickCounter = 0;
                 for (ServerPlayerEntity pet : server.getPlayerManager().getPlayerList()) {
                     var bond = ModComponents.PLAYER_BOND.get(pet);
                     if (!bond.hasOwner() || !canPetObey(pet)) continue;
-                    BlockPos bedPos = bond.getBedPos();
 
+                    BlockPos bedPos = bond.getBedPos();
                     if (bedPos != null) {
                         ServerWorld bedWorld = server.getWorld(pet.getSpawnPointDimension());
                         if (bedWorld != null) {
@@ -315,10 +374,12 @@ public class ModEvents {
                     if (!ownerBond.isSitting() && ownerBond.isTeleportEnabled() && ownerBond.getBondLevel() >= 2 && d > 400.0 && d <= 10000.0) {
                         tryTeleportPet(player, owner);
                     }
+
                     if (d <= 144.0 && ownerBond.getBondLevel() >= 4 && ownerBond.isAuraEnabled()) {
                         player.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, 60, 0, true, false, true));
                         owner.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 60, 0, true, false, true));
                     }
+
                     if (ownerBond.getBondLevel() >= 3 && ownerBond.isProtectionMode()) {
                         player.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 60, 0, true, false, true));
                     }
@@ -341,13 +402,11 @@ public class ModEvents {
         ServerWorld world = owner.getServerWorld();
         BlockPos ownerPos = owner.getBlockPos();
         Random random = pet.getRandom();
-
         for (int i = 0; i < 10; i++) {
             int dx = random.nextBetween(-2, 2);
             int dy = random.nextBetween(-1, 1);
             int dz = random.nextBetween(-2, 2);
             BlockPos targetPos = ownerPos.add(dx, dy, dz);
-
             if (canTeleportTo(targetPos, world)) {
                 pet.teleport(world, targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5, pet.getYaw(), pet.getPitch());
                 pet.setVelocity(Vec3d.ZERO);

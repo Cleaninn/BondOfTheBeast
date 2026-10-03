@@ -10,6 +10,12 @@ import java.util.Set;
 
 public interface PlayerBondComponent extends Component, AutoSyncedComponent {
     boolean hasOwner();
+
+    // Новые методы для системы подчинения
+    int getTamingState();
+    void setTamingState(int state);
+    boolean isFullPet();
+
     String getOwnerUUID();
     String getOwnerName();
     void setOwner(String uuid, String name);

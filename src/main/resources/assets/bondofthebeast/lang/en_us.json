@@ -268,5 +268,6 @@
   "text.bondofthebeast.owner_went_feral_pet": "The Master has become completely feral. The bond is broken!",
   "text.bondofthebeast.owner_went_feral_owner": "You have lost your mind to the beast. Your pets no longer obey you!",
   "text.bondofthebeast.packet.pet_offline_chain": "You cannot enable the chain for a pet that is offline!",
-  "text.bondofthebeast.packet.pet_too_far_for_chain": "The pet is too far from the bed to be chained!"
+  "text.bondofthebeast.packet.pet_too_far_for_chain": "The pet is too far from the bed to be chained!",
+  "text.bondofthebeast.recall_cooldown_long": "The whistle overheated due to a massive spatial recall. It needs time to recharge..."
 }
