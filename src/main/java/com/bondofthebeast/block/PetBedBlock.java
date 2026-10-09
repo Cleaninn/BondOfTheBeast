@@ -115,7 +115,7 @@ public class PetBedBlock extends BlockWithEntity {
                     buf.writeString(entry.getKey());
                     buf.writeString(entry.getValue());
                     ServerPlayerEntity petEntity = world.getServer().getPlayerManager().getPlayer(UUID.fromString(entry.getKey()));
-                    buf.writeBoolean(petEntity != null && TrinketsApi.getTrinketComponent(petEntity).map(c -> c.isEquipped(ModItems.COLLAR)).orElse(false));
+                    buf.writeBoolean(petEntity != null && TrinketsApi.getTrinketComponent(petEntity).map(c -> c.isEquipped(item -> item.getItem() instanceof com.bondofthebeast.CollarItem)).orElse(false));
                 }
                 ServerPlayNetworking.send((ServerPlayerEntity) player, ModPackets.OPEN_BED_GUI, buf);
                 return ActionResult.CONSUME;

@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "bondofthebeast:collar"
+    "bondofthebeast:collar",
+    "bondofthebeast:infused_collar"
   ]
 }

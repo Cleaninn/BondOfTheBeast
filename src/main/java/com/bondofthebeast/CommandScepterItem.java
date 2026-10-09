@@ -49,17 +49,11 @@ public class CommandScepterItem extends Item {
             }
 
             PacketByteBuf buf = PacketByteBufs.create();
-            if (registeredPets.size() == 1) {
-                Map.Entry<String, String> singlePet = registeredPets.entrySet().iterator().next();
-                ModPackets.writePetData(buf, UUID.fromString(singlePet.getKey()), singlePet.getValue(), serverPlayer.getServer());
-                ServerPlayNetworking.send(serverPlayer, ModPackets.OPEN_PET_STATS_GUI, buf);
-            } else {
-                buf.writeInt(registeredPets.size());
-                for (Map.Entry<String, String> entry : registeredPets.entrySet()) {
-                    ModPackets.writePetData(buf, UUID.fromString(entry.getKey()), entry.getValue(), serverPlayer.getServer());
-                }
-                ServerPlayNetworking.send(serverPlayer, ModPackets.OPEN_MANAGEMENT_GUI, buf);
+            buf.writeInt(registeredPets.size());
+            for (Map.Entry<String, String> entry : registeredPets.entrySet()) {
+                ModPackets.writePetData(buf, UUID.fromString(entry.getKey()), entry.getValue(), serverPlayer.getServer());
             }
+            ServerPlayNetworking.send(serverPlayer, ModPackets.OPEN_MANAGEMENT_GUI, buf);
         }
         return TypedActionResult.success(user.getStackInHand(hand));
     }

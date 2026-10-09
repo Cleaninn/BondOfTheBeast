@@ -1,6 +1,28 @@
-# Bond of the Beast - Shape Shifter Curse Addon
+# Bond of the Beast
 
-An addon for Shape Shifter Curse that introduces player taming mechanics! Turn your friend into a pet, put a collar on them, and control them. Or become a loyal pet yourself!
+Local test build 1.1.0-beta_23 for Minecraft 1.20.1, Fabric, and Shape Shifter Curse 1.9.2. Java sources target Java 17; run Gradle with JDK 21.
 
-Modrinth release should be soon (it is on approval for 2 weeks already)
-### I am not working on this project all of my time but i would like to update it and make it better as time goes on
+Voluntary bond abilities unlock while a pet wears its collar: after 30 minutes, 2 hours, and 6 hours. The grimoire shows pet cards with a 3D preview and a button to open controls.
+
+Current command unlock rules and the status of the legacy XP counter are documented in [BOND_RULES_RU.md](BOND_RULES_RU.md).
+
+## Local test launch
+
+Run these batch files from this directory. Each opens a console window with its process logs:
+
+- `run-local-server.bat` starts the local server with a visible console.
+- `run-owner-client.bat` starts the owner client.
+- `run-pet-client.bat` starts the pet client.
+- `run-two-players.bat` starts the server, then both clients. In each game, connect to `127.0.0.1:25565`.
+
+The same Gradle commands can be run manually from this directory:
+
+```powershell
+.\gradlew.bat runLocalServer
+.\gradlew.bat runClientOwner
+.\gradlew.bat runClientPet
+```
+
+On first server launch, accept the Minecraft EULA in `run/local-server/eula.txt` and start the server again. Each process stores its world and settings under a separate directory in `run/`.
+
+For development, use `.\gradlew.bat runClient`, `.\gradlew.bat build`, or `.\gradlew.bat test`. No automated tests are configured yet; Gradle reports `NO-SOURCE` for `test`.

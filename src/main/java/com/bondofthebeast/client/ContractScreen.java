@@ -5,67 +5,39 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 
 public class ContractScreen extends Screen {
     private final boolean isPet;
+    private GrimoireStyle.PanelLayout panel;
 
     public ContractScreen(boolean isPet) {
         super(Text.translatable(isPet ? "gui.bondofthebeast.contract.title_pet" : "gui.bondofthebeast.contract.title_owner"));
         this.isPet = isPet;
     }
 
-    @Override
-    protected void init() {
-        super.init();
-
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
-
-        this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.bondofthebeast.contract.sign").formatted(isPet ? Formatting.DARK_RED : Formatting.GOLD), button -> {
+    @Override protected void init() {
+        panel = GrimoireStyle.panel(width, height, 260, 154);
+        addDrawableChild(new GrimoireButtonWidget(panel.x(14), panel.y(120), panel.size(110), panel.size(22),
+                Text.translatable("gui.bondofthebeast.contract.sign"), button -> {
             ClientPlayNetworking.send(ModPackets.SIGN_CONTRACT_C2S, PacketByteBufs.empty());
-            this.close();
-        }).dimensions(centerX - 105, centerY + 30, 100, 20).build());
-
-        this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.bondofthebeast.contract.decline").formatted(Formatting.GRAY), button -> {
-            this.close();
-        }).dimensions(centerX + 5, centerY + 30, 100, 20).build());
+            close();
+        }));
+        addDrawableChild(new GrimoireButtonWidget(panel.x(136), panel.y(120), panel.size(110), panel.size(22),
+                Text.translatable("gui.bondofthebeast.contract.decline"), button -> close()));
     }
 
-    @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        this.renderBackground(context);
+    @Override public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        renderBackground(context);
+        GrimoireStyle.beginPanel(context, panel);
+        GrimoireStyle.fittedText(context, textRenderer, title, 130, 12, 224, 0xFFF0DCAA);
+        String prefix = "gui.bondofthebeast.contract." + (isPet ? "pet" : "owner");
+        GrimoireStyle.wrappedText(context, textRenderer, Text.translatable(prefix + ".line2"),
+                130, 46, 226, 28, GrimoireStyle.INK);
+        context.fill(34, 80, 226, 81, 0xFFAA8B5C);
+        GrimoireStyle.wrappedText(context, textRenderer, Text.translatable(prefix + ".line3"),
+                130, 91, 226, 22, GrimoireStyle.MUTED_INK);
+        context.getMatrices().pop();
         super.render(context, mouseX, mouseY, delta);
-
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
-
-        if (isPet) {
-            context.drawCenteredTextWithShadow(this.textRenderer,
-                    Text.translatable("gui.bondofthebeast.contract.pet.line1").formatted(Formatting.DARK_RED, Formatting.BOLD),
-                    centerX, centerY - 40, 0xFFFFFF);
-
-            context.drawCenteredTextWithShadow(this.textRenderer,
-                    Text.translatable("gui.bondofthebeast.contract.pet.line2").formatted(Formatting.GRAY),
-                    centerX, centerY - 20, 0xFFFFFF);
-
-            context.drawCenteredTextWithShadow(this.textRenderer,
-                    Text.translatable("gui.bondofthebeast.contract.pet.line3").formatted(Formatting.RED),
-                    centerX, centerY - 5, 0xFFFFFF);
-        } else {
-            context.drawCenteredTextWithShadow(this.textRenderer,
-                    Text.translatable("gui.bondofthebeast.contract.owner.line1").formatted(Formatting.GOLD, Formatting.BOLD),
-                    centerX, centerY - 40, 0xFFFFFF);
-
-            context.drawCenteredTextWithShadow(this.textRenderer,
-                    Text.translatable("gui.bondofthebeast.contract.owner.line2").formatted(Formatting.GRAY),
-                    centerX, centerY - 20, 0xFFFFFF);
-
-            context.drawCenteredTextWithShadow(this.textRenderer,
-                    Text.translatable("gui.bondofthebeast.contract.owner.line3").formatted(Formatting.YELLOW),
-                    centerX, centerY - 5, 0xFFFFFF);
-        }
     }
 }

@@ -18,6 +18,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
 
+    @Inject(method = "isSleepingInBed", at = @At("HEAD"), cancellable = true)
+    private void botb$recognizePetBed(CallbackInfoReturnable<Boolean> cir) {
+        LivingEntity entity = (LivingEntity) (Object) this;
+        entity.getSleepingPosition().ifPresent(pos -> {
+            if (entity.getWorld().getBlockState(pos).getBlock() instanceof PetBedBlock)
+                cir.setReturnValue(true);
+        });
+    }
+
     @Inject(method = "getSleepingDirection", at = @At("HEAD"), cancellable = true)
     private void fixPetBedRotation(CallbackInfoReturnable<Direction> cir) {
         LivingEntity entity = (LivingEntity) (Object) this;

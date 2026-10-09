@@ -19,7 +19,7 @@ public class BlockStateMixin {
         if (player != null) {
             try {
                 var bond = ModComponents.PLAYER_BOND.get(player);
-                if (bond.hasOwner()) {
+                if (com.bondofthebeast.BondRules.allows(player, "nobreak")) {
                     net.minecraft.block.BlockState state = world.getBlockState(pos);
 
                     if (state.getBlock() instanceof com.bondofthebeast.block.PetBedBlock) {

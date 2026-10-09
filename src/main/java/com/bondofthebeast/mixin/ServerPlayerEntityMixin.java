@@ -111,14 +111,6 @@ public abstract class ServerPlayerEntityMixin {
         ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
         World world = player.getWorld();
 
-        if (skipSleepTimer && player.isSleeping() && player.getSleepingPosition().isPresent()) {
-            BlockPos pos = player.getSleepingPosition().get();
-            if (world.getBlockState(pos).getBlock() instanceof PetBedBlock) {
-                ci.cancel();
-                return;
-            }
-        }
-
         if (!world.isClient && player.isSleeping() && player.getSleepingPosition().isPresent()) {
             if (player.getSleepTimer() < 100) {
                 return;
@@ -134,7 +126,7 @@ public abstract class ServerPlayerEntityMixin {
             this.botb$lastSleepDay = currentDay;
 
             if (block instanceof PetBedBlock) {
-                if (formCategory == 0) {
+                if (formCategory == 0 && !com.bondofthebeast.ForcedTamingService.freeWindow(player)) {
                     try {
                         net.onixary.shapeShifterCurseFabric.player_form.instinct.InstinctManager.applyImmediateEffect(player, "pet_bed_sleep", 15.0f);
                     } catch (Exception ignored) {}
@@ -157,10 +149,9 @@ public abstract class ServerPlayerEntityMixin {
                         ServerPlayerEntity pet = world.getServer().getPlayerManager().getPlayer(UUID.fromString(petUUIDStr));
                         if (pet != null && pet.isSleeping()) {
                             var petComponent = ModComponents.PLAYER_BOND.get(pet);
-                            if (player.getUuid().equals(petComponent.getOwnerUUID())) {
+                            if (player.getUuidAsString().equals(petComponent.getOwnerUUID()) && !petComponent.getForcedBond().forced) {
                                 player.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, 20 * 60 * 5, 0));
                                 pet.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, 20 * 60 * 5, 0));
-                                petComponent.addBondExperience(50);
                                 player.sendMessage(Text.translatable("text.bondofthebeast.sleep.owner_energy"), true);
                             }
                         }
@@ -189,44 +180,9 @@ public abstract class ServerPlayerEntityMixin {
             boolean isFeral = formComponent.getCurrentForm().getBodyType() == PlayerFormBodyType.FERAL;
 
             if (!bond.getRegisteredPets().isEmpty() && (index >= 3 || isFeral)) {
-                List<String> petsToRemove = new ArrayList<>(bond.getRegisteredPets().keySet());
-                for (String petUuidStr : petsToRemove) {
-                    try {
-                        ServerPlayerEntity pet = player.getServer().getPlayerManager().getPlayer(UUID.fromString(petUuidStr));
-                        if (pet != null) {
-                            var petBond = ModComponents.PLAYER_BOND.get(pet);
-                            if (petBond.hasOwner() && petBond.getOwnerUUID().equals(player.getUuidAsString())) {
-                                if (petBond.isAbsorbed()) {
-                                    pet.changeGameMode(GameMode.SURVIVAL);
-                                    petBond.setAbsorbed(false);
-                                }
-                                petBond.setBedPos(null);
-                                petBond.clearOwner();
-
-                                TrinketsApi.getTrinketComponent(pet).ifPresent(c -> {
-                                    c.getInventory().values().forEach(g -> g.values().forEach(inv -> {
-                                        for (int i = 0; i < inv.size(); i++) {
-                                            if (inv.getStack(i).getItem() instanceof CollarItem) {
-                                                ItemStack dropped = inv.getStack(i).copy();
-                                                if (dropped.hasNbt()) dropped.getNbt().remove("OwnerName");
-                                                pet.dropItem(dropped, true);
-                                                inv.setStack(i, ItemStack.EMPTY);
-                                            }
-                                        }
-                                    }));
-                                });
-                                ModComponents.PLAYER_BOND.sync(pet);
-                                pet.sendMessage(Text.translatable("text.bondofthebeast.owner_went_feral_pet").formatted(Formatting.DARK_RED), false);
-                            }
-                        }
-                        bond.removePetFromRegistry(petUuidStr);
-                    } catch (Exception ignored) {}
-                }
-
-                if (!petsToRemove.isEmpty()) {
-                    ModComponents.PLAYER_BOND.sync(player);
-                    player.sendMessage(Text.translatable("text.bondofthebeast.owner_went_feral_owner").formatted(Formatting.DARK_RED), false);
-                }
+                for (String petId : new ArrayList<>(bond.getRegisteredPets().keySet()))
+                    com.bondofthebeast.BondService.release(player.getServer(), petId, player.getUuidAsString());
+                player.sendMessage(Text.translatable("text.bondofthebeast.owner_went_feral_owner"), false);
             }
         }
     }
