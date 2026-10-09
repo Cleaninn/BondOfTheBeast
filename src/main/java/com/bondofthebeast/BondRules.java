@@ -20,7 +20,13 @@ public final class BondRules {
     public static boolean canOwn(PlayerEntity player) {
         var form = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm();
         return !ModComponents.PLAYER_BOND.get(player).hasOwner() && form != null && (form.FormID.getPath().contains("allay") ||
-                (form.getIndex() < 2 && form.getBodyType() != PlayerFormBodyType.FERAL));
+                (form.getBodyType() != PlayerFormBodyType.FERAL &&
+                        (form.getIndex() < 2 || (form.getIndex() == 2 && hasClarity(player)))));
+    }
+
+    public static boolean hasClarity(PlayerEntity player) {
+        return TrinketsApi.getTrinketComponent(player)
+                .map(c -> c.isEquipped(stack -> stack.getItem() instanceof NecklaceOfClarity)).orElse(false);
     }
 
     public static boolean canBePet(PlayerEntity player) {

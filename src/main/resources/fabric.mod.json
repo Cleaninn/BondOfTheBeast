@@ -3,13 +3,13 @@
   "id": "bondofthebeast",
   "version": "${version}",
   "name": "Bond of the Beast - Shape Shifter Curse Addon",
-  "description": "An addon for Shape Shifter Curse. Adds voluntary final-form contracts, care milestones, collars, pet beds, leashes, owner commands and a separate forced-taming path.",
+  "description": "An addon for Shape Shifter Curse. Adds voluntary final-form contracts, gradual bond progression, collars, pet beds, leashes, owner commands and a separate forced-taming path.",
   "authors": [
     "Cleanin"
   ],
   "contact": {
     "homepage": "https://modrinth.com/mod/bond-of-the-beast",
-    "sources": ""
+    "sources": "https://github.com/Cleaninn/BondOfTheBeast"
   },
   "license": "MIT",
   "icon": "assets/bondofthebeast/icon.png",

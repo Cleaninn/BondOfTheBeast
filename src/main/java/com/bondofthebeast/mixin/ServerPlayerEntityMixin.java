@@ -1,6 +1,7 @@
 package com.bondofthebeast.mixin;
 
 import com.bondofthebeast.CollarItem;
+import com.bondofthebeast.BondRules;
 import com.bondofthebeast.block.PetBedBlock;
 import com.bondofthebeast.block.PetBedBlockEntity;
 import com.bondofthebeast.component.ModComponents;
@@ -50,14 +51,13 @@ public abstract class ServerPlayerEntityMixin {
                 }
             }
         } catch (Exception ignored) {}
-
         if (formIdStr.contains("original_before_enable") || formIdStr.contains("original_shifter") || formIdStr.contains("allay")) {
             return -1;
         }
         if (formIdStr.contains("_sp") || stage == 3) {
             return 3;
         }
-        if (stage == 0 || stage == 1) {
+        if (stage == 0 || stage == 1 || (stage == 2 && BondRules.canOwn(player))) {
             return 0;
         }
         if (stage == 2) {

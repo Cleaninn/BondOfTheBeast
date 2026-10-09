@@ -24,6 +24,7 @@ public class ModItemGroups {
                         entries.add(ModItems.LUNAR_OBLIVION_DUST);
                         entries.add(ModItems.INFUSED_COLLAR);
                         entries.add(ModBlocks.PET_BED);
+                        entries.add(ModItems.NECKLACE_OF_CLARITY);
                     })
                     .build());
 

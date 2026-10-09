@@ -25,19 +25,7 @@ public class CommandScepterItem extends Item {
     @Override
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         if (!world.isClient && user instanceof ServerPlayerEntity serverPlayer) {
-            int formIndex = -1;
-            try {
-                var sscComp = net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(serverPlayer);
-                if (sscComp != null && sscComp.getCurrentForm() != null) {
-                    if (sscComp.getCurrentForm().FormID != null && sscComp.getCurrentForm().FormID.getPath().toLowerCase().contains("allay")) {
-                        formIndex = 0;
-                    } else {
-                        formIndex = sscComp.getCurrentForm().getIndex();
-                    }
-                }
-            } catch (Exception ignored) {}
-
-            if (formIndex >= 2) {
+            if (!BondRules.canOwn(user)) {
                 user.sendMessage(Text.translatable("text.bondofthebeast.owner_too_wild_to_command").formatted(Formatting.RED), true);
                 return TypedActionResult.fail(user.getStackInHand(hand));
             }

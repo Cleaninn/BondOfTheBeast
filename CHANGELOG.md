@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0-beta_24 - Minecraft 1.20.1 / Fabric
+
+- Integrate the Necklace of Clarity from dark-neon1101's PR #14, including its recipe, sprite, and translations.
+- Allow unowned, non-feral stage 2 players wearing the necklace to sign contracts and use owner controls. Owned pets and stage 3 players cannot gain owner rights.
+- Preserve beta 23 bond mechanics, grimoire screens, leads, armor controls, and the restored Gradle wrapper.
+
 ## 1.1.0-beta_23 - Minecraft 1.20.1 / Fabric
 
 - Пыль лунного забвения действует 2,5 секунды и позволяет небольшие уклонения. Для принудительного надевания ошейника нужно удерживать ПКМ и прицел на игроке 2 секунды; прерывание не расходует ошейник.
