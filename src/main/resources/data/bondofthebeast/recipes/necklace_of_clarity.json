@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " G ",
+    "ACA",
+    " G "
+  ],
+  "key": {
+    "A": { "item": "minecraft:amethyst_shard" },
+    "C": { "item": "shape-shifter-curse:moondust_crystal_shard" },
+    "G": { "item": "minecraft:gold_ingot" }
+  },
+  "result": { "item": "bondofthebeast:necklace_of_clarity", "count": 1 }
+}

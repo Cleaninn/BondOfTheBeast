@@ -1,6 +1,8 @@
 {
   "replace": false,
   "values": [
-    "bondofthebeast:collar"
+    "bondofthebeast:collar",
+    "bondofthebeast:infused_collar",
+    "bondofthebeast:necklace_of_clarity"
   ]
 }

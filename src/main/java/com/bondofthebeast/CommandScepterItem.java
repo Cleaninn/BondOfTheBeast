@@ -25,19 +25,7 @@ public class CommandScepterItem extends Item {
     @Override
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         if (!world.isClient && user instanceof ServerPlayerEntity serverPlayer) {
-            int formIndex = -1;
-            try {
-                var sscComp = net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(serverPlayer);
-                if (sscComp != null && sscComp.getCurrentForm() != null) {
-                    if (sscComp.getCurrentForm().FormID != null && sscComp.getCurrentForm().FormID.getPath().toLowerCase().contains("allay")) {
-                        formIndex = 0;
-                    } else {
-                        formIndex = sscComp.getCurrentForm().getIndex();
-                    }
-                }
-            } catch (Exception ignored) {}
-
-            if (formIndex >= 2) {
+            if (!BondRules.canOwn(user)) {
                 user.sendMessage(Text.translatable("text.bondofthebeast.owner_too_wild_to_command").formatted(Formatting.RED), true);
                 return TypedActionResult.fail(user.getStackInHand(hand));
             }
@@ -49,17 +37,11 @@ public class CommandScepterItem extends Item {
             }
 
             PacketByteBuf buf = PacketByteBufs.create();
-            if (registeredPets.size() == 1) {
-                Map.Entry<String, String> singlePet = registeredPets.entrySet().iterator().next();
-                ModPackets.writePetData(buf, UUID.fromString(singlePet.getKey()), singlePet.getValue(), serverPlayer.getServer());
-                ServerPlayNetworking.send(serverPlayer, ModPackets.OPEN_PET_STATS_GUI, buf);
-            } else {
-                buf.writeInt(registeredPets.size());
-                for (Map.Entry<String, String> entry : registeredPets.entrySet()) {
-                    ModPackets.writePetData(buf, UUID.fromString(entry.getKey()), entry.getValue(), serverPlayer.getServer());
-                }
-                ServerPlayNetworking.send(serverPlayer, ModPackets.OPEN_MANAGEMENT_GUI, buf);
+            buf.writeInt(registeredPets.size());
+            for (Map.Entry<String, String> entry : registeredPets.entrySet()) {
+                ModPackets.writePetData(buf, UUID.fromString(entry.getKey()), entry.getValue(), serverPlayer.getServer());
             }
+            ServerPlayNetworking.send(serverPlayer, ModPackets.OPEN_MANAGEMENT_GUI, buf);
         }
         return TypedActionResult.success(user.getStackInHand(hand));
     }

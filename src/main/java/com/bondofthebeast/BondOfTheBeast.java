@@ -22,6 +22,9 @@ public class BondOfTheBeast implements ModInitializer {
         ModBlockEntities.registerBlockEntities();
         ModItemGroups.registerItemGroups();
         ModPackets.registerC2SPackets();
+        PetArmorScreenHandler.register();
+        LeashManager.register();
+        BondService.register();
         ModEvents.registerEvents();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {

@@ -1,392 +1,181 @@
 package com.bondofthebeast.client;
 
-import com.bondofthebeast.BondOfTheBeast;
+import com.bondofthebeast.BondRules;
+import com.bondofthebeast.VoluntaryBondService;
 import com.bondofthebeast.ModPackets;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
-import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class StaffPetScreen extends Screen {
     private final Screen parent;
     private final StaffMainScreen.PetData pet;
-
-    private static final Identifier BG = new Identifier(BondOfTheBeast.MOD_ID, "textures/gui/owner_book_petmen.png");
-    private static final Identifier TEX_SIT = new Identifier(BondOfTheBeast.MOD_ID, "textures/gui/btn_sit.png");
-    private static final Identifier TEX_TP = new Identifier(BondOfTheBeast.MOD_ID, "textures/gui/btn_tp.png");
-    private static final Identifier TEX_PROT = new Identifier(BondOfTheBeast.MOD_ID, "textures/gui/btn_prot.png");
-    private static final Identifier TEX_AURA = new Identifier(BondOfTheBeast.MOD_ID, "textures/gui/btn_aura.png");
-    private static final Identifier TEX_VAMPIRIC = new Identifier(BondOfTheBeast.MOD_ID, "textures/gui/btn_vampiric.png");
-    private static final Identifier TEX_NOBREAK = new Identifier(BondOfTheBeast.MOD_ID, "textures/gui/btn_nobreak.png");
-    private static final Identifier TEX_ABSORB = new Identifier(BondOfTheBeast.MOD_ID, "textures/gui/btn_absorb.png");
-    private static final Identifier TEX_LOCK = new Identifier(BondOfTheBeast.MOD_ID, "textures/gui/btn_lock.png");
-
-    private final int OFFSET_TREE_X = 160;
-    private final int OFFSET_TREE_Y = 40;
-    private final int TREE_STEP_X = 42;
-    private final int TREE_STEP_Y = 38;
-    private final int ICON_SIZE = 26;
-    private final int LIST_BTN_SIZE = 16;
-
-    private final int OFFSET_MODEL_X = 66;
-    private final int OFFSET_MODEL_Y = 125;
-    private final int MODEL_SCALE = 30;
-
-    private final int OFFSET_TITLE_Y = 40;
-    private final int OFFSET_NAME_Y = 50;
-
-    private final int OFFSET_EXP_X = 66;
-    private final int OFFSET_EXP_Y = 165;
-    private final int OFFSET_SP_X = 205;
-    private final int OFFSET_SP_Y = 45;
-
-    private final int OFFSET_BACK_X = 14;
-    private final int OFFSET_BACK_Y = 22;
-    private final int OFFSET_INFO_X = 226;
-    private final int OFFSET_INFO_Y = 20;
-
-    private ButtonWidget bSit, bPac, bNoB, bTp, bAur, bAbsorb, bPro, bVam, bBlack, bWhite, bInteract, bInfo;
+    private GrimoireStyle.BookLayout book;
+    private net.minecraft.client.network.OtherClientPlayerEntity preview;
 
     public StaffPetScreen(Screen parent, StaffMainScreen.PetData pet) {
-        super(Text.translatable("gui.bondofthebeast.staff.title"));
+        super(Text.translatable("gui.bondofthebeast.control_title"));
         this.parent = parent;
         this.pet = pet;
     }
 
-    @Override
-    protected void init() {
-        super.init();
-        int bgX = (width - 256) / 2, bgY = (height - 200) / 2;
-
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("<-"), b -> this.client.setScreen(parent))
-                .dimensions(bgX + OFFSET_BACK_X, bgY + OFFSET_BACK_Y, 16, 16).build());
-
-        int cX = bgX + OFFSET_TREE_X;
-        int cY = bgY + OFFSET_TREE_Y;
-
-        bSit = createBtn(cX - ICON_SIZE/2, cY, ICON_SIZE, "sit", null, b -> {
-            pet.isSitting = !pet.isSitting;
-            sendToggle(ModPackets.TOGGLE_PET_STATE_C2S);
-            this.client.setScreen(new StaffPetScreen(this.parent, this.pet));
-        });
-
-        bTp = createBtn(cX - TREE_STEP_X - ICON_SIZE/2, cY + TREE_STEP_Y, ICON_SIZE, "tp", "sit", b -> {
-            pet.isTeleportEnabled = !pet.isTeleportEnabled;
-            sendToggle(ModPackets.TOGGLE_TELEPORT_C2S);
-            this.client.setScreen(new StaffPetScreen(this.parent, this.pet));
-        });
-
-        bAbsorb = createBtn(cX - TREE_STEP_X - ICON_SIZE/2, cY + TREE_STEP_Y * 2, ICON_SIZE, "absorb", "tp", b -> {
-            if (!pet.isAbsorbed) {
-                PlayerEntity ent = client.world.getPlayerByUuid(pet.uuid);
-                if (ent == null || client.player.squaredDistanceTo(ent) > 25.0) {
-                    if (client.player != null) client.player.sendMessage(Text.translatable("text.bondofthebeast.too_far_absorb").formatted(Formatting.RED), true);
-                    return;
-                }
-            }
-            pet.isAbsorbed = !pet.isAbsorbed;
-            if(pet.isAbsorbed) pet.isSitting = false;
-            sendToggle(ModPackets.TOGGLE_ABSORB_C2S);
-            this.client.setScreen(new StaffPetScreen(this.parent, this.pet));
-        });
-
-        bPro = createBtn(cX - ICON_SIZE/2, cY + TREE_STEP_Y, ICON_SIZE, "prot", "sit", b -> {
-            pet.isProtectionMode = !pet.isProtectionMode;
-            sendToggle(ModPackets.TOGGLE_PROTECTION_C2S);
-            this.client.setScreen(new StaffPetScreen(this.parent, this.pet));
-        });
-
-        bVam = createBtn(cX - ICON_SIZE/2, cY + TREE_STEP_Y * 2, ICON_SIZE, "vampiric", "prot", b -> {
-            pet.isVampiricMode = !pet.isVampiricMode;
-            sendToggle(ModPackets.TOGGLE_VAMPIRIC_C2S);
-            this.client.setScreen(new StaffPetScreen(this.parent, this.pet));
-        });
-
-        bNoB = createBtn(cX + TREE_STEP_X - ICON_SIZE/2, cY + TREE_STEP_Y, ICON_SIZE, "nobreak", "sit", b -> {
-            pet.isNoBreakMode = !pet.isNoBreakMode;
-            if (!pet.isNoBreakMode) {
-                pet.isNoInteractMode = false;
-                pet.isPacifistMode = false;
-            }
-            sendToggle(ModPackets.TOGGLE_NO_BREAK_C2S);
-            this.client.setScreen(new StaffPetScreen(this.parent, this.pet));
-        });
-
-        bAur = createBtn(cX + TREE_STEP_X - ICON_SIZE/2, cY + TREE_STEP_Y * 2, ICON_SIZE, "aura", "nobreak", b -> {
-            pet.isAuraEnabled = !pet.isAuraEnabled;
-            sendToggle(ModPackets.TOGGLE_AURA_C2S);
-            this.client.setScreen(new StaffPetScreen(this.parent, this.pet));
-        });
-
-        boolean noBreakUnlocked = pet.unlockedSkills.contains("nobreak");
-
-        int listX = bNoB.getX() + 32;
-        int listY = bNoB.getY() - 4;
-
-        bInteract = ButtonWidget.builder(Text.empty(), b -> {
-                    pet.isNoInteractMode = !pet.isNoInteractMode;
-                    sendToggle(ModPackets.TOGGLE_NO_INTERACT_C2S);
-                    this.client.setScreen(new StaffPetScreen(this.parent, this.pet));
-                }).dimensions(listX, listY, LIST_BTN_SIZE, LIST_BTN_SIZE)
-                .tooltip(Tooltip.of(Text.translatable("gui.bondofthebeast.staff.interact_tooltip").append("\n")
-                        .append(pet.isNoBreakMode ? Text.translatable(pet.isNoInteractMode ? "command.bondofthebeast.status.on" : "command.bondofthebeast.status.off").formatted(pet.isNoInteractMode ? Formatting.GREEN : Formatting.RED)
-                                : Text.translatable("gui.bondofthebeast.staff.requires_nobreak").formatted(Formatting.RED)))).build();
-
-        bPac = ButtonWidget.builder(Text.empty(), b -> {
-                    pet.isPacifistMode = !pet.isPacifistMode;
-                    sendToggle(ModPackets.TOGGLE_PACIFIST_C2S);
-                    this.client.setScreen(new StaffPetScreen(this.parent, this.pet));
-                }).dimensions(listX + 16, listY, LIST_BTN_SIZE, LIST_BTN_SIZE)
-                .tooltip(Tooltip.of(Text.translatable("gui.bondofthebeast.staff.pacifist_tooltip").append("\n")
-                        .append(pet.isNoBreakMode ? Text.translatable(pet.isPacifistMode ? "command.bondofthebeast.status.on" : "command.bondofthebeast.status.off").formatted(pet.isPacifistMode ? Formatting.GREEN : Formatting.RED)
-                                : Text.translatable("gui.bondofthebeast.staff.requires_nobreak").formatted(Formatting.RED)))).build();
-
-        bBlack = ButtonWidget.builder(Text.empty(), b -> this.client.setScreen(new BlockSelectionScreen(this, pet, 0)))
-                .dimensions(listX, listY + 16, LIST_BTN_SIZE, LIST_BTN_SIZE)
-                .tooltip(Tooltip.of(Text.translatable("gui.bondofthebeast.staff.blacklist_tooltip"))).build();
-
-        bWhite = ButtonWidget.builder(Text.empty(), b -> this.client.setScreen(new BlockSelectionScreen(this, pet, 1)))
-                .dimensions(listX + 16, listY + 16, LIST_BTN_SIZE, LIST_BTN_SIZE)
-                .tooltip(Tooltip.of(Text.translatable("gui.bondofthebeast.staff.whitelist_tooltip"))).build();
-
-        bInteract.active = pet.hasCollar && noBreakUnlocked && pet.isNoBreakMode && pet.isOnline;
-        bPac.active = pet.hasCollar && noBreakUnlocked && pet.isNoBreakMode && pet.isOnline;
-        bBlack.active = pet.hasCollar && noBreakUnlocked && pet.isOnline;
-        bWhite.active = pet.hasCollar && noBreakUnlocked && pet.isOnline;
-
-        addDrawableChild(bInteract);
-        addDrawableChild(bPac);
-        addDrawableChild(bBlack);
-        addDrawableChild(bWhite);
-
-        ButtonWidget bSpTooltip = ButtonWidget.builder(Text.empty(), b -> {})
-                .dimensions(bgX + OFFSET_SP_X - 10, bgY + OFFSET_SP_Y - 5, 20, 20)
-                .tooltip(Tooltip.of(Text.translatable("gui.bondofthebeast.staff.sp_tooltip", pet.skillPoints)))
-                .build();
-        bSpTooltip.setAlpha(0.0f);
-        addDrawableChild(bSpTooltip);
-
-        bInfo = ButtonWidget.builder(Text.empty(), b -> {})
-                .dimensions(bgX + OFFSET_INFO_X, bgY + OFFSET_INFO_Y, 18, 18)
-                .tooltip(Tooltip.of(Text.translatable("gui.bondofthebeast.staff.info.tooltip")))
-                .build();
-        addDrawableChild(bInfo);
-    }
-
-    private ButtonWidget createBtn(int x, int y, int size, String key, String parentKey, ButtonWidget.PressAction toggleAction) {
-        boolean isUnlocked = pet.unlockedSkills.contains(key);
-        boolean canUnlock = parentKey == null || pet.unlockedSkills.contains(parentKey);
-
-        List<Text> lines = new ArrayList<>();
-        lines.add(Text.translatable("gui.bondofthebeast.staff." + key + ".name").formatted(Formatting.GOLD));
-        lines.add(Text.translatable("gui.bondofthebeast.staff." + key + ".desc").formatted(Formatting.GRAY));
-
-        if (pet.hasCollar && isUnlocked) {
-            boolean active = false;
-            if (key.equals("sit")) active = pet.isSitting;
-            else if (key.equals("tp")) active = pet.isTeleportEnabled;
-            else if (key.equals("nobreak")) active = pet.isNoBreakMode;
-            else if (key.equals("absorb")) active = pet.isAbsorbed;
-            else if (key.equals("prot")) active = pet.isProtectionMode;
-            else if (key.equals("aura")) active = pet.isAuraEnabled;
-            else if (key.equals("vampiric")) active = pet.isVampiricMode;
-
-            if (active) {
-                lines.add(Text.translatable("gui.bondofthebeast.staff.state_on").formatted(Formatting.GREEN));
-            } else {
-                lines.add(Text.translatable("gui.bondofthebeast.staff.state_off").formatted(Formatting.RED));
-            }
-        }
-
-        if (!pet.hasCollar) {
-            lines.add(Text.translatable("gui.bondofthebeast.staff.need_collar").formatted(Formatting.RED));
-        } else if (!isUnlocked) {
-            if (!canUnlock) {
-                lines.add(Text.translatable("gui.bondofthebeast.staff.requires_previous").formatted(Formatting.RED));
-            } else if (pet.skillPoints > 0) {
-                lines.add(Text.translatable("gui.bondofthebeast.staff.click_to_unlock").formatted(Formatting.GREEN));
-            } else {
-                lines.add(Text.translatable("gui.bondofthebeast.staff.not_enough_points").formatted(Formatting.RED));
-            }
-        }
-
-        ButtonWidget button = ButtonWidget.builder(Text.empty(), b -> {
-            if (!pet.hasCollar || !pet.isOnline) return;
-            if (isUnlocked) {
-                toggleAction.onPress(b);
-            } else if (canUnlock && pet.skillPoints > 0) {
-                pet.unlockedSkills.add(key);
-                pet.skillPoints--;
-                sendUnlock(key);
-                this.client.setScreen(new StaffPetScreen(this.parent, this.pet));
-            }
-        }).dimensions(x, y, size, size).tooltip(Tooltip.of(joinTexts(lines))).build();
-
-        button.active = pet.hasCollar && pet.isOnline;
-        return addDrawableChild(button);
-    }
-
-    private Text joinTexts(List<Text> lines) {
-        MutableText finalBox = Text.empty();
-        for (int i = 0; i < lines.size(); i++) {
-            finalBox.append(lines.get(i));
-            if (i < lines.size() - 1) finalBox.append(Text.literal("\n"));
-        }
-        return finalBox;
-    }
-
-    private void sendToggle(Identifier id) {
-        PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeUuid(pet.uuid);
-        ClientPlayNetworking.send(id, buf);
-    }
-
-    private void sendUnlock(String skill) {
-        PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeUuid(pet.uuid);
-        buf.writeString(skill);
-        ClientPlayNetworking.send(ModPackets.UNLOCK_SKILL_C2S, buf);
-    }
-
-    @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        renderBackground(context);
-        int x = (width - 256) / 2, y = (height - 200) / 2;
-
-        context.drawTexture(BG, x, y, 0, 0, 256, 200);
-
-        drawTreeLine(context, bSit, bTp, pet.unlockedSkills.contains("tp"));
-        drawTreeLine(context, bSit, bPro, pet.unlockedSkills.contains("prot"));
-        drawTreeLine(context, bSit, bNoB, pet.unlockedSkills.contains("nobreak"));
-
-        drawTreeLine(context, bTp, bAbsorb, pet.unlockedSkills.contains("absorb"));
-        drawTreeLine(context, bPro, bVam, pet.unlockedSkills.contains("vampiric"));
-        drawTreeLine(context, bNoB, bAur, pet.unlockedSkills.contains("aura"));
-
-        String displayName = pet.name;
-        String loginName = "";
-        if (pet.name.contains("|")) {
-            String[] parts = pet.name.split("\\|");
-            displayName = parts[0];
-            if (parts.length > 1) {
-                loginName = parts[1];
-            }
-        }
-
-        Text titleText = Text.translatable("gui.bondofthebeast.staff.pet_bond").formatted(Formatting.GOLD);
-        Text nameText = Text.literal(displayName).formatted(Formatting.WHITE);
-
-        context.drawCenteredTextWithShadow(textRenderer, titleText, x + OFFSET_MODEL_X, y + OFFSET_TITLE_Y, 0xFFFFFF);
-        context.drawCenteredTextWithShadow(textRenderer, nameText, x + OFFSET_MODEL_X, y + OFFSET_NAME_Y, 0xFFFFFF);
-
-        if (!loginName.isEmpty() && !loginName.equals(displayName)) {
-            Text loginText = Text.literal("(" + loginName + ")").formatted(Formatting.GRAY);
-            context.drawCenteredTextWithShadow(textRenderer, loginText, x + OFFSET_MODEL_X, y + OFFSET_NAME_Y + 10, 0xFFFFFF);
-        }
-
-        context.drawCenteredTextWithShadow(textRenderer, String.valueOf(pet.skillPoints), x + OFFSET_SP_X, y + OFFSET_SP_Y, 0xFFFF55);
-
-        if (!pet.isOnline) {
-            context.drawCenteredTextWithShadow(textRenderer, Text.translatable("gui.bondofthebeast.staff.pet_offline_big").formatted(Formatting.RED, Formatting.BOLD), x + OFFSET_MODEL_X, y + OFFSET_MODEL_Y + 10, 0xFFFFFF);
+    @Override protected void init() {
+        book = GrimoireStyle.layout(width, height);
+        preview = previewEntity();
+        if (pet.forced) {
+            action(0, "sit", pet.isSitting, ModPackets.TOGGLE_PET_STATE_C2S, "sit");
+            action(1, "nobreak", pet.isNoBreakMode, ModPackets.TOGGLE_NO_BREAK_C2S, "nobreak");
+            action(2, "nobreak", pet.isNoInteractMode, ModPackets.TOGGLE_NO_INTERACT_C2S, "interact", "interact");
+            action(3, "nobreak", pet.isPacifistMode, ModPackets.TOGGLE_PACIFIST_C2S, "pacifist", "pacifist");
+            action(4, "armor", pet.armorLocked, ModPackets.TOGGLE_ARMOR_C2S, "armor_lock", "armor_lock");
+            utility(5, "armor_open", "armor", "armor", b -> send(ModPackets.OPEN_ARMOR_C2S));
+            utility(6, "block_rules", "nobreak", "blocks", b -> client.setScreen(new BlockRulesScreen(this, pet)));
         } else {
-            PlayerEntity ent = client.world.getPlayerByUuid(pet.uuid);
-            if (ent != null) {
-                boolean hudHidden = client.options.hudHidden;
-                client.options.hudHidden = true;
-                InventoryScreen.drawEntity(context, x + OFFSET_MODEL_X, y + OFFSET_MODEL_Y, MODEL_SCALE, (float)(x+OFFSET_MODEL_X)-mouseX, (float)(y+OFFSET_MODEL_Y-38)-mouseY, ent);
-                client.options.hudHidden = hudHidden;
-            }
+            action(0, "sit", pet.isSitting, ModPackets.TOGGLE_PET_STATE_C2S, "sit");
+            action(1, "tp", pet.isTeleportEnabled, ModPackets.TOGGLE_TELEPORT_C2S, "tp");
+            action(2, "prot", pet.isProtectionMode, ModPackets.TOGGLE_PROTECTION_C2S, "prot");
+            action(3, "aura", pet.isAuraEnabled, ModPackets.TOGGLE_AURA_C2S, "aura");
+            action(4, "vampiric", pet.isVampiricMode, ModPackets.TOGGLE_VAMPIRIC_C2S, "vampiric");
+            action(5, "nobreak", pet.isNoBreakMode, ModPackets.TOGGLE_NO_BREAK_C2S, "nobreak");
+            action(6, "nobreak", pet.isNoInteractMode, ModPackets.TOGGLE_NO_INTERACT_C2S, "interact", "interact");
+            action(7, "nobreak", pet.isPacifistMode, ModPackets.TOGGLE_PACIFIST_C2S, "pacifist", "pacifist");
+            action(8, "absorb", pet.isAbsorbed, ModPackets.TOGGLE_ABSORB_C2S, "absorb");
+            action(9, "armor", pet.armorLocked, ModPackets.TOGGLE_ARMOR_C2S, "armor_lock", "armor_lock");
+
+            utility(10, "armor_open", "armor", "armor", b -> send(ModPackets.OPEN_ARMOR_C2S));
+            utility(11, "block_rules", "nobreak", "blocks", b -> client.setScreen(new BlockRulesScreen(this, pet)));
         }
+        addDrawableChild(new GrimoireBackButton(book.x(344), book.y(25), book.size(24),
+                Text.translatable(parent == null ? "gui.bondofthebeast.staff.back_tooltip" :
+                        "gui.bondofthebeast.back_to_pets"), b -> close()));
+    }
 
-        drawExperienceBar(context, x + OFFSET_EXP_X, y + OFFSET_EXP_Y);
+    private boolean available(String skill) {
+        return pet.isOnline && pet.hasCollar && pet.escapeTicks == 0 && pet.unlockedSkills.contains(skill);
+    }
 
+    private void action(int index, String skill, boolean value, Identifier packet, String icon) {
+        action(index, skill, value, packet, icon, skill);
+    }
+
+    private void action(int index, String skill, boolean value, Identifier packet, String icon, String name) {
+        boolean unlocked = available(skill);
+        if ((packet.equals(ModPackets.TOGGLE_NO_INTERACT_C2S) || packet.equals(ModPackets.TOGGLE_PACIFIST_C2S)) && !pet.isNoBreakMode) unlocked = false;
+        int x = book.x(180 + index % 3 * 64);
+        int y = book.y(52 + index / 3 * 34);
+        Text label = Text.translatable("gui.bondofthebeast.control." + name);
+        Text state = Text.translatable(value ? "gui.bondofthebeast.on" : "gui.bondofthebeast.off");
+        Text fullLabel = Text.empty().append(label.copy().formatted(net.minecraft.util.Formatting.GOLD)).append(Text.literal(" — ")).append(state);
+        Text lockedReason = Text.translatable("gui.bondofthebeast.requires_stage",
+                BondRules.requiredStage(skill));
+        if (!pet.forced) lockedReason = Text.translatable("gui.bondofthebeast.requires_trust",
+                Text.translatable("gui.bondofthebeast.trust." + VoluntaryBondService.requiredTier(skill)));
+        if ((name.equals("interact") || name.equals("pacifist")) && !pet.isNoBreakMode) lockedReason = Text.translatable("gui.bondofthebeast.staff.requires_nobreak");
+        if (pet.escapeTicks > 0) lockedReason = Text.translatable("gui.bondofthebeast.escape_seconds", pet.escapeTicks / 20);
+        if (!pet.hasCollar) lockedReason = Text.translatable("gui.bondofthebeast.staff.no_collar_suffix");
+        if (!pet.isOnline) lockedReason = Text.translatable("gui.bondofthebeast.staff.offline");
+        Text tooltip = fullLabel.copy().append(Text.literal("\n")).append(
+                Text.translatable("gui.bondofthebeast.control.description." + name).formatted(net.minecraft.util.Formatting.RESET));
+        if (!unlocked) tooltip = tooltip.copy().append(Text.literal("\n")).append(lockedReason.copy().formatted(net.minecraft.util.Formatting.GRAY));
+        var button = addDrawableChild(new GrimoireAbilityButton(x, y, book.size(60), book.size(32), label, value, icon, b -> {
+            b.active = false;
+            send(packet);
+        }));
+        button.active = unlocked;
+        button.setTooltip(net.minecraft.client.gui.tooltip.Tooltip.of(tooltip));
+    }
+
+    private void utility(int index, String name, String skill, String icon, ButtonWidget.PressAction press) {
+        Text label = Text.translatable("gui.bondofthebeast." + name);
+        var button = addDrawableChild(new GrimoireAbilityButton(book.x(180 + index % 3 * 64),
+                book.y(52 + index / 3 * 34), book.size(60), book.size(32), label, null, icon, press));
+        button.active = available(skill);
+        Text tooltip = Text.empty().append(label.copy().formatted(net.minecraft.util.Formatting.GOLD))
+                .append(Text.literal("\n")).append(Text.translatable("gui.bondofthebeast." + name + ".description"));
+        if (!button.active) {
+            Text reason = !pet.isOnline ? Text.translatable("gui.bondofthebeast.staff.offline") :
+                    !pet.hasCollar ? Text.translatable("gui.bondofthebeast.staff.no_collar_suffix") :
+                    pet.escapeTicks > 0 ? Text.translatable("gui.bondofthebeast.escape_seconds", pet.escapeTicks / 20) :
+                    pet.forced ? Text.translatable("gui.bondofthebeast.requires_stage", BondRules.requiredStage(skill)) :
+                    Text.translatable("gui.bondofthebeast.requires_trust",
+                            Text.translatable("gui.bondofthebeast.trust." + VoluntaryBondService.requiredTier(skill)));
+            tooltip = tooltip.copy().append(Text.literal("\n")).append(reason.copy().formatted(net.minecraft.util.Formatting.GRAY));
+        }
+        button.setTooltip(net.minecraft.client.gui.tooltip.Tooltip.of(tooltip));
+    }
+
+    private void send(Identifier packet) {
+        var buffer = PacketByteBufs.create();
+        buffer.writeUuid(pet.uuid);
+        ClientPlayNetworking.send(packet, buffer);
+    }
+
+    @Override public void close() { client.setScreen(parent); }
+
+    @Override public void tick() {
+        PetPreview.tick(preview);
+    }
+
+    @Override public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        GrimoireStyle.drawBook(context, width, height);
+        drawBondProgress(context);
+        var matrices = context.getMatrices();
+        matrices.push();
+        matrices.translate(book.x(), book.y(), 0);
+        matrices.scale(book.scale(), book.scale(), 1);
+        GrimoireStyle.leather(context, 42, 42, 116, 19, false);
+        GrimoireStyle.fittedText(context, textRenderer, Text.literal(pet.name.split("\\|")[0]).formatted(net.minecraft.util.Formatting.BOLD), 100, 47, 96, 0xFFF1DCA7);
+        Text status = !pet.isOnline ? Text.translatable("gui.bondofthebeast.staff.offline") : !pet.hasCollar ? Text.translatable("gui.bondofthebeast.staff.no_collar_suffix") :
+                pet.escapeTicks > 0 ? Text.translatable("gui.bondofthebeast.escape_seconds", pet.escapeTicks / 20) :
+                        pet.forced ? Text.translatable(pet.formStage < 0 ? "gui.bondofthebeast.human_stage.short" : "gui.bondofthebeast.stage", pet.formStage) :
+                                Text.translatable(pet.trustTier >= 3 ? "gui.bondofthebeast.bond_complete.short" : "gui.bondofthebeast.bond_time.remaining",
+                                        VoluntaryBondService.remainingSeconds(pet.trustTier, pet.activeTicks) / 3600,
+                                        VoluntaryBondService.remainingSeconds(pet.trustTier, pet.activeTicks) / 60 % 60);
+        if (preview != null) {
+            context.enableScissor(book.x(54), book.y(68), book.x(147), book.y(147));
+            int modelScale = Math.min(PetPreview.isFeral(preview) ? 40 : 28,
+                    Math.max(10, (int) ((PetPreview.isFeral(preview) ? 80 : 60) / Math.max(1, preview.getHeight()))));
+            boolean looking = mouseX >= book.x(54) && mouseX < book.x(147) && mouseY >= book.y(68) && mouseY < book.y(147);
+            PetPreview.draw(context, preview, 100, 145, modelScale,
+                    looking ? net.minecraft.util.math.MathHelper.clamp((book.x(100) - mouseX) / book.scale(), -20, 20) : 0,
+                    looking ? net.minecraft.util.math.MathHelper.clamp((book.y(106) - mouseY) / book.scale(), -10, 10) : 0);
+            context.disableScissor();
+        }
+        GrimoireStyle.fittedText(context, textRenderer,
+                Text.translatable("gui.bondofthebeast.staff.level", pet.bondLevel), 100, 153, 130, 0xFFEAD4A2);
+        GrimoireStyle.leather(context, 31, 188, 136, 21, false);
+        GrimoireStyle.fittedText(context, textRenderer,
+                Text.translatable(pet.forced ? "gui.bondofthebeast.automatic_unlocks.short" :
+                        pet.trustTier >= 3 ? "gui.bondofthebeast.bond_complete.title" : "gui.bondofthebeast.bond_time.title"),
+                99, 190, 126, 0xFFEAD4A2, 1.0F);
+        GrimoireStyle.fittedText(context, textRenderer, status, 99, 199, 126, 0xFFBDA77B, 1.0F);
+        matrices.pop();
         super.render(context, mouseX, mouseY, delta);
-
-        drawIcons(context);
-
-        context.drawCenteredTextWithShadow(textRenderer, "?", bInfo.getX() + 9, bInfo.getY() + 5, 0xFFD700);
-    }
-
-    private void drawTreeLine(DrawContext context, ButtonWidget b1, ButtonWidget b2, boolean unlocked) {
-        int color = unlocked ? 0xFFFFAA00 : 0xFF333333;
-        int thick = 2;
-        int x1 = b1.getX() + b1.getWidth() / 2, y1 = b1.getY() + b1.getHeight() / 2;
-        int x2 = b2.getX() + b2.getWidth() / 2, y2 = b2.getY() + b2.getHeight() / 2;
-
-        int midY = (y1 + y2) / 2;
-
-        context.fill(x1 - thick, y1, x1 + thick, midY, color);
-        context.fill(Math.min(x1, x2) - thick, midY - thick, Math.max(x1, x2) + thick, midY + thick, color);
-        context.fill(x2 - thick, midY, x2 + thick, y2, color);
-    }
-
-    private void drawExperienceBar(DrawContext context, int centerX, int barY) {
-        int barWidth = 90, barHeight = 6, barX = centerX - (barWidth / 2);
-
-        float progress = Math.min(1.0f, (float) pet.bondExp / (pet.bondLevel * 100));
-
-        context.fill(barX, barY, barX + barWidth, barY + barHeight, 0xFF333333);
-        context.fill(barX, barY, barX + (int)(barWidth * progress), barY + barHeight, 0xFF228B22);
-        context.drawBorder(barX - 1, barY - 1, barWidth + 2, barHeight + 2, 0xFF000000);
-
-        context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("gui.bondofthebeast.staff.level", pet.bondLevel).formatted(Formatting.GOLD), centerX, barY - 12, 0xFFFFFF);
-    }
-
-    private void drawIcons(DrawContext context) {
-        drawIconSitInverted(context, bSit, TEX_SIT, pet.isSitting, "sit");
-        drawIcon(context, bNoB, TEX_NOBREAK, pet.isNoBreakMode, "nobreak");
-        drawIcon(context, bTp, TEX_TP, pet.isTeleportEnabled, "tp");
-        drawIcon(context, bAur, TEX_AURA, pet.isAuraEnabled, "aura");
-        drawIcon(context, bAbsorb, TEX_ABSORB, pet.isAbsorbed, "absorb");
-        drawIcon(context, bPro, TEX_PROT, pet.isProtectionMode, "prot");
-        drawIcon(context, bVam, TEX_VAMPIRIC, pet.isVampiricMode, "vampiric");
-
-        if (pet.unlockedSkills.contains("nobreak")) {
-            context.drawItem(net.minecraft.item.Items.CHEST.getDefaultStack(), bInteract.getX(), bInteract.getY());
-            context.drawItem(net.minecraft.item.Items.IRON_SWORD.getDefaultStack(), bPac.getX(), bPac.getY());
-            context.drawItem(net.minecraft.item.Items.INK_SAC.getDefaultStack(), bBlack.getX(), bBlack.getY());
-            context.drawItem(net.minecraft.item.Items.PAPER.getDefaultStack(), bWhite.getX(), bWhite.getY());
-
-            if (pet.isNoInteractMode) context.drawBorder(bInteract.getX() - 1, bInteract.getY() - 1, 18, 18, 0xFF00FF00);
-            else context.drawBorder(bInteract.getX() - 1, bInteract.getY() - 1, 18, 18, 0xFFFF0000);
-
-            if (pet.isPacifistMode) context.drawBorder(bPac.getX() - 1, bPac.getY() - 1, 18, 18, 0xFF00FF00);
-            else context.drawBorder(bPac.getX() - 1, bPac.getY() - 1, 18, 18, 0xFFFF0000);
-        } else {
-            context.drawTexture(TEX_LOCK, bInteract.getX(), bInteract.getY(), 16, 16, 0, 0, 16, 16, 16, 16);
-            context.drawTexture(TEX_LOCK, bPac.getX(), bPac.getY(), 16, 16, 0, 0, 16, 16, 16, 16);
-            context.drawTexture(TEX_LOCK, bBlack.getX(), bBlack.getY(), 16, 16, 0, 0, 16, 16, 16, 16);
-            context.drawTexture(TEX_LOCK, bWhite.getX(), bWhite.getY(), 16, 16, 0, 0, 16, 16, 16, 16);
+        if (mouseX >= book.x(54) && mouseX < book.x(147) && mouseY >= book.y(68) && mouseY < book.y(147)) {
+            context.drawOrderedTooltip(textRenderer, textRenderer.wrapLines(Text.translatable("gui.bondofthebeast.escape_rule." +
+                    (!pet.forced || pet.formStage >= 3 ? "contract" : pet.formStage == 2 ? "enchanted" : "apple")),
+                    Math.min(200, width - 24)), mouseX, mouseY);
         }
     }
 
-    private void drawIcon(DrawContext context, ButtonWidget btn, Identifier tex, boolean active, String key) {
-        int offset = (btn.getWidth() - ICON_SIZE) / 2;
-        if (!pet.hasCollar || !pet.unlockedSkills.contains(key)) {
-            context.drawTexture(TEX_LOCK, btn.getX() + offset, btn.getY() + offset, ICON_SIZE, ICON_SIZE, 0, 0, 16, 16, 16, 16);
-        } else {
-            context.drawTexture(tex, btn.getX() + offset, btn.getY() + offset, ICON_SIZE, ICON_SIZE, 0, active ? 0 : 24, 24, 24, 24, 48);
-        }
+    private void drawBondProgress(DrawContext context) {
+        int maxExp = Math.max(1, pet.bondLevel * 100);
+        int filled = pet.bondLevel >= 100 ? 98 : Math.max(0, Math.min(98, (pet.bondExp * 98) / maxExp));
+        var matrices = context.getMatrices();
+        matrices.push();
+        matrices.translate(book.x(), book.y(), 0);
+        // Match the backdrop's actual size; these are the slot's native texture coordinates.
+        matrices.scale(book.size(384) / 256.0F, book.size(216) / 200.0F, 1);
+        context.fill(17, 164, 17 + filled, 173, 0xFF754249);
+        matrices.pop();
     }
 
-    private void drawIconSitInverted(DrawContext context, ButtonWidget btn, Identifier tex, boolean active, String key) {
-        int offset = (btn.getWidth() - ICON_SIZE) / 2;
-        if (!pet.hasCollar || !pet.unlockedSkills.contains(key)) {
-            context.drawTexture(TEX_LOCK, btn.getX() + offset, btn.getY() + offset, ICON_SIZE, ICON_SIZE, 0, 0, 16, 16, 16, 16);
-        } else {
-            context.drawTexture(tex, btn.getX() + offset, btn.getY() + offset, ICON_SIZE, ICON_SIZE, 0, active ? 24 : 0, 24, 24, 24, 48);
-        }
+    private net.minecraft.client.network.OtherClientPlayerEntity previewEntity() {
+        return PetPreview.create(client, pet);
     }
+
 }

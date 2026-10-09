@@ -32,7 +32,7 @@ public class PetBedBlockEntity extends BlockEntity {
                 if (pet instanceof ServerPlayerEntity sp) {
                     var bond = com.bondofthebeast.component.ModComponents.PLAYER_BOND.get(sp);
 
-                    if (bond.hasOwner()) {
+                    if (bond.hasOwner() && (bond.getBedPos() == null || (bond.getBedPos().equals(pos) && bond.getBedDimension().equals(world.getRegistryKey().getValue().toString())))) {
                         BlockPos currentBed = bond.getBedPos();
 
                         // Проверяем, не была ли эта лежанка уже привязана через пакет из меню
@@ -49,49 +49,13 @@ public class PetBedBlockEntity extends BlockEntity {
             } catch (Exception ignored) {}
         }
 
-        // КЛИЕНТ: Отрисовка цепи (визуал)
-        if (world.isClient && !be.boundPetUUID.isEmpty() && be.chainRadius > 0) {
-            try {
-                UUID petUUID = UUID.fromString(be.boundPetUUID);
-                PlayerEntity pet = world.getPlayerByUuid(petUUID);
-                if (pet != null) {
-                    boolean isWildEnough = true;
-                    try {
-                        var sscComp = net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(pet);
-                        if (sscComp != null && sscComp.getCurrentForm() != null) {
-                            if (sscComp.getCurrentForm().FormID != null && sscComp.getCurrentForm().FormID.getPath().toLowerCase().contains("allay")) {
-                                isWildEnough = false;
-                            } else {
-                                int index = sscComp.getCurrentForm().getIndex();
-                                boolean isFeral = sscComp.getCurrentForm().getBodyType() == net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType.FERAL;
-                                isWildEnough = index >= 3 || isFeral;
-                            }
-                        }
-                    } catch (Exception ignored) {}
-                    if (!isWildEnough) return;
-
-                    Vec3d bedPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.4, pos.getZ() + 0.5);
-                    Vec3d petPos = pet.getPos().add(0, pet.getHeight() / 2.0, 0);
-                    Vec3d vector = bedPos.subtract(petPos);
-                    double distance = vector.length();
-
-                    if (distance > be.chainRadius) {
-                        Vec3d step = vector.normalize().multiply(0.5);
-                        for (double d = 0; d < distance; d += 0.5) {
-                            Vec3d particlePos = petPos.add(step.multiply(d));
-                            world.addParticle(ParticleTypes.SMOKE, particlePos.x, particlePos.y, particlePos.z, 0, 0, 0);
-                        }
-                    }
-                }
-            } catch (IllegalArgumentException ignored) {}
-        }
     }
 
     @Override
     public void readNbt(NbtCompound nbt) {
         super.readNbt(nbt);
         this.boundPetUUID = nbt.getString("BoundPetUUID");
-        this.chainRadius = nbt.getInt("ChainRadius");
+        this.chainRadius = Math.max(0, Math.min(50, nbt.getInt("ChainRadius")));
         if (nbt.contains("IsWaitingForPet")) {
             this.isWaitingForPet = nbt.getBoolean("IsWaitingForPet");
         } else {
@@ -120,5 +84,5 @@ public class PetBedBlockEntity extends BlockEntity {
     }
 
     public int getChainRadius() { return chainRadius; }
-    public void setChainRadius(int radius) { this.chainRadius = radius; markDirty(); world.updateListeners(pos, getCachedState(), getCachedState(), 3); }
+    public void setChainRadius(int radius) { this.chainRadius = Math.max(0, Math.min(50, radius)); markDirty(); world.updateListeners(pos, getCachedState(), getCachedState(), 3); }
 }

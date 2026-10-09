@@ -50,12 +50,12 @@ public class ContractItem extends Item {
         }
 
         int userIndex = getFormIndex(user);
-        boolean isUserPet = isPlayerFeral(user) || userIndex >= 2;
-        boolean isUserOwner = userIndex < 2;
+        boolean isUserPet = BondRules.canBePet(user);
+        boolean isUserOwner = BondRules.canOwn(user);
 
         int targetIndex = getFormIndex(targetPlayer);
-        boolean isTargetPet = isPlayerFeral(targetPlayer) || targetIndex >= 2;
-        boolean isTargetOwner = targetIndex < 2;
+        boolean isTargetPet = BondRules.canBePet(targetPlayer);
+        boolean isTargetOwner = BondRules.canOwn(targetPlayer);
 
         PlayerBondComponent userBond = ModComponents.PLAYER_BOND.get(user);
         PlayerBondComponent targetBond = ModComponents.PLAYER_BOND.get(targetPlayer);
@@ -131,6 +131,19 @@ public class ContractItem extends Item {
     public void finalizeContract(ItemStack stack, PlayerEntity player) {
         NbtCompound nbt = stack.getOrCreateNbt();
         if (player.getWorld().isClient) return;
+
+        if (!(player instanceof ServerPlayerEntity signer)) return;
+        try {
+            boolean ownerSigning = nbt.contains("PetUUID") && !nbt.contains("OwnerUUID");
+            boolean petSigning = nbt.contains("OwnerUUID") && !nbt.contains("PetUUID");
+            if (!ownerSigning && !petSigning) return;
+            ServerPlayerEntity other = signer.getServer().getPlayerManager().getPlayer(
+                    UUID.fromString(nbt.getString(ownerSigning ? "PetUUID" : "OwnerUUID")));
+            if (other == null || other == signer || other.getWorld() != signer.getWorld() || signer.squaredDistanceTo(other) > 64) return;
+            ServerPlayerEntity owner = ownerSigning ? signer : other;
+            ServerPlayerEntity pet = ownerSigning ? other : signer;
+            if (!BondRules.canOwn(owner) || !BondRules.canBePet(pet) || ModComponents.PLAYER_BOND.get(pet).hasOwner()) return;
+        } catch (IllegalArgumentException e) { return; }
 
         if (nbt.contains("PetUUID") && !nbt.contains("OwnerUUID")) {
             nbt.putString("OwnerUUID", player.getUuidAsString());
