@@ -29,8 +29,7 @@ public class KeyboardInputMixin {
 
                 if (bond.isAbsorbed()) {
                     input.sneaking = false;
-                } else {
-                    input.sneaking = true;
+
                 }
             }
         }

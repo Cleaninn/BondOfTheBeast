@@ -6,6 +6,7 @@ import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -14,6 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ServerPlayNetworkHandlerMixin {
     @Shadow
     public ServerPlayerEntity player;
+    @Unique private long botb$dodgeTick = -1;
+    @Unique private double botb$dodgeDistance;
 
     @Inject(method = "onPlayerMove", at = @At("HEAD"), cancellable = true)
     private void lockSittingPosition(PlayerMoveC2SPacket packet, CallbackInfo ci) {
@@ -26,10 +29,22 @@ public class ServerPlayNetworkHandlerMixin {
                 // Если игрок сдвинулся больше чем на мизерное расстояние
                 if (dx > 0.01 || dz > 0.01) {
                     this.player.requestTeleport(this.player.getX(), this.player.getY(), this.player.getZ());
-                    // Мы не отменяем пакет (ci.cancel()), а просто возвращаем игрока.
+                    ci.cancel();
+                    // Reject the attempted displacement after correcting the client position.
                     // Это предотвратит kick за "Invalid movement".
                 }
             }
+        } else if (com.bondofthebeast.ForcedTamingService.stunned(player) && packet.changesPosition()) {
+            long tick = player.getWorld().getTime();
+            if (botb$dodgeTick != tick) { botb$dodgeTick = tick; botb$dodgeDistance = 0; }
+            double dx = packet.getX(player.getX()) - player.getX();
+            double dz = packet.getZ(player.getZ()) - player.getZ();
+            double distance = Math.sqrt(dx * dx + dz * dz);
+            double upward = packet.getY(player.getY()) - player.getY();
+            if (botb$dodgeDistance + distance > 0.1 || upward > Math.max(0.08, player.getVelocity().y + 0.02)) {
+                player.requestTeleport(player.getX(), player.getY(), player.getZ());
+                ci.cancel();
+            } else botb$dodgeDistance += distance;
         }
     }
 }

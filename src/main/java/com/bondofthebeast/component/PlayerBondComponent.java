@@ -10,6 +10,24 @@ import java.util.Set;
 
 public interface PlayerBondComponent extends Component, AutoSyncedComponent {
     boolean hasOwner();
+    ForcedBondState getForcedBond();
+    VoluntaryBondState getVoluntaryBond();
+    String getBedDimension();
+    String getLeashHolder();
+    BlockPos getLeashPos();
+    String getLeashDimension();
+    boolean isLeashPaid();
+    void setLeash(String holder, BlockPos pos, String dimension, boolean paid);
+    int getTamingTicks();
+    void setTamingTicks(int ticks);
+    String getAbsorbedGameMode();
+    void setAbsorbedGameMode(String mode);
+
+    // Новые методы для системы подчинения
+    int getTamingState();
+    void setTamingState(int state);
+    boolean isFullPet();
+
     String getOwnerUUID();
     String getOwnerName();
     void setOwner(String uuid, String name);

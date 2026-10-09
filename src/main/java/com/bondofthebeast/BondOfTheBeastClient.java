@@ -16,7 +16,16 @@ import java.util.*;
 public class BondOfTheBeastClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        net.minecraft.client.gui.screen.ingame.HandledScreens.register(PetArmorScreenHandler.TYPE, com.bondofthebeast.client.PetArmorScreen::new);
+        var statusKey = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(
+                new net.minecraft.client.option.KeyBinding("key.bondofthebeast.status", org.lwjgl.glfw.GLFW.GLFW_KEY_G, "category.bondofthebeast"));
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            while (statusKey.wasPressed()) if (client.player != null && ModComponents.PLAYER_BOND.get(client.player).hasOwner()) client.setScreen(new PetStatusScreen());
+        });
+        net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register(com.bondofthebeast.client.BondHud::render);
         TrinketRendererRegistry.registerRenderer(ModItems.COLLAR, new CollarRenderer());
+        TrinketRendererRegistry.registerRenderer(ModItems.INFUSED_COLLAR, new CollarRenderer());
+        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(PetLeashRenderer::render);
 
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.OPEN_OWNER_GUI, (c, h, b, rs) -> c.execute(() -> c.setScreen(new ContractScreen(false))));
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.OPEN_PET_GUI, (c, h, b, rs) -> c.execute(() -> c.setScreen(new ContractScreen(true))));
@@ -50,7 +59,7 @@ public class BondOfTheBeastClient implements ClientModInitializer {
 
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             var bond = ModComponents.PLAYER_BOND.get(player);
-            if (bond.hasOwner()) {
+            if (BondRules.allows(player, "nobreak")) {
                 net.minecraft.block.BlockState state = world.getBlockState(pos);
 
                 // Проверяем, не бьет ли питомец любую из частей своей лежанки
@@ -80,6 +89,10 @@ public class BondOfTheBeastClient implements ClientModInitializer {
         int blackSize = b.readInt(); Set<String> black = new HashSet<>(); for (int i = 0; i < blackSize; i++) black.add(b.readString());
         int whiteSize = b.readInt(); Set<String> white = new HashSet<>(); for (int i = 0; i < whiteSize; i++) white.add(b.readString());
         boolean isOnline = b.readBoolean();
-        return new StaffMainScreen.PetData(uuid, name, sitting, tp, prot, aura, pacifist, vampiric, noBreak, absorbed, noInteract, level, exp, collar, skillPoints, unlockedSkills, black, white, isOnline);
+        var pet = new StaffMainScreen.PetData(uuid, name, sitting, tp, prot, aura, pacifist, vampiric, noBreak, absorbed, noInteract, level, exp, collar, skillPoints, unlockedSkills, black, white, isOnline);
+        pet.formStage = b.readInt(); pet.trustTier = b.readInt(); pet.forced = b.readBoolean(); pet.armorLocked = b.readBoolean();
+        pet.escapeTicks = b.readInt(); pet.instinct = b.readFloat();
+        pet.activeTicks = b.readInt(); pet.formId = b.readString();
+        return pet;
     }
 }

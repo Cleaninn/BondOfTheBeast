@@ -4,6 +4,41 @@ plugins {
 	id "me.modmuss50.mod-publish-plugin" version "0.5.1"
 }
 
+tasks.configureEach {
+	if (name == 'runLocalServer') doFirst {
+		def propertiesFile = file('run/local-server/server.properties')
+		if (!propertiesFile.exists()) {
+			propertiesFile.parentFile.mkdirs()
+			propertiesFile.setText('online-mode=false\nserver-ip=127.0.0.1\nserver-port=25565\nmotd=Bond of the Beast local test server\n', 'UTF-8')
+		}
+	}
+}
+
+loom {
+	runs {
+		localServer {
+			server()
+			configName = 'Bond of the Beast - Local Server'
+			runDir 'run/local-server'
+			ideConfigGenerated = true
+		}
+		clientOwner {
+			client()
+			configName = 'Bond of the Beast - Owner'
+			runDir 'run/client-owner'
+			programArgs '--username', 'BondOwner', '--width', '1000', '--height', '700'
+			ideConfigGenerated = true
+		}
+		clientPet {
+			client()
+			configName = 'Bond of the Beast - Pet'
+			runDir 'run/client-pet'
+			programArgs '--username', 'BondPet', '--width', '1000', '--height', '700'
+			ideConfigGenerated = true
+		}
+	}
+}
+
 version = project.mod_version
 group = project.maven_group
 base {
@@ -51,7 +86,6 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	modImplementation "dev.kosmx.player-anim:player-animation-lib-fabric:${project.player_anim}"
 	include "dev.kosmx.player-anim:player-animation-lib-fabric:${project.player_anim}"
-	modImplementation "maven.modrinth:aqhZDcov:52YrQBKA"
 	// AzureLib
 	modImplementation "mod.azure.azurelib:azurelib-fabric-1.20.1:${project.azurelib_version}"
 
@@ -125,7 +159,7 @@ java {
 publishMods {
 	file = remapJar.archiveFile
 	changelog = file("CHANGELOG.md").text
-	type = STABLE
+	type = BETA
 	modLoaders.add("fabric")
 
 	modrinth {

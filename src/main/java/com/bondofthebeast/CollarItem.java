@@ -39,9 +39,19 @@ public class CollarItem extends AccessoryItem{
         if (!(entity instanceof PlayerEntity targetPet)) return ActionResult.PASS;
 
         World world = user.getWorld();
-        if (world.isClient) return ActionResult.SUCCESS;
+        if (!ModComponents.PLAYER_BOND.get(targetPet).hasOwner() && !ForcedTamingService.stunned(targetPet)) return ActionResult.PASS;
+        if (world.isClient) {
+            if (!ModComponents.PLAYER_BOND.get(targetPet).hasOwner() && ForcedTamingService.stunned(targetPet) && BondRules.canOwn(user))
+                user.setCurrentHand(hand);
+            return ActionResult.SUCCESS;
+        }
 
         PlayerBondComponent bond = ModComponents.PLAYER_BOND.get(targetPet);
+        if (!bond.hasOwner() && targetPet instanceof net.minecraft.server.network.ServerPlayerEntity sp) {
+            ActionResult forced = ForcedTamingService.start(stack, user, sp, hand);
+            if (forced != ActionResult.PASS) return forced;
+        }
+
 
         if (bond.hasOwner() && bond.getOwnerUUID().equals(user.getUuidAsString())) {
             if (equipToPet(targetPet, stack, user.getName().getString())) {
@@ -63,6 +73,15 @@ public class CollarItem extends AccessoryItem{
             user.sendMessage(Text.translatable("text.bondofthebeast.not_your_pet").formatted(Formatting.RED), true);
             return ActionResult.CONSUME;
         }
+    }
+
+    @Override
+    public int getMaxUseTime(ItemStack stack) { return 72000; }
+
+    @Override
+    public void onStoppedUsing(ItemStack stack, World world, LivingEntity user, int remainingUseTicks) {
+        if (!world.isClient && user instanceof PlayerEntity player) ForcedTamingService.cancelCollaring(player);
+        super.onStoppedUsing(stack, world, user, remainingUseTicks);
     }
 
     private boolean equipToPet(PlayerEntity pet, ItemStack collar, String ownerName) {

@@ -21,15 +21,10 @@ import org.jetbrains.annotations.Nullable;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.UUID;
 
 public class ContractItem extends Item {
-    private static final Logger log = LoggerFactory.getLogger(ContractItem.class);
-
     public ContractItem(Settings settings) {
         super(settings);
     }
@@ -55,14 +50,12 @@ public class ContractItem extends Item {
         }
 
         int userIndex = getFormIndex(user);
-        boolean ClearMindUser = TrinketsApi.getTrinketComponent(user).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
-        boolean isUserPet = isPlayerFeral(user) || (userIndex >= 2 && !ClearMindUser);
-        boolean isUserOwner = !isUserPet;
+        boolean isUserPet = BondRules.canBePet(user);
+        boolean isUserOwner = BondRules.canOwn(user);
 
         int targetIndex = getFormIndex(targetPlayer);
-        boolean ClearMindTarget = TrinketsApi.getTrinketComponent(targetPlayer).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
-        boolean isTargetPet = isPlayerFeral(targetPlayer) || (targetIndex == 2 && !ClearMindTarget) || targetIndex > 2;
-        boolean isTargetOwner = !isTargetPet;
+        boolean isTargetPet = BondRules.canBePet(targetPlayer);
+        boolean isTargetOwner = BondRules.canOwn(targetPlayer);
 
         PlayerBondComponent userBond = ModComponents.PLAYER_BOND.get(user);
         PlayerBondComponent targetBond = ModComponents.PLAYER_BOND.get(targetPlayer);
@@ -138,6 +131,19 @@ public class ContractItem extends Item {
     public void finalizeContract(ItemStack stack, PlayerEntity player) {
         NbtCompound nbt = stack.getOrCreateNbt();
         if (player.getWorld().isClient) return;
+
+        if (!(player instanceof ServerPlayerEntity signer)) return;
+        try {
+            boolean ownerSigning = nbt.contains("PetUUID") && !nbt.contains("OwnerUUID");
+            boolean petSigning = nbt.contains("OwnerUUID") && !nbt.contains("PetUUID");
+            if (!ownerSigning && !petSigning) return;
+            ServerPlayerEntity other = signer.getServer().getPlayerManager().getPlayer(
+                    UUID.fromString(nbt.getString(ownerSigning ? "PetUUID" : "OwnerUUID")));
+            if (other == null || other == signer || other.getWorld() != signer.getWorld() || signer.squaredDistanceTo(other) > 64) return;
+            ServerPlayerEntity owner = ownerSigning ? signer : other;
+            ServerPlayerEntity pet = ownerSigning ? other : signer;
+            if (!BondRules.canOwn(owner) || !BondRules.canBePet(pet) || ModComponents.PLAYER_BOND.get(pet).hasOwner()) return;
+        } catch (IllegalArgumentException e) { return; }
 
         if (nbt.contains("PetUUID") && !nbt.contains("OwnerUUID")) {
             nbt.putString("OwnerUUID", player.getUuidAsString());
