@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.UUID;
 
 public class ContractItem extends Item {
-    private static final Logger log = LoggerFactory.getLogger(ContractItem.class);
-
     public ContractItem(Settings settings) {
         super(settings);
     }
