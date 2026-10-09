@@ -39,3 +39,11 @@ replay_*.log
 *.hprof
 *.jfr
 run2/
+
+# Local development materials
+/BOND_RULES.md
+/BOND_RULES_RU.md
+/PROJECT_OVERVIEW_RU.md
+/run-*.bat
+/docs/screenshots/
+/tools/
