@@ -8,6 +8,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 
 import java.util.Map;
+import java.util.Objects;
 
 /** Shared rules used by both server actions and client presentation. */
 public final class BondRules {
