@@ -13,15 +13,25 @@ import net.minecraft.entity.player.PlayerEntity;
 public class IsAllowedAnAction {
 
     public static boolean condition(SerializableData.Instance data, Entity entity) {
-        String command = data.getString("command");
-        if (entity instanceof PlayerEntity player) {
-            var bond = ModComponents.PLAYER_BOND.get(entity);
-            if (bond.hasOwner()) {
-                if (command.equals("pacifism")){
-                   return bond.isPacifistMode();
-                }
-                return BondRules.allows(player, command);
+        try {
+            if (entity.getWorld().isClient()){
+                BondOfTheBeast.LOGGER.info("hi from the client");
+                return false;
             }
+            BondOfTheBeast.LOGGER.info("hi from the server");
+            String command = data.getString("command");
+            if (entity.getWorld().isClient()) return false;
+            if (entity instanceof PlayerEntity player) {
+                var bond = ModComponents.PLAYER_BOND.get(entity);
+                if (bond.hasOwner()) {
+                    if (command.equals("pacifism")) {
+                        return bond.isPacifistMode();
+                    }
+                    return BondRules.allows(player, command);
+                }
+            }
+        }catch (Exception e){
+            throw  new RuntimeException(e);
         }
         return false;
     }
@@ -29,7 +39,7 @@ public class IsAllowedAnAction {
         return new ConditionFactory<>(
                 BondOfTheBeast.identifier("is_command_active"),
                 new SerializableData().add("command", SerializableDataTypes.STRING),
-                HasOwnerCondition::condition
+               IsAllowedAnAction::condition
         );
 
     }

@@ -49,6 +49,11 @@
                             "inverted": true
                         },
                         {
+                            "type": "bondofthebeast:is_owner",
+                            "reversed": false,
+                            "inverted": true
+                        },
+                        {
                             "type": "apoli:and",
                             "conditions": [
                                 {
@@ -155,6 +160,7 @@
         "should_render": false
     },
     "key": {
-        "key": "key.shape-shifter-curse.active_skill_1"
+        "key": "key.shape-shifter-curse.active_skill_2",
+        "id": "key.shape-shifter-curse.active_skill_2"
     }
 }
