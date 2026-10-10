@@ -6,6 +6,8 @@ import dev.emi.trinkets.api.client.TrinketRendererRegistry;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.ActionResult;
@@ -19,6 +21,7 @@ public class BondOfTheBeastClient implements ClientModInitializer {
         net.minecraft.client.gui.screen.ingame.HandledScreens.register(PetArmorScreenHandler.TYPE, com.bondofthebeast.client.PetArmorScreen::new);
         var statusKey = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(
                 new net.minecraft.client.option.KeyBinding("key.bondofthebeast.status", org.lwjgl.glfw.GLFW.GLFW_KEY_G, "category.bondofthebeast"));
+
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (statusKey.wasPressed()) if (client.player != null && ModComponents.PLAYER_BOND.get(client.player).hasOwner()) client.setScreen(new PetStatusScreen());
         });

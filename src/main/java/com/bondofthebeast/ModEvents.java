@@ -33,8 +33,6 @@ import java.util.UUID;
 
 public class ModEvents {
     private static int tickCounter = 0;
-    private static int tamingTickCounter = 0; // Новый счетчик для системы подавления воли
-
     public static boolean canPetObey(PlayerEntity pet) {
         return BondRules.canObey(pet);
     }
@@ -116,7 +114,7 @@ public class ModEvents {
                     if (foodComponent != null) {
                         int hungerValue = foodComponent.getHunger();
                         if (!player.getAbilities().creativeMode) foodStack.decrement(1);
-                            pet.getHungerManager().add(hungerValue, foodComponent.getSaturationModifier());
+                        pet.getHungerManager().add(hungerValue, foodComponent.getSaturationModifier());
 
                         ModComponents.PLAYER_BOND.sync(pet);
                         ModComponents.PLAYER_BOND.sync(player);
