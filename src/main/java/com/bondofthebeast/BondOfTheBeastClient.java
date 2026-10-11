@@ -20,8 +20,8 @@ public class BondOfTheBeastClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         net.minecraft.client.gui.screen.ingame.HandledScreens.register(PetArmorScreenHandler.TYPE, com.bondofthebeast.client.PetArmorScreen::new);
-        var workAroundKey = new KeyBinding("key.bondofthebeast.workaround", InputUtil.Type.KEYSYM, InputUtil.UNKNOWN_KEY.getCode(), "");
-        var workAroundKeyReg = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(workAroundKey);
+        //var workAroundKey = new KeyBinding("key.bondofthebeast.workaround", InputUtil.Type.KEYSYM, InputUtil.UNKNOWN_KEY.getCode(), "category.bondofthebeast");
+        //var workAroundKeyReg = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(workAroundKey);
         var statusKey = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(
                 new net.minecraft.client.option.KeyBinding("key.bondofthebeast.status", org.lwjgl.glfw.GLFW.GLFW_KEY_G, "category.bondofthebeast"));
 
@@ -61,19 +61,6 @@ public class BondOfTheBeastClient implements ClientModInitializer {
                 pets.put(uuid, new PetBedScreen.PetOption(name, hasCollar));
             }
             c.execute(() -> c.setScreen(new PetBedScreen(pos, petUUID, radius, pets)));
-        });
-        ClientTickEvents.END_CLIENT_TICK.register((client) -> {
-            if (client != null && client.options != null) {
-                for (KeyBinding keyb : client.options.allKeys) {
-                    if (keyb.getTranslationKey().equals("key.origins.primary_active")) {
-                        if (!keyb.getBoundKeyTranslationKey().equals(workAroundKey.getBoundKeyTranslationKey())){
-                            workAroundKey.setBoundKey(InputUtil.fromTranslationKey(keyb.getBoundKeyTranslationKey()));
-                            KeyBinding.updateKeysByCode();
-                        }
-                        break;
-                    }
-                }
-            }
         });
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             var bond = ModComponents.PLAYER_BOND.get(player);
