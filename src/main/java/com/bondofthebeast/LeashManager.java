@@ -2,7 +2,6 @@ package com.bondofthebeast;
 
 import com.bondofthebeast.block.PetBedBlockEntity;
 import com.bondofthebeast.component.ModComponents;
-import com.bondofthebeast.component.PlayerBondComponent;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.entity.decoration.LeashKnotEntity;

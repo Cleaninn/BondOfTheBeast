@@ -2,10 +2,7 @@ package com.bondofthebeast;
 
 import com.bondofthebeast.component.ModComponents;
 import com.bondofthebeast.component.PlayerBondComponent;
-import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.TrinketEnums;
 import dev.emi.trinkets.api.TrinketInventory;
-import dev.emi.trinkets.api.TrinketItem;
 import dev.emi.trinkets.api.TrinketsApi;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;

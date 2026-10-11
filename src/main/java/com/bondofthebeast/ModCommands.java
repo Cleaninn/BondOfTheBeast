@@ -3,7 +3,6 @@ package com.bondofthebeast;
 import com.bondofthebeast.component.ModComponents;
 import com.bondofthebeast.component.PlayerBondComponent;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.emi.trinkets.api.TrinketsApi;

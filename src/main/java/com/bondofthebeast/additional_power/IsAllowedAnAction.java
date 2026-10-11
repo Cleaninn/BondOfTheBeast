@@ -2,7 +2,6 @@ package com.bondofthebeast.additional_power;
 
 import com.bondofthebeast.BondOfTheBeast;
 import com.bondofthebeast.component.ModComponents;
-import io.github.apace100.apoli.Apoli;
 import io.github.apace100.apoli.power.factory.condition.ConditionFactory;
 import io.github.apace100.calio.data.SerializableData;
 import com.bondofthebeast.BondRules;

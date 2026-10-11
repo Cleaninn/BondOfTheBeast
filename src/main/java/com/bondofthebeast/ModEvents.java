@@ -28,9 +28,6 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.GameMode;
 
-import java.util.ArrayList;
-import java.util.UUID;
-
 public class ModEvents {
     private static int tickCounter = 0;
     public static boolean canPetObey(PlayerEntity pet) {

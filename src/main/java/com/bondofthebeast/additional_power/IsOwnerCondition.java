@@ -2,14 +2,10 @@ package com.bondofthebeast.additional_power;
 
 
 import com.bondofthebeast.BondOfTheBeast;
-import io.github.apace100.apoli.Apoli;
-import io.github.apace100.apoli.power.factory.condition.BiEntityConditions;
 import io.github.apace100.calio.data.SerializableData;
-import io.github.apace100.calio.data.SerializableDataType;
 import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.Entity;
 import com.bondofthebeast.component.ModComponents;
-import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import io.github.apace100.apoli.power.factory.condition.ConditionFactory;
 import net.minecraft.util.Pair;

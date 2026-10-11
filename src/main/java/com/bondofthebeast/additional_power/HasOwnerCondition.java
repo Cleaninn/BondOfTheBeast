@@ -1,7 +1,6 @@
 package com.bondofthebeast.additional_power;
 
 import com.bondofthebeast.BondOfTheBeast;
-import io.github.apace100.apoli.Apoli;
 import io.github.apace100.calio.data.SerializableData;
 import net.minecraft.entity.Entity;
 import com.bondofthebeast.component.ModComponents;

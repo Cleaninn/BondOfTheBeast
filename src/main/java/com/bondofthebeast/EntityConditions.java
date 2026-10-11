@@ -2,7 +2,6 @@ package com.bondofthebeast;
 
 import com.bondofthebeast.additional_power.HasOwnerCondition;
 import com.bondofthebeast.additional_power.IsAllowedAnAction;
-import com.bondofthebeast.additional_power.IsOwnerCondition;
 import io.github.apace100.apoli.power.factory.condition.ConditionFactory;
 import io.github.apace100.apoli.registry.ApoliRegistries;
 import net.minecraft.entity.Entity;
