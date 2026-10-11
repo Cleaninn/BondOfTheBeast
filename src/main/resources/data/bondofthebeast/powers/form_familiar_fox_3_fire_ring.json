@@ -155,12 +155,11 @@
             }
         ]
     },
-    "cooldown": 40,
+    "cooldown": 50,
     "hud_render": {
         "should_render": false
     },
     "key": {
-        "key": "key.shape-shifter-curse.active_skill_2",
-        "id": "key.shape-shifter-curse.active_skill_2"
+        "key": "key.bondofthebeast.workaround"
     }
 }
