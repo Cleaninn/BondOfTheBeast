@@ -57,11 +57,9 @@ public class ContractItem extends Item {
             return ActionResult.FAIL;
         }
 
-        int userIndex = getFormIndex(user);
         boolean isUserPet = BondRules.canBePet(user);
         boolean isUserOwner = BondRules.canOwn(user);
 
-        int targetIndex = getFormIndex(targetPlayer);
         boolean isTargetPet = BondRules.canBePet(targetPlayer);
         boolean isTargetOwner = BondRules.canOwn(targetPlayer);
 

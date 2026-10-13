@@ -62,6 +62,7 @@ public final class ForcedTamingService {
 
     public static int stage(PlayerEntity pet) {
         var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).getCurrentForm();
+        if (form != null && form.getIDString().contains("allay")) return 0;
         return form == null ? -2 : form.getIndex();
     }
 
