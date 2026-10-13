@@ -53,7 +53,7 @@ public class CollarItem extends TrinketItem {
 
 
         if (bond.hasOwner() && bond.getOwnerUUID().equals(user.getUuidAsString())) {
-            if (equipToPet(targetPet, stack, user.getName().getString())) {
+            if (equipToPet(targetPet, stack, user.getName().getString(), true)) {
                 if (stack.hasCustomName()) {
                     bond.setPetNickname(stack.getName().getString());
                 }
@@ -83,7 +83,7 @@ public class CollarItem extends TrinketItem {
         super.onStoppedUsing(stack, world, user, remainingUseTicks);
     }
 
-    private boolean equipToPet(PlayerEntity pet, ItemStack collar, String ownerName) {
+    public static boolean equipToPet(PlayerEntity pet, ItemStack collar, String ownerName, boolean replace) {
         var optionalComponent = TrinketsApi.getTrinketComponent(pet);
         if (optionalComponent.isPresent()) {
             var component = optionalComponent.get();
@@ -92,11 +92,15 @@ public class CollarItem extends TrinketItem {
                     if (entry.getKey().equalsIgnoreCase("necklace")) {
                         TrinketInventory inventory = entry.getValue();
                         for (int i = 0; i < inventory.size(); i++) {
-                            if (inventory.getStack(i).isEmpty()) {
+                            if (inventory.getStack(i).isEmpty() || replace) {
+                                ItemStack displaced = inventory.getStack(i).copy();
                                 ItemStack personalizedCollar = collar.copy();
                                 personalizedCollar.setCount(1);
-                                personalizedCollar.getOrCreateNbt().putString("OwnerName", ownerName);
+                                if (ownerName.isEmpty()) {
+                                    if (personalizedCollar.hasNbt()) personalizedCollar.getNbt().remove("OwnerName");
+                                } else personalizedCollar.getOrCreateNbt().putString("OwnerName", ownerName);
                                 inventory.setStack(i, personalizedCollar);
+                                if (!displaced.isEmpty()) pet.getInventory().offerOrDrop(displaced);
                                 return true;
                             }
                         }
@@ -105,6 +109,15 @@ public class CollarItem extends TrinketItem {
             }
         }
         return false;
+    }
+
+    public static void personalizeEquipped(PlayerEntity pet, String ownerName) {
+        TrinketsApi.getTrinketComponent(pet).ifPresent(component -> {
+            for (var equipped : component.getEquipped(stack -> stack.getItem() instanceof CollarItem)) {
+                equipped.getRight().getOrCreateNbt().putString("OwnerName", ownerName);
+                equipped.getLeft().inventory().markDirty();
+            }
+        });
     }
 
     @Override
@@ -138,6 +151,7 @@ public class CollarItem extends TrinketItem {
 
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+        tooltip.add(Text.translatable("tooltip.bondofthebeast.collar_contract").formatted(Formatting.GRAY));
         NbtCompound nbt = stack.getNbt();
         if (nbt != null && nbt.contains("OwnerName")) {
             tooltip.add(Text.translatable("tooltip.bondofthebeast.collar_owner")

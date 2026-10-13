@@ -6,7 +6,6 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -98,7 +97,7 @@ public final class ForcedTamingService {
                 pet.isCreative() || pet.isSpectator() || !stunned(pet) || freeWindow(pet) ||
                 user.getWorld() != pet.getWorld() || user.squaredDistanceTo(pet) > 16 || !user.canSee(pet)) return false;
         var bond = ModComponents.PLAYER_BOND.get(pet);
-        if (bond.hasOwner() || stage(pet) > 3) return false;
+        if (bond.hasOwner()) return false;
         var component = TrinketsApi.getTrinketComponent(pet);
         if (component.isEmpty()) return false;
         var group = component.get().getInventory().get("chest");
@@ -125,30 +124,37 @@ public final class ForcedTamingService {
         }
         if (++attempt.ticks < COLLARING_TICKS) return;
         cancelCollaring(user);
-        equipForced(attempt.collar, user, pet);
+        equipAfterHold(attempt.collar, user, pet);
         user.stopUsingItem();
     }
 
-    private static void equipForced(ItemStack stack, ServerPlayerEntity user, ServerPlayerEntity pet) {
-        var inventory = TrinketsApi.getTrinketComponent(pet).orElseThrow().getInventory().get("chest").get("necklace");
-        ItemStack displaced = inventory.getStack(0).copy();
-        ItemStack collar = stack.copy();
-        collar.setCount(1);
-        collar.getOrCreateNbt().putString("OwnerName", user.getName().getString());
-        inventory.setStack(0, collar);
-        if (!displaced.isEmpty()) pet.getInventory().offerOrDrop(displaced);
+    private static void equipAfterHold(ItemStack stack, ServerPlayerEntity user, ServerPlayerEntity pet) {
+        if (!CollarItem.equipToPet(pet, stack, "", true)) return;
+        if (!user.isCreative()) stack.decrement(1);
+        user.sendMessage(Text.translatable("text.bondofthebeast.collar_put_on", pet.getName().getString()), true);
+        pet.sendMessage(Text.translatable("text.bondofthebeast.unbound_collar_received"), false);
+    }
+
+    public static ActionResult startFromContract(ItemStack contract, ServerPlayerEntity user, ServerPlayerEntity pet) {
+        if (!user.isAlive() || !pet.isAlive() || user.isSpectator() || pet == user || !BondRules.canOwn(user) ||
+                pet.isCreative() || pet.isSpectator() || freeWindow(pet) || !BondRules.hasCollar(pet) ||
+                user.getWorld() != pet.getWorld() || user.squaredDistanceTo(pet) > 16 || !user.canSee(pet)) return ActionResult.FAIL;
         var bond = ModComponents.PLAYER_BOND.get(pet);
+        if (bond.hasOwner()) return ActionResult.FAIL;
         bond.setOwner(user.getUuidAsString(), user.getName().getString());
         var forced = bond.getForcedBond();
         forced.forced = true;
         forced.token = UUID.randomUUID().toString();
         forced.lastStage = stage(pet);
         bond.setTamingState(stage(pet) >= 3 ? 2 : 1);
+        CollarItem.personalizeEquipped(pet, user.getName().getString());
         ModComponents.PLAYER_BOND.get(user).addPetToRegistry(pet.getUuidAsString(), pet.getGameProfile().getName());
-        if (!user.isCreative()) stack.decrement(1);
+        if (!user.isCreative()) contract.decrement(1);
         pet.sendMessage(Text.translatable("text.bondofthebeast.forced_start"), false);
         user.sendMessage(Text.translatable("text.bondofthebeast.taming_started"), true);
         ModComponents.PLAYER_BOND.sync(pet);
+        // Issue the final contract on the server tick after the initiating hand is cleared.
+        return ActionResult.SUCCESS;
     }
 
     public static boolean escapeApple(ServerPlayerEntity pet, ItemStack food) {
@@ -207,6 +213,7 @@ public final class ForcedTamingService {
         state.catalystStages |= bit;
         if (stage < 0) {
             state.warningTicks = WARNING_TICKS;
+            state.catalystWarningFromCookie = true;
         } else {
             InstinctManager.applyImmediateEffect(pet, "botb_owner_cookie", 25);
         }
@@ -264,40 +271,11 @@ public final class ForcedTamingService {
             state.lastStage = stage;
             bond.setTamingState(stage >= 3 ? 2 : 1);
             state.warningTicks = -1;
+            state.catalystWarningFromCookie = false;
             state.finalWarningTicks = -1;
             pet.sendMessage(Text.translatable("text.bondofthebeast.stage_changed", stage), false);
         }
         if (stage >= 3) issueContract(pet);
-        if (stage == 2 && state.finalWarningTicks >= 0 && !freeWindow(pet)) {
-            if (state.finalWarningTicks > 0) {
-                state.finalWarningTicks--;
-                if (state.finalWarningTicks % 20 == 0) {
-                    pet.sendMessage(Text.translatable("text.bondofthebeast.final_countdown", (state.finalWarningTicks + 19) / 20), true);
-                    pet.getServerWorld().spawnParticles(ParticleTypes.WITCH, pet.getX(), pet.getY() + 1, pet.getZ(), 8, 0.3, 0.5, 0.3, 0);
-                }
-            } else {
-                var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).getCurrentForm();
-                state.finalWarningTicks = -1;
-                if (form.getGroup() != null && form.getGroup().hasForm(3)) {
-                    net.onixary.shapeShifterCurseFabric.player_form.instinct.RegPlayerInstinctComponent.PLAYER_INSTINCT_COMP.get(pet).instinctValue = 0;
-                    net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager.handleDirectTransform(pet, form.getGroup().getForm(3), false);
-                }
-            }
-        }
-        if (stage < 0 && EffectManager.hasTransformativeEffect(pet) && !freeWindow(pet) &&
-                (infused(pet) || state.warningTicks >= 0)) {
-            if (state.warningTicks < 0) state.warningTicks = WARNING_TICKS;
-            if (state.warningTicks > 0) {
-                state.warningTicks--;
-                if (state.warningTicks % 20 == 0) {
-                    pet.getServerWorld().spawnParticles(ParticleTypes.WITCH, pet.getX(), pet.getY() + 1, pet.getZ(), 6, 0.3, 0.5, 0.3, 0);
-                    pet.sendMessage(Text.translatable("text.bondofthebeast.curse_countdown", (state.warningTicks + 19) / 20), true);
-                }
-            } else {
-                EffectManager.ActiveTransformativeEffect(pet);
-                state.warningTicks = -1;
-            }
-        } else if (!EffectManager.hasTransformativeEffect(pet)) state.warningTicks = -1;
         if (pet.age % 20 == 0) ModComponents.PLAYER_BOND.sync(pet);
     }
 }

@@ -276,7 +276,7 @@
   "text.bondofthebeast.leash_anchor": "Привязка поводка изменена.",
   "text.bondofthebeast.leash_conflict": "Сначала наденьте ошейник, снимите цепь лежанки и отключите поглощение.",
   "text.bondofthebeast.cannot_break_own_bed": "Нельзя разрушить свою привязанную лежанку.",
-  "text.bondofthebeast.forced_start": "На вас насильно надели ошейник. Удерживайте Shift 3 секунды или нажмите G для сопротивления. До стадии 2 съешьте золотое яблоко, на стадии 2 — зачарованное.",
+  "text.bondofthebeast.forced_start": "Контракт связал тебя насильно. Зажми Shift на 3 секунды или нажми G для сопротивления; до стадии 2 съешь золотое яблоко, на стадии 2 — зачарованное.",
   "text.bondofthebeast.escape_window": "Вы сопротивляетесь: 2 минуты без ограничений хозяина и катализатора ошейника. Найдите яблоко для освобождения.",
   "text.bondofthebeast.catalyst_stage_used": "На этой стадии уже дано одно печенье с катализатором.",
   "text.bondofthebeast.catalyst_given": "Катализатор: +25 инстинкта. Следующая доза доступна на новой стадии.",
@@ -368,5 +368,9 @@
   "gui.bondofthebeast.collaring": "Надевание ошейника — удерживайте ПКМ",
   "text.bondofthebeast.collar_hold_start": "Удерживайте ПКМ и смотрите на игрока 2 секунды, чтобы надеть ошейник.",
   "text.bondofthebeast.collar_dodge_hint": "На вас пытаются надеть ошейник! Уворачивайтесь клавишами движения.",
-  "text.bondofthebeast.collar_hold_interrupted": "Надевание прервано: игрок ушёл из прицела, вы отпустили ошейник или стан закончился."
+  "text.bondofthebeast.collar_hold_interrupted": "Надевание прервано: игрок ушёл из прицела, вы отпустили ошейник или стан закончился.",
+  "tooltip.bondofthebeast.collar_contract": "Пустой контракт может связать носителя.",
+  "tooltip.bondofthebeast.contract_collared": "Клик по игроку в ошейнике: подчинение.",
+  "tooltip.bondofthebeast.contract_voluntary": "Shift + клик: добровольный договор.",
+  "text.bondofthebeast.unbound_collar_received": "На тебе ошейник, но хозяина ещё нет. Пустой контракт может связать тебя."
 }

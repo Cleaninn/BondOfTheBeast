@@ -276,7 +276,7 @@
   "text.bondofthebeast.leash_anchor": "Lead anchor updated.",
   "text.bondofthebeast.leash_conflict": "Equip a collar and remove the bed chain or absorption first.",
   "text.bondofthebeast.cannot_break_own_bed": "You cannot break your bound pet bed.",
-  "text.bondofthebeast.forced_start": "You were forcibly collared. Hold Sneak for 3 seconds or press G to resist; eat a golden apple before stage 2, an enchanted apple at stage 2.",
+  "text.bondofthebeast.forced_start": "A contract forcibly bound you. Hold Sneak for 3 seconds or press G to resist; eat a golden apple before stage 2, an enchanted apple at stage 2.",
   "text.bondofthebeast.escape_window": "You resisted: 2 minutes without owner restrictions or collar catalyst. Find your escape apple.",
   "text.bondofthebeast.catalyst_stage_used": "One catalyst cookie has already been given at this stage.",
   "text.bondofthebeast.catalyst_given": "Catalyst given: +25 instinct. The next dose unlocks at a new stage.",
@@ -367,5 +367,9 @@
   "gui.bondofthebeast.collaring": "Putting on collar - hold right click",
   "text.bondofthebeast.collar_hold_start": "Hold right click and keep aiming at the player for 2 seconds to put on the collar.",
   "text.bondofthebeast.collar_dodge_hint": "Someone is putting a collar on you! Use movement keys to dodge.",
-  "text.bondofthebeast.collar_hold_interrupted": "Interrupted: the player left your aim, you released the collar, or the stun ended."
+  "text.bondofthebeast.collar_hold_interrupted": "Interrupted: the player left your aim, you released the collar, or the stun ended.",
+  "tooltip.bondofthebeast.collar_contract": "An empty contract can bind the wearer.",
+  "tooltip.bondofthebeast.contract_collared": "Click a collared player: forced bond.",
+  "tooltip.bondofthebeast.contract_voluntary": "Sneak + click: voluntary final-stage pact.",
+  "text.bondofthebeast.unbound_collar_received": "You are wearing a collar, but have no owner. An empty contract can bind you."
 }

@@ -72,6 +72,7 @@ public final class BondService {
                         releaseAbsorption(pet);
                 }
                 ForcedTamingService.tick(pet);
+                CollarCatalystService.tick(pet);
                 VoluntaryBondService.tick(pet);
                 if (b.hasOwner() && pet.age % 20 == 0) PetPreviewState.get(server).update(pet);
 
