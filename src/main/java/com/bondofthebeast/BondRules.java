@@ -17,6 +17,11 @@ public final class BondRules {
 
     private BondRules() {}
 
+    public static boolean hasOpenedBook(PlayerEntity player) {
+        var form = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm();
+        return form != null && !form.FormID.getPath().equals("original_before_enable");
+    }
+
     public static boolean canOwn(PlayerEntity player) {
         var form = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm();
         return !ModComponents.PLAYER_BOND.get(player).hasOwner() && form != null && (form.FormID.getPath().contains("allay") ||
@@ -30,6 +35,7 @@ public final class BondRules {
     }
 
     public static boolean canBePet(PlayerEntity player) {
+        if (!hasOpenedBook(player)) return false;
         var form = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm();
         if (form == null || form.FormID.getPath().contains("allay") || form.getIndex() < 2) return false;
         var group = form.getGroup();

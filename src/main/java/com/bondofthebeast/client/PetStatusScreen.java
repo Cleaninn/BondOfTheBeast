@@ -62,7 +62,7 @@ public class PetStatusScreen extends Screen {
             summary = Text.translatable("gui.bondofthebeast.escape_rule." + (stage >= 3 ? "contract" : stage == 2 ? "enchanted" : "apple"));
             hint = stage >= 3 ? Text.translatable("gui.bondofthebeast.owner_controls") :
                     ForcedTamingService.freeWindow(client.player) ? Text.translatable("gui.bondofthebeast.escape_seconds", bond.getForcedBond().escapeTicks / 20) :
-                    Text.translatable("gui.bondofthebeast.escape_hint");
+                    Text.translatable("gui.bondofthebeast.escape_rule." + (stage == 2 ? "enchanted" : "apple"));
         } else {
             int seconds = VoluntaryBondService.remainingSeconds(trust.tier, trust.activeTicks);
             summary = Text.translatable(trust.tier >= 3 ? "gui.bondofthebeast.bond_complete" : "gui.bondofthebeast.bond_time", seconds / 3600, seconds / 60 % 60);

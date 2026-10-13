@@ -14,12 +14,15 @@
     "GoldenAppleEscapeMixin",
     "BondCombatMixin",
     "ForcedInstinctMixin",
+    "BookActivationTransformMixin",
+    "BookActivationFormMixin",
     "PetArmorLockMixin",
     "PetArmorUseMixin",
     "ItemForwardingInventoryMixin",
     "ItemForwardingScreenMixin"
   ],
   "client": [
+    "CollaringHudMixin",
     "KeyboardInputMixin",
     "PlayerEntityRendererMixin",
     "BookOfShapeShifterScreenMixin"

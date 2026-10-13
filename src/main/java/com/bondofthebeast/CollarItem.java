@@ -16,6 +16,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
+import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,6 +37,7 @@ public class CollarItem extends TrinketItem {
     @Override
     public ActionResult useOnEntity(ItemStack stack, PlayerEntity user, LivingEntity entity, Hand hand) {
         if (!(entity instanceof PlayerEntity targetPet)) return ActionResult.PASS;
+        if (!BondRules.hasOpenedBook(targetPet)) return ActionResult.FAIL;
 
         World world = user.getWorld();
         if (!ModComponents.PLAYER_BOND.get(targetPet).hasOwner() && !ForcedTamingService.stunned(targetPet)) return ActionResult.PASS;
@@ -57,8 +59,6 @@ public class CollarItem extends TrinketItem {
                 if (stack.hasCustomName()) {
                     bond.setPetNickname(stack.getName().getString());
                 }
-                user.sendMessage(Text.translatable("text.bondofthebeast.collar_put_on", targetPet.getName().getString()).formatted(Formatting.GREEN), true);
-                targetPet.sendMessage(Text.translatable("text.bondofthebeast.collar_received", user.getName().getString()).formatted(Formatting.RED), true);
 
                 if (!user.getAbilities().creativeMode) {
                     stack.decrement(1);
@@ -76,6 +76,16 @@ public class CollarItem extends TrinketItem {
 
     @Override
     public int getMaxUseTime(ItemStack stack) { return 72000; }
+
+    @Override
+    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
+        // Repeated use packets during a hold must not equip the collar on the holder.
+        if (ForcedTamingService.isCollaring(user) || (user.isUsingItem() && user.getActiveItem().getItem() instanceof CollarItem)) {
+            user.setCurrentHand(hand);
+            return TypedActionResult.consume(user.getStackInHand(hand));
+        }
+        return super.use(world, user, hand);
+    }
 
     @Override
     public void onStoppedUsing(ItemStack stack, World world, LivingEntity user, int remainingUseTicks) {

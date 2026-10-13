@@ -9,19 +9,25 @@ import net.onixary.shapeShifterCurseFabric.player_form.instinct.RegPlayerInstinc
 
 public final class BondHud {
     private BondHud() {}
+    private static int collaringTicks = -1;
+    private static long collaringUpdated;
+    public static void updateCollaring(int ticks) {
+        collaringTicks = ticks;
+        collaringUpdated = net.minecraft.util.Util.getMeasuringTimeMs();
+    }
+    public static boolean isCollaringVisible() {
+        return collaringTicks >= 0 && net.minecraft.util.Util.getMeasuringTimeMs() - collaringUpdated < 500;
+    }
     public static void render(DrawContext context, float delta) {
         var client = MinecraftClient.getInstance();
         if (client.player == null || client.options.hudHidden) return;
-        if (client.player.isUsingItem() && client.player.getActiveItem().getItem() instanceof com.bondofthebeast.CollarItem) {
-            int panelWidth = Math.min(220, client.getWindow().getScaledWidth() - 10);
-            var title = GrimoireStyle.bookText(Text.translatable("gui.bondofthebeast.collaring"));
-            context.fill(5, 5, 5 + panelWidth, 35, 0xD02B1921);
-            context.drawBorder(5, 5, panelWidth, 30, UiColors.CARD_BORDER);
-            GrimoireStyle.fittedText(context, client.textRenderer, title, 5 + panelWidth / 2, 10, panelWidth - 12, 0xFFE0C080);
-            int barWidth = panelWidth - 12;
-            float progress = Math.min(1, client.player.getItemUseTime() / (float) ForcedTamingService.COLLARING_TICKS);
-            context.fill(11, 24, 11 + barWidth, 29, 0xFF403039);
-            context.fill(11, 24, 11 + (int) (barWidth * progress), 29, UiColors.INSTINCT);
+        if (isCollaringVisible()) {
+            int barWidth = Math.min(150, client.getWindow().getScaledWidth() - 16);
+            float progress = Math.min(1, collaringTicks / (float) ForcedTamingService.COLLARING_TICKS);
+            context.fill(5, 5, 11 + barWidth, 19, 0xD02B1921);
+            context.drawBorder(5, 5, barWidth + 6, 14, UiColors.CARD_BORDER);
+            context.fill(8, 9, 8 + barWidth, 15, 0xFF403039);
+            context.fill(8, 9, 8 + (int) (barWidth * progress), 15, UiColors.INSTINCT);
             return;
         }
         var bond = ModComponents.PLAYER_BOND.get(client.player);

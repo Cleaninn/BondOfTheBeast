@@ -16,6 +16,11 @@ import java.util.*;
 public class BondOfTheBeastClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.COLLARING_PROGRESS_S2C, (client, handler, buffer, sender) -> {
+            int ticks = buffer.readInt();
+            client.execute(() -> BondHud.updateCollaring(ticks));
+        });
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> BondHud.updateCollaring(-1));
         net.minecraft.client.gui.screen.ingame.HandledScreens.register(PetArmorScreenHandler.TYPE, com.bondofthebeast.client.PetArmorScreen::new);
         var statusKey = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(
                 new net.minecraft.client.option.KeyBinding("key.bondofthebeast.status", org.lwjgl.glfw.GLFW.GLFW_KEY_G, "category.bondofthebeast"));

@@ -15,7 +15,7 @@ public final class CollarCatalystService {
     private CollarCatalystService() {}
 
     public static boolean active(PlayerEntity player) {
-        return player.isAlive() && !player.isCreative() && !player.isSpectator() &&
+        return BondRules.hasOpenedBook(player) && player.isAlive() && !player.isCreative() && !player.isSpectator() &&
                 ForcedTamingService.infused(player) && !ForcedTamingService.freeWindow(player);
     }
 
@@ -27,7 +27,7 @@ public final class CollarCatalystService {
 
     public static void tick(ServerPlayerEntity player) {
         var state = ModComponents.PLAYER_BOND.get(player).getForcedBond();
-        if (!player.isAlive() || player.isCreative() || player.isSpectator() || ForcedTamingService.freeWindow(player)) return;
+        if (!BondRules.hasOpenedBook(player) || !player.isAlive() || player.isCreative() || player.isSpectator() || ForcedTamingService.freeWindow(player)) return;
         int stage = ForcedTamingService.stage(player);
         if (stage < 0 && EffectManager.hasTransformativeEffect(player) && (active(player) || state.catalystWarningFromCookie)) {
             if (state.warningTicks < 0) state.warningTicks = ForcedTamingService.WARNING_TICKS;

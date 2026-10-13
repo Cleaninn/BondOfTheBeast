@@ -37,6 +37,7 @@ public final class ForcedTamingService {
         final Hand hand;
         final ItemStack collar;
         int ticks;
+        int missedAimTicks;
 
         CollaringAttempt(UUID target, Hand hand, ItemStack collar) {
             this.target = target;
@@ -79,22 +80,21 @@ public final class ForcedTamingService {
     }
 
     public static ActionResult start(ItemStack stack, PlayerEntity user, ServerPlayerEntity pet, Hand hand) {
-        if (pet == user || !BondRules.canOwn(user) || pet.isCreative() || pet.isSpectator()) return ActionResult.FAIL;
+        if (pet == user || !BondRules.canOwn(user) || !BondRules.hasOpenedBook(pet) || pet.isCreative() || pet.isSpectator()) return ActionResult.FAIL;
         if (!stunned(pet)) return ActionResult.PASS;
-        if (!canCollar(user, pet)) return ActionResult.FAIL;
+        if (!canCollar(user, pet) || !aimsAt(user, pet)) return ActionResult.FAIL;
         var attempt = COLLARING.get(user.getUuid());
-        if (attempt != null && attempt.target.equals(pet.getUuid()) && attempt.collar == stack && user.isUsingItem())
+        if (attempt != null && attempt.target.equals(pet.getUuid()) && ItemStack.areEqual(attempt.collar, stack) && user.isUsingItem())
             return ActionResult.SUCCESS;
         COLLARING.put(user.getUuid(), new CollaringAttempt(pet.getUuid(), hand, stack));
         user.setCurrentHand(hand);
-        user.sendMessage(Text.translatable("text.bondofthebeast.collar_hold_start"), true);
-        pet.sendMessage(Text.translatable("text.bondofthebeast.collar_dodge_hint"), true);
+        sendProgress(user, pet, 0);
         return ActionResult.SUCCESS;
     }
 
     private static boolean canCollar(PlayerEntity user, ServerPlayerEntity pet) {
         if (!user.isAlive() || !pet.isAlive() || user.isSpectator() || pet == user || !BondRules.canOwn(user) ||
-                pet.isCreative() || pet.isSpectator() || !stunned(pet) || freeWindow(pet) ||
+                !BondRules.hasOpenedBook(pet) || pet.isCreative() || pet.isSpectator() || freeWindow(pet) ||
                 user.getWorld() != pet.getWorld() || user.squaredDistanceTo(pet) > 16 || !user.canSee(pet)) return false;
         var bond = ModComponents.PLAYER_BOND.get(pet);
         if (bond.hasOwner()) return false;
@@ -102,13 +102,32 @@ public final class ForcedTamingService {
         if (component.isEmpty()) return false;
         var group = component.get().getInventory().get("chest");
         if (group == null || group.get("necklace") == null || group.get("necklace").size() == 0) return false;
+        return true;
+    }
+
+    private static boolean aimsAt(PlayerEntity user, PlayerEntity pet) {
         Vec3d eyes = user.getEyePos();
-        return pet.getBoundingBox().expand(0.1).raycast(eyes,
+        return pet.getBoundingBox().expand(0.25).raycast(eyes,
                 eyes.add(user.getRotationVec(1).multiply(4))).isPresent();
     }
 
+    public static boolean isCollaring(PlayerEntity user) {
+        return COLLARING.containsKey(user.getUuid());
+    }
+
+    private static void sendProgress(PlayerEntity user, ServerPlayerEntity pet, int ticks) {
+        for (var player : new ServerPlayerEntity[]{(ServerPlayerEntity) user, pet}) {
+            if (player == null || !net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.canSend(player, ModPackets.COLLARING_PROGRESS_S2C)) continue;
+            var buffer = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+            buffer.writeInt(ticks);
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, ModPackets.COLLARING_PROGRESS_S2C, buffer);
+        }
+    }
+
     public static void cancelCollaring(PlayerEntity user) {
-        COLLARING.remove(user.getUuid());
+        var attempt = COLLARING.remove(user.getUuid());
+        if (attempt != null && user instanceof ServerPlayerEntity serverUser)
+            sendProgress(user, serverUser.getServer().getPlayerManager().getPlayer(attempt.target), -1);
     }
 
     public static void tickCollaring(ServerPlayerEntity user) {
@@ -116,28 +135,31 @@ public final class ForcedTamingService {
         if (attempt == null) return;
         var pet = user.getServer().getPlayerManager().getPlayer(attempt.target);
         if (pet == null || !user.isUsingItem() || user.getActiveHand() != attempt.hand ||
-                user.getStackInHand(attempt.hand) != attempt.collar || attempt.collar.isEmpty() || !canCollar(user, pet)) {
+                !ItemStack.areEqual(user.getStackInHand(attempt.hand), attempt.collar) || attempt.collar.isEmpty() || !canCollar(user, pet)) {
             cancelCollaring(user);
             user.stopUsingItem();
-            user.sendMessage(Text.translatable("text.bondofthebeast.collar_hold_interrupted"), true);
             return;
         }
+        if (!aimsAt(user, pet)) {
+            if (++attempt.missedAimTicks > 4) { cancelCollaring(user); user.stopUsingItem(); }
+            return;
+        }
+        attempt.missedAimTicks = 0;
+        if (attempt.ticks % 2 == 0) sendProgress(user, pet, attempt.ticks);
         if (++attempt.ticks < COLLARING_TICKS) return;
         cancelCollaring(user);
-        equipAfterHold(attempt.collar, user, pet);
+        equipAfterHold(user.getStackInHand(attempt.hand), user, pet);
         user.stopUsingItem();
     }
 
     private static void equipAfterHold(ItemStack stack, ServerPlayerEntity user, ServerPlayerEntity pet) {
         if (!CollarItem.equipToPet(pet, stack, "", true)) return;
         if (!user.isCreative()) stack.decrement(1);
-        user.sendMessage(Text.translatable("text.bondofthebeast.collar_put_on", pet.getName().getString()), true);
-        pet.sendMessage(Text.translatable("text.bondofthebeast.unbound_collar_received"), false);
     }
 
     public static ActionResult startFromContract(ItemStack contract, ServerPlayerEntity user, ServerPlayerEntity pet) {
         if (!user.isAlive() || !pet.isAlive() || user.isSpectator() || pet == user || !BondRules.canOwn(user) ||
-                pet.isCreative() || pet.isSpectator() || freeWindow(pet) || !BondRules.hasCollar(pet) ||
+                !BondRules.hasOpenedBook(pet) || pet.isCreative() || pet.isSpectator() || freeWindow(pet) || !BondRules.hasCollar(pet) ||
                 user.getWorld() != pet.getWorld() || user.squaredDistanceTo(pet) > 16 || !user.canSee(pet)) return ActionResult.FAIL;
         var bond = ModComponents.PLAYER_BOND.get(pet);
         if (bond.hasOwner()) return ActionResult.FAIL;
@@ -200,7 +222,7 @@ public final class ForcedTamingService {
 
     public static ActionResult feedCatalyst(PlayerEntity owner, ServerPlayerEntity pet, ItemStack stack) {
         if (!isCatalyst(stack)) return ActionResult.PASS;
-        if (!BondRules.owns(owner, pet) || !BondRules.canOwn(owner) || !BondRules.hasCollar(pet) || freeWindow(pet)) return ActionResult.FAIL;
+        if (!BondRules.hasOpenedBook(pet) || !BondRules.owns(owner, pet) || !BondRules.canOwn(owner) || !BondRules.hasCollar(pet) || freeWindow(pet)) return ActionResult.FAIL;
         int stage = stage(pet);
         if (stage < -1 || stage >= 3) return ActionResult.FAIL;
         var state = ModComponents.PLAYER_BOND.get(pet).getForcedBond();

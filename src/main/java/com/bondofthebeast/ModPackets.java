@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public class ModPackets {
+    public static final Identifier COLLARING_PROGRESS_S2C = new Identifier(BondOfTheBeast.MOD_ID, "collaring_progress_s2c");
     public static final Identifier OPEN_OWNER_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_owner_gui");
     public static final Identifier OPEN_PET_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_pet_gui");
     public static final Identifier OPEN_MANAGEMENT_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_management_gui");

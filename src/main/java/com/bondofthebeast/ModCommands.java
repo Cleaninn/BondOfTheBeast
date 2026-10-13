@@ -104,7 +104,7 @@ public class ModCommands {
         ServerPlayerEntity pet = EntityArgumentType.getPlayer(context, "pet");
         ServerPlayerEntity owner = EntityArgumentType.getPlayer(context, "owner");
 
-        if (pet == owner) return 0;
+        if (pet == owner || !BondRules.hasOpenedBook(pet)) return 0;
         BondService.release(pet);
         ModComponents.PLAYER_BOND.get(pet).setOwner(owner.getUuidAsString(), owner.getName().getString());
         ModComponents.PLAYER_BOND.get(owner).addPetToRegistry(pet.getUuidAsString(), pet.getName().getString());
