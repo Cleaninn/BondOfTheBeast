@@ -46,7 +46,7 @@ public final class BondRules {
 
     public static int requiredStage(String command) {
         return switch (command) {
-            case "sit", "nobreak" -> 2;
+            case "sit", "nobreak", "inventory" -> 2;
             case "armor" -> 3;
             default -> 99;
         };

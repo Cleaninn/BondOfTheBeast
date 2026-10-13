@@ -26,6 +26,7 @@ public class StaffPetScreen extends Screen {
     @Override protected void init() {
         book = GrimoireStyle.layout(width, height);
         preview = previewEntity();
+        action(-1, "inventory", pet.itemForwarding, ModPackets.TOGGLE_ITEM_FORWARDING_C2S, "inventory");
         if (pet.forced) {
             action(0, "sit", pet.isSitting, ModPackets.TOGGLE_PET_STATE_C2S, "sit");
             action(1, "nobreak", pet.isNoBreakMode, ModPackets.TOGGLE_NO_BREAK_C2S, "nobreak");
@@ -65,8 +66,8 @@ public class StaffPetScreen extends Screen {
     private void action(int index, String skill, boolean value, Identifier packet, String icon, String name) {
         boolean unlocked = available(skill);
         if ((packet.equals(ModPackets.TOGGLE_NO_INTERACT_C2S) || packet.equals(ModPackets.TOGGLE_PACIFIST_C2S)) && !pet.isNoBreakMode) unlocked = false;
-        int x = book.x(180 + index % 3 * 64);
-        int y = book.y(52 + index / 3 * 34);
+        int x = book.x(index < 0 ? 276 : 180 + index % 3 * 64);
+        int y = book.y(index < 0 ? 25 : 52 + index / 3 * 34);
         Text label = Text.translatable("gui.bondofthebeast.control." + name);
         Text state = Text.translatable(value ? "gui.bondofthebeast.on" : "gui.bondofthebeast.off");
         Text fullLabel = Text.empty().append(label.copy().formatted(net.minecraft.util.Formatting.GOLD)).append(Text.literal(" — ")).append(state);
@@ -81,7 +82,7 @@ public class StaffPetScreen extends Screen {
         Text tooltip = fullLabel.copy().append(Text.literal("\n")).append(
                 Text.translatable("gui.bondofthebeast.control.description." + name).formatted(net.minecraft.util.Formatting.RESET));
         if (!unlocked) tooltip = tooltip.copy().append(Text.literal("\n")).append(lockedReason.copy().formatted(net.minecraft.util.Formatting.GRAY));
-        var button = addDrawableChild(new GrimoireAbilityButton(x, y, book.size(60), book.size(32), label, value, icon, b -> {
+        var button = addDrawableChild(new GrimoireAbilityButton(x, y, book.size(60), book.size(index < 0 ? 24 : 32), label, value, icon, b -> {
             b.active = false;
             send(packet);
         }));

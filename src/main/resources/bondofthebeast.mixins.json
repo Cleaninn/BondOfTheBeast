@@ -15,7 +15,9 @@
     "BondCombatMixin",
     "ForcedInstinctMixin",
     "PetArmorLockMixin",
-    "PetArmorUseMixin"
+    "PetArmorUseMixin",
+    "ItemForwardingInventoryMixin",
+    "ItemForwardingScreenMixin"
   ],
   "client": [
     "KeyboardInputMixin",

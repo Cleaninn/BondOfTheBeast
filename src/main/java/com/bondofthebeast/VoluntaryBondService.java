@@ -19,7 +19,7 @@ public final class VoluntaryBondService {
 
     public static int requiredTier(String command) {
         return switch (command) {
-            case "sit", "nobreak", "armor" -> 0;
+            case "sit", "nobreak", "armor", "inventory" -> 0;
             case "tp", "prot" -> 1;
             case "aura", "vampiric" -> 2;
             case "absorb" -> 3;

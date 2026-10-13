@@ -32,8 +32,10 @@ public final class BondService {
             var b = ModComponents.PLAYER_BOND.get(player);
             if (b.isAbsorbed()) releaseAbsorption(player);
             if (!b.getLeashHolder().isEmpty()) LeashManager.detach(player);
+            ItemForwardingService.baseline(player);
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            ItemForwardingService.forget(handler.player);
             ForcedTamingService.cancelCollaring(handler.player);
             if (ModComponents.PLAYER_BOND.get(handler.player).isAbsorbed()) releaseAbsorption(handler.player);
             if (!ModComponents.PLAYER_BOND.get(handler.player).getLeashHolder().isEmpty()) LeashManager.detach(handler.player);
@@ -74,6 +76,7 @@ public final class BondService {
                 ForcedTamingService.tick(pet);
                 CollarCatalystService.tick(pet);
                 VoluntaryBondService.tick(pet);
+                ItemForwardingService.tick(pet);
                 if (b.hasOwner() && pet.age % 20 == 0) PetPreviewState.get(server).update(pet);
 
             }

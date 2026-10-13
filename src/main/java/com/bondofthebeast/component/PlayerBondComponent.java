@@ -77,6 +77,8 @@ public interface PlayerBondComponent extends Component, AutoSyncedComponent {
     void setAbsorbed(boolean absorbed);
     boolean isNoInteractMode();
     void setNoInteractMode(boolean noInteractMode);
+    boolean isItemForwarding();
+    void setItemForwarding(boolean forwarding);
 
     Set<String> getBlacklistedBlocks();
     void setBlacklistedBlocks(Set<String> blocks);

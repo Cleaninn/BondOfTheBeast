@@ -42,11 +42,14 @@ public class ModPackets {
     public static final Identifier REQUEST_ESCAPE_C2S = new Identifier(BondOfTheBeast.MOD_ID, "request_escape_c2s");
     public static final Identifier OPEN_ARMOR_C2S = new Identifier(BondOfTheBeast.MOD_ID, "open_armor_c2s");
     public static final Identifier TOGGLE_ARMOR_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_armor_c2s");
+    public static final Identifier TOGGLE_ITEM_FORWARDING_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_item_forwarding_c2s");
 
     private static boolean canOwnerCommand(ServerPlayerEntity owner) { return BondRules.canOwn(owner); }
     private static boolean canPetObey(ServerPlayerEntity pet) { return BondRules.canObey(pet); }
 
     public static void registerC2SPackets() {
+        registerToggle(TOGGLE_ITEM_FORWARDING_C2S, "inventory", (bond, owner, pet) ->
+                bond.setItemForwarding(!bond.isItemForwarding()));
         ServerPlayNetworking.registerGlobalReceiver(REQUEST_ESCAPE_C2S, (server, player, network, buf, sender) ->
                 server.execute(() -> ForcedTamingService.determination(player)));
         ServerPlayNetworking.registerGlobalReceiver(OPEN_ARMOR_C2S, (server, owner, network, buf, sender) -> {
@@ -217,7 +220,7 @@ public class ModPackets {
             buf.writeBoolean(petBond.isNoBreakMode()); buf.writeBoolean(petBond.isAbsorbed()); buf.writeBoolean(petBond.isNoInteractMode());
             buf.writeInt(petBond.getBondLevel()); buf.writeInt(petBond.getBondExperience()); buf.writeBoolean(hasCollar);
             buf.writeInt(petBond.getSkillPoints());
-            Set<String> skills = new java.util.HashSet<>(); for (String command : java.util.List.of("sit", "tp", "prot", "nobreak", "absorb", "vampiric", "aura", "armor")) if (BondRules.allows(onlinePet, command)) skills.add(command); buf.writeInt(skills.size()); for(String s : skills) buf.writeString(s);
+            Set<String> skills = new java.util.HashSet<>(); for (String command : java.util.List.of("sit", "tp", "prot", "nobreak", "absorb", "vampiric", "aura", "armor", "inventory")) if (BondRules.allows(onlinePet, command)) skills.add(command); buf.writeInt(skills.size()); for(String s : skills) buf.writeString(s);
             Set<String> black = petBond.getBlacklistedBlocks(); buf.writeInt(black.size()); for(String s : black) buf.writeString(s);
             Set<String> white = petBond.getWhitelistedBlocks(); buf.writeInt(white.size()); for(String s : white) buf.writeString(s);
             buf.writeBoolean(true);
@@ -241,5 +244,6 @@ public class ModPackets {
         buf.writeFloat(onlinePet == null ? 0 : net.onixary.shapeShifterCurseFabric.player_form.instinct.RegPlayerInstinctComponent.PLAYER_INSTINCT_COMP.get(onlinePet).instinctValue);
         buf.writeInt(onlinePet == null ? 0 : ModComponents.PLAYER_BOND.get(onlinePet).getVoluntaryBond().activeTicks);
         buf.writeString(PetPreviewState.get(server).form(petUuid));
+        buf.writeBoolean(onlinePet != null && ModComponents.PLAYER_BOND.get(onlinePet).isItemForwarding());
     }
 }

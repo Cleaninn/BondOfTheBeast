@@ -93,6 +93,7 @@ public class BondOfTheBeastClient implements ClientModInitializer {
         pet.formStage = b.readInt(); pet.trustTier = b.readInt(); pet.forced = b.readBoolean(); pet.armorLocked = b.readBoolean();
         pet.escapeTicks = b.readInt(); pet.instinct = b.readFloat();
         pet.activeTicks = b.readInt(); pet.formId = b.readString();
+        pet.itemForwarding = b.readBoolean();
         return pet;
     }
 }

@@ -47,6 +47,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     private boolean noBreakMode = false;
     private boolean absorbed = false;
     private boolean noInteractMode = false;
+    private boolean itemForwarding;
 
     private Set<String> blacklistedBlocks = new HashSet<>();
     private Set<String> whitelistedBlocks = new HashSet<>();
@@ -117,6 +118,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
         this.noBreakMode = tag.getBoolean("NoBreakMode");
         this.absorbed = tag.getBoolean("Absorbed");
         this.noInteractMode = tag.getBoolean("NoInteractMode");
+        this.itemForwarding = tag.getBoolean("ItemForwarding");
 
         this.blacklistedBlocks.clear();
         NbtList blackList = tag.getList("BlacklistedBlocks", NbtElement.STRING_TYPE);
@@ -170,6 +172,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
         tag.putBoolean("NoBreakMode", this.noBreakMode);
         tag.putBoolean("Absorbed", this.absorbed);
         tag.putBoolean("NoInteractMode", this.noInteractMode);
+        tag.putBoolean("ItemForwarding", this.itemForwarding);
 
         NbtList blackList = new NbtList();
         for (String id : this.blacklistedBlocks) blackList.add(NbtString.of(id));
@@ -196,6 +199,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
 
     @Override public void setOwner(String uuid, String name) {
         if (!uuid.equals(this.ownerUUID)) {
+            itemForwarding = false;
             voluntaryBond.read(new NbtCompound());
             forcedBond.read(new NbtCompound());
         }
@@ -206,6 +210,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     }
 
     @Override public void clearOwner() {
+        itemForwarding = false;
         forcedBond.read(new NbtCompound());
         voluntaryBond.read(new NbtCompound());
         this.ownerUUID = "";
@@ -230,6 +235,13 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     }
 
     @Nullable @Override public String getPetNickname() { return petNickname; }
+
+    @Override public boolean isItemForwarding() { return itemForwarding; }
+    @Override public void setItemForwarding(boolean forwarding) {
+        itemForwarding = forwarding;
+        if (provider instanceof ServerPlayerEntity player) com.bondofthebeast.ItemForwardingService.baseline(player);
+        ModComponents.PLAYER_BOND.sync(provider);
+    }
 
     @Override public void setPetNickname(@Nullable String name) {
         this.petNickname = name;
