@@ -46,6 +46,10 @@ base {
 }
 
 repositories {
+	exclusiveContent {
+		forRepository { maven { url 'https://maven.shedaniel.me' } }
+		filter { includeGroup 'me.shedaniel.cloth' }
+	}
 	mavenCentral()
 	maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
 	maven { url 'https://maven.azuredoom.com/mods' }

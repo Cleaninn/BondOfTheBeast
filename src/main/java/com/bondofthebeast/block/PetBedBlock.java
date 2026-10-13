@@ -1,6 +1,5 @@
 package com.bondofthebeast.block;
 
-import com.bondofthebeast.ModItems;
 import com.bondofthebeast.ModPackets;
 import com.bondofthebeast.component.ModComponents;
 import dev.emi.trinkets.api.TrinketsApi;

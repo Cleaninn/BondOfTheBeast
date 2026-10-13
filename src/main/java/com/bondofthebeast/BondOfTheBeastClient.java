@@ -19,6 +19,7 @@ public class BondOfTheBeastClient implements ClientModInitializer {
         net.minecraft.client.gui.screen.ingame.HandledScreens.register(PetArmorScreenHandler.TYPE, com.bondofthebeast.client.PetArmorScreen::new);
         var statusKey = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(
                 new net.minecraft.client.option.KeyBinding("key.bondofthebeast.status", org.lwjgl.glfw.GLFW.GLFW_KEY_G, "category.bondofthebeast"));
+
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (statusKey.wasPressed()) if (client.player != null && ModComponents.PLAYER_BOND.get(client.player).hasOwner()) client.setScreen(new PetStatusScreen());
         });
@@ -56,7 +57,6 @@ public class BondOfTheBeastClient implements ClientModInitializer {
             }
             c.execute(() -> c.setScreen(new PetBedScreen(pos, petUUID, radius, pets)));
         });
-
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             var bond = ModComponents.PLAYER_BOND.get(player);
             if (BondRules.allows(player, "nobreak")) {
@@ -77,7 +77,6 @@ public class BondOfTheBeastClient implements ClientModInitializer {
             return ActionResult.PASS;
         });
     }
-
     private StaffMainScreen.PetData readPet(PacketByteBuf b) {
         UUID uuid = b.readUuid(); String name = b.readString();
         boolean sitting = b.readBoolean(); boolean tp = b.readBoolean(); boolean prot = b.readBoolean(); boolean aura = b.readBoolean();
