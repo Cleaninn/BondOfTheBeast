@@ -18,6 +18,7 @@ public final class ForcedBondState {
     public int lastStage = -99;
     public boolean armorLocked;
     public boolean contractSigned;
+    public boolean contractPending;
 
     public NbtCompound write() {
         NbtCompound tag = new NbtCompound();
@@ -34,6 +35,7 @@ public final class ForcedBondState {
         tag.putInt("LastStage", lastStage);
         tag.putBoolean("ArmorLocked", armorLocked);
         tag.putBoolean("ContractSigned", contractSigned);
+        tag.putBoolean("ContractPending", contractPending);
         return tag;
     }
 
@@ -51,6 +53,7 @@ public final class ForcedBondState {
         lastStage = tag.contains("LastStage") ? tag.getInt("LastStage") : -99;
         armorLocked = tag.getBoolean("ArmorLocked");
         contractSigned = tag.getBoolean("ContractSigned");
+        contractPending = tag.getBoolean("ContractPending") && !contractSigned;
         escapeCharge = 0;
     }
 }

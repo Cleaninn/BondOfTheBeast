@@ -40,10 +40,6 @@ public class ContractItem extends Item {
 
         if (!nbt.contains("OwnerUUID") && !nbt.contains("PetUUID") && !user.isSneaking() &&
                 BondRules.canOwn(user) && BondRules.hasCollar(targetPlayer)) {
-            if (ModComponents.PLAYER_BOND.get(targetPlayer).hasOwner()) {
-                user.sendMessage(Text.translatable("text.bondofthebeast.already_owned_target").formatted(Formatting.RED), true);
-                return ActionResult.FAIL;
-            }
             return ForcedTamingService.startFromContract(stack, serverUser, targetPlayer);
         }
 

@@ -72,7 +72,8 @@ public final class ForcedTamingService {
     }
 
     public static boolean freeWindow(PlayerEntity pet) {
-        return ModComponents.PLAYER_BOND.get(pet).getForcedBond().escapeTicks > 0 && stage(pet) < 3;
+        var state = ModComponents.PLAYER_BOND.get(pet).getForcedBond();
+        return state.escapeTicks > 0 && !state.contractSigned;
     }
 
     public static boolean armorLocked(PlayerEntity pet) {
@@ -154,9 +155,24 @@ public final class ForcedTamingService {
     }
 
     private static void equipAfterHold(ItemStack stack, ServerPlayerEntity user, ServerPlayerEntity pet) {
-        if (!CollarItem.equipToPet(pet, stack, "", true)) return;
+        if (!CollarItem.equipToPet(pet, stack, user.getName().getString(), true)) return;
         CollarItem.sealEquipped(pet);
         if (!user.isCreative()) stack.decrement(1);
+        var bond = ModComponents.PLAYER_BOND.get(pet);
+        bond.setOwner(user.getUuidAsString(), user.getName().getString());
+        var forced = bond.getForcedBond();
+        forced.forced = true;
+        forced.token = UUID.randomUUID().toString();
+        forced.lastStage = stage(pet);
+        bond.setTamingState(1);
+        ModComponents.PLAYER_BOND.get(user).addPetToRegistry(pet.getUuidAsString(), pet.getGameProfile().getName());
+        ModComponents.PLAYER_BOND.sync(pet);
+    }
+
+    public static boolean canFinalizeForced(PlayerEntity pet) {
+        var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).getCurrentForm();
+        return BondRules.canBePet(pet) && form != null &&
+                form.getBodyType() == net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType.FERAL;
     }
 
     public static ActionResult startFromContract(ItemStack contract, ServerPlayerEntity user, ServerPlayerEntity pet) {
@@ -164,27 +180,20 @@ public final class ForcedTamingService {
                 !BondRules.hasOpenedBook(pet) || pet.isCreative() || pet.isSpectator() || freeWindow(pet) || !BondRules.hasCollar(pet) ||
                 user.getWorld() != pet.getWorld() || user.squaredDistanceTo(pet) > 16 || !user.canSee(pet)) return ActionResult.FAIL;
         var bond = ModComponents.PLAYER_BOND.get(pet);
-        if (bond.hasOwner()) return ActionResult.FAIL;
-        bond.setOwner(user.getUuidAsString(), user.getName().getString());
+        if (!BondRules.owns(user, pet) || !bond.getForcedBond().forced || !canFinalizeForced(pet)) return ActionResult.FAIL;
         var forced = bond.getForcedBond();
-        forced.forced = true;
-        forced.token = UUID.randomUUID().toString();
-        forced.lastStage = stage(pet);
-        bond.setTamingState(stage(pet) >= 3 ? 2 : 1);
-        CollarItem.personalizeEquipped(pet, user.getName().getString());
-        CollarItem.sealEquipped(pet);
-        ModComponents.PLAYER_BOND.get(user).addPetToRegistry(pet.getUuidAsString(), pet.getGameProfile().getName());
+        if (forced.contractSigned || forced.contractPending) return ActionResult.FAIL;
+        if (user.isCreative() && user.getInventory().getEmptySlot() < 0) return ActionResult.FAIL;
         if (!user.isCreative()) contract.decrement(1);
-        pet.sendMessage(Text.translatable("text.bondofthebeast.forced_start"), false);
-        user.sendMessage(Text.translatable("text.bondofthebeast.taming_started"), true);
+        forced.contractPending = true;
         ModComponents.PLAYER_BOND.sync(pet);
-        // Issue the final contract on the server tick after the initiating hand is cleared.
+        // Defer issuance: the vanilla interaction can clear the newly emptied hand afterwards.
         return ActionResult.SUCCESS;
     }
 
     public static boolean escapeApple(ServerPlayerEntity pet, ItemStack food) {
         var bond = ModComponents.PLAYER_BOND.get(pet);
-        if (bond.hasOwner() && (!bond.getForcedBond().forced || stage(pet) >= 3)) return false;
+        if (bond.hasOwner() && (!bond.getForcedBond().forced || bond.getForcedBond().contractSigned)) return false;
         if (!bond.getForcedBond().forced && !CollarItem.hasForcedCollar(pet)) return false;
         return food.isOf(Items.ENCHANTED_GOLDEN_APPLE) || (stage(pet) < 2 && food.isOf(Items.GOLDEN_APPLE));
     }
@@ -192,7 +201,7 @@ public final class ForcedTamingService {
     public static void determination(ServerPlayerEntity pet) {
         var bond = ModComponents.PLAYER_BOND.get(pet);
         var forced = bond.getForcedBond();
-        if (!bond.hasOwner() || !forced.forced || stage(pet) >= 3 || forced.escapeTicks > 0) return;
+        if (!bond.hasOwner() || !forced.forced || forced.contractSigned || forced.escapeTicks > 0) return;
         if (forced.resistanceCooldownTicks > 0) {
             pet.sendMessage(Text.translatable("gui.bondofthebeast.resistance_cooldown", resistanceCooldownSeconds(pet)), true);
             return;
@@ -254,6 +263,8 @@ public final class ForcedTamingService {
         var bond = ModComponents.PLAYER_BOND.get(pet);
         var state = bond.getForcedBond();
         if (state.contractSigned) return;
+        var owner = BondRules.owner(pet);
+        if (owner != null && owner.isCreative() && owner.getInventory().getEmptySlot() < 0) return;
         if (state.token.isEmpty()) state.token = UUID.randomUUID().toString();
         ItemStack contract = new ItemStack(ModItems.FIDELITY_CONTRACT);
         var tag = contract.getOrCreateNbt();
@@ -264,7 +275,8 @@ public final class ForcedTamingService {
         tag.putString("ForcedBondToken", state.token);
         tag.putInt("CustomModelData", 1);
         state.contractSigned = true;
-        var owner = BondRules.owner(pet);
+        state.contractPending = false;
+        bond.setTamingState(2);
         if (owner != null) owner.getInventory().offerOrDrop(contract); else pet.dropItem(contract, false);
         pet.sendMessage(Text.translatable("text.bondofthebeast.forced_contract"), false);
         if (owner != null) owner.sendMessage(Text.translatable("text.bondofthebeast.forced_contract_owner"), false);
@@ -278,7 +290,7 @@ public final class ForcedTamingService {
         int stage = stage(pet);
         if (state.escapeTicks > 0) state.escapeTicks--;
         if (state.resistanceCooldownTicks > 0) state.resistanceCooldownTicks--;
-        if (state.forced && stage < 3 && state.escapeTicks == 0 && state.resistanceCooldownTicks == 0) {
+        if (state.forced && !state.contractSigned && state.escapeTicks == 0 && state.resistanceCooldownTicks == 0) {
             state.escapeCharge = pet.isSneaking() ? state.escapeCharge + 1 : 0;
             if (state.escapeCharge >= 60) determination(pet);
         } else state.escapeCharge = 0;
@@ -292,16 +304,16 @@ public final class ForcedTamingService {
         if (bond.isTeleportEnabled()) bond.setTeleportEnabled(false);
         if (bond.isAbsorbed()) BondService.releaseAbsorption(pet);
         if (!pet.isAlive()) return;
-        if (!BondRules.hasCollar(pet) && stage < 3) { BondService.release(pet); return; }
+        if (!BondRules.hasCollar(pet) && !state.contractSigned) { BondService.release(pet); return; }
         if (state.lastStage != stage) {
             state.lastStage = stage;
-            bond.setTamingState(stage >= 3 ? 2 : 1);
+            bond.setTamingState(state.contractSigned ? 2 : 1);
             state.warningTicks = -1;
             state.catalystWarningFromCookie = false;
             state.finalWarningTicks = -1;
             pet.sendMessage(Text.translatable("text.bondofthebeast.stage_changed", stage), false);
         }
-        if (stage >= 3) issueContract(pet);
+        if (state.contractPending) issueContract(pet);
         if (pet.age % 20 == 0) ModComponents.PLAYER_BOND.sync(pet);
     }
 }

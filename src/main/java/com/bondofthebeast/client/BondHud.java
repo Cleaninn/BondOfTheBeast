@@ -14,12 +14,14 @@ public final class BondHud {
     private static int previousStage = Integer.MIN_VALUE;
     private static int previousEscape;
     private static boolean previousForced;
+    private static boolean previousSigned;
     private static long noticeUntil;
     public static void reset() {
         collaringTicks = -1;
         previousStage = Integer.MIN_VALUE;
         previousEscape = 0;
         previousForced = false;
+        previousSigned = false;
         noticeUntil = 0;
     }
     public static void updateCollaring(int ticks) {
@@ -46,18 +48,19 @@ public final class BondHud {
         var state = bond.getForcedBond();
         long now = net.minecraft.util.Util.getMeasuringTimeMs();
         boolean restrained = state.forced || com.bondofthebeast.CollarItem.hasForcedCollar(client.player);
-        if (restrained && (!previousForced || stage != previousStage || state.escapeTicks > previousEscape))
+        if (restrained && (!previousForced || stage != previousStage || state.escapeTicks > previousEscape || state.contractSigned != previousSigned))
             noticeUntil = now + 8000;
         previousForced = restrained;
         previousStage = stage;
         previousEscape = state.escapeTicks;
+        previousSigned = state.contractSigned;
         boolean countdown = state.warningTicks >= 0 || state.finalWarningTicks >= 0;
         if (!countdown && (!restrained || now >= noticeUntil)) return;
         Text hint = state.finalWarningTicks >= 0 ? Text.translatable("text.bondofthebeast.final_countdown", (state.finalWarningTicks + 19) / 20) : state.escapeTicks > 0 ? Text.translatable("gui.bondofthebeast.escape_seconds", state.escapeTicks / 20) :
                 state.warningTicks >= 0 ? Text.translatable("text.bondofthebeast.curse_countdown", (state.warningTicks + 19) / 20) :
-                Text.translatable("gui.bondofthebeast.escape_rule." + (stage >= 3 ? "contract" : stage == 2 ? "enchanted" : "apple"));
+                Text.translatable("gui.bondofthebeast.escape_rule." + (state.contractSigned ? "contract" : stage >= 2 ? "enchanted" : "apple"));
         int cooldown = ForcedTamingService.resistanceCooldownSeconds(client.player);
-        if (cooldown > 0 && state.escapeTicks == 0 && stage < 3)
+        if (cooldown > 0 && state.escapeTicks == 0 && !state.contractSigned)
             hint = hint.copy().append(Text.literal("\n")).append(Text.translatable("gui.bondofthebeast.resistance_cooldown", cooldown));
         int panelWidth = Math.min(240, client.getWindow().getScaledWidth() - 10);
         var stageLines = client.textRenderer.wrapLines(GrimoireStyle.bookText(Text.translatable(
