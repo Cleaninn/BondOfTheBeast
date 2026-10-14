@@ -12,6 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class CollaringHudMixin {
     @Inject(method = "renderHeldItemTooltip", at = @At("HEAD"), cancellable = true)
     private void botb$hideItemCaptionWhileCollaring(DrawContext context, CallbackInfo ci) {
-        if (BondHud.isCollaringVisible()) ci.cancel();
+        var player = net.minecraft.client.MinecraftClient.getInstance().player;
+        if (BondHud.isCollaringVisible() || (player != null && player.isUsingItem() &&
+                player.getActiveItem().getItem() instanceof com.bondofthebeast.CollarItem)) ci.cancel();
     }
 }

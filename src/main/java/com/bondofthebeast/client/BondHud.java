@@ -11,6 +11,17 @@ public final class BondHud {
     private BondHud() {}
     private static int collaringTicks = -1;
     private static long collaringUpdated;
+    private static int previousStage = Integer.MIN_VALUE;
+    private static int previousEscape;
+    private static boolean previousForced;
+    private static long noticeUntil;
+    public static void reset() {
+        collaringTicks = -1;
+        previousStage = Integer.MIN_VALUE;
+        previousEscape = 0;
+        previousForced = false;
+        noticeUntil = 0;
+    }
     public static void updateCollaring(int ticks) {
         collaringTicks = ticks;
         collaringUpdated = net.minecraft.util.Util.getMeasuringTimeMs();
@@ -31,9 +42,17 @@ public final class BondHud {
             return;
         }
         var bond = ModComponents.PLAYER_BOND.get(client.player);
-        if (!bond.hasOwner() || !bond.getForcedBond().forced) return;
         int stage = ForcedTamingService.stage(client.player);
         var state = bond.getForcedBond();
+        long now = net.minecraft.util.Util.getMeasuringTimeMs();
+        boolean restrained = state.forced || com.bondofthebeast.CollarItem.hasForcedCollar(client.player);
+        if (restrained && (!previousForced || stage != previousStage || state.escapeTicks > previousEscape))
+            noticeUntil = now + 8000;
+        previousForced = restrained;
+        previousStage = stage;
+        previousEscape = state.escapeTicks;
+        boolean countdown = state.warningTicks >= 0 || state.finalWarningTicks >= 0;
+        if (!countdown && (!restrained || now >= noticeUntil)) return;
         Text hint = state.finalWarningTicks >= 0 ? Text.translatable("text.bondofthebeast.final_countdown", (state.finalWarningTicks + 19) / 20) : state.escapeTicks > 0 ? Text.translatable("gui.bondofthebeast.escape_seconds", state.escapeTicks / 20) :
                 state.warningTicks >= 0 ? Text.translatable("text.bondofthebeast.curse_countdown", (state.warningTicks + 19) / 20) :
                 Text.translatable("gui.bondofthebeast.escape_rule." + (stage >= 3 ? "contract" : stage == 2 ? "enchanted" : "apple"));

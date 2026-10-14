@@ -20,7 +20,7 @@ public class BondOfTheBeastClient implements ClientModInitializer {
             int ticks = buffer.readInt();
             client.execute(() -> BondHud.updateCollaring(ticks));
         });
-        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> BondHud.updateCollaring(-1));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> BondHud.reset());
         net.minecraft.client.gui.screen.ingame.HandledScreens.register(PetArmorScreenHandler.TYPE, com.bondofthebeast.client.PetArmorScreen::new);
         var statusKey = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(
                 new net.minecraft.client.option.KeyBinding("key.bondofthebeast.status", org.lwjgl.glfw.GLFW.GLFW_KEY_G, "category.bondofthebeast"));
@@ -40,7 +40,11 @@ public class BondOfTheBeastClient implements ClientModInitializer {
             int count = b.readInt();
             List<StaffMainScreen.PetData> pets = new ArrayList<>();
             for (int i = 0; i < count; i++) pets.add(readPet(b));
-            c.execute(() -> c.setScreen(new StaffMainScreen(pets)));
+            c.execute(() -> {
+                var selection = new StaffMainScreen(pets);
+                if (pets.size() == 1) selection.rememberSelection(pets.get(0).uuid);
+                c.setScreen(pets.size() == 1 ? new StaffPetScreen(selection, pets.get(0)) : selection);
+            });
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.OPEN_PET_STATS_GUI, (c, h, b, rs) -> {

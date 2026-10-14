@@ -79,10 +79,10 @@ public class StaffMainScreen extends Screen {
         return null;
     }
 
-    private void rememberSelection(UUID pet) {
+    public void rememberSelection(UUID pet) {
         lastSelected = pet;
         try {
-            Path path = client.runDirectory.toPath().resolve("bondofthebeast-last-pet.txt");
+            Path path = net.minecraft.client.MinecraftClient.getInstance().runDirectory.toPath().resolve("bondofthebeast-last-pet.txt");
             Files.createDirectories(path.getParent());
             Files.writeString(path, pet.toString(), StandardCharsets.UTF_8);
         } catch (Exception ignored) {}

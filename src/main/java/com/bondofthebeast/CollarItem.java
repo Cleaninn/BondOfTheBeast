@@ -84,7 +84,35 @@ public class CollarItem extends TrinketItem {
             user.setCurrentHand(hand);
             return TypedActionResult.consume(user.getStackInHand(hand));
         }
+        var target = world.getEntitiesByClass(PlayerEntity.class, user.getBoundingBox().expand(4),
+                player -> player != user && ForcedTamingService.aimsAt(user, player)).stream()
+                .min(java.util.Comparator.comparingDouble(user::squaredDistanceTo));
+        if (target.isPresent()) {
+            ActionResult result = useOnEntity(user.getStackInHand(hand), user, target.get(), hand);
+            return result == ActionResult.FAIL ? TypedActionResult.fail(user.getStackInHand(hand)) :
+                    TypedActionResult.consume(user.getStackInHand(hand));
+        }
+        if (!canSelfEquipFromAir()) return TypedActionResult.pass(user.getStackInHand(hand));
         return super.use(world, user, hand);
+    }
+
+    protected boolean canSelfEquipFromAir() { return true; }
+
+    public static boolean isForcedCollar(ItemStack stack) {
+        return stack.getItem() instanceof CollarItem && stack.hasNbt() && stack.getNbt().getBoolean("ForcedCollar");
+    }
+
+    public static boolean hasForcedCollar(PlayerEntity player) {
+        return TrinketsApi.getTrinketComponent(player).map(c -> c.isEquipped(CollarItem::isForcedCollar)).orElse(false);
+    }
+
+    public static void sealEquipped(PlayerEntity player) {
+        TrinketsApi.getTrinketComponent(player).ifPresent(c -> {
+            for (var entry : c.getEquipped(stack -> stack.getItem() instanceof CollarItem)) {
+                entry.getRight().getOrCreateNbt().putBoolean("ForcedCollar", true);
+                entry.getLeft().inventory().markDirty();
+            }
+        });
     }
 
     @Override
@@ -106,6 +134,9 @@ public class CollarItem extends TrinketItem {
                                 ItemStack displaced = inventory.getStack(i).copy();
                                 ItemStack personalizedCollar = collar.copy();
                                 personalizedCollar.setCount(1);
+                                if (isForcedCollar(displaced) || ModComponents.PLAYER_BOND.get(pet).getForcedBond().forced)
+                                    personalizedCollar.getOrCreateNbt().putBoolean("ForcedCollar", true);
+                                if (displaced.hasNbt()) displaced.getNbt().remove("ForcedCollar");
                                 if (ownerName.isEmpty()) {
                                     if (personalizedCollar.hasNbt()) personalizedCollar.getNbt().remove("OwnerName");
                                 } else personalizedCollar.getOrCreateNbt().putString("OwnerName", ownerName);
@@ -154,7 +185,7 @@ public class CollarItem extends TrinketItem {
     public boolean canUnequip(ItemStack stack, SlotReference slot, LivingEntity entity) {
         if (entity instanceof PlayerEntity player) {
             PlayerBondComponent bond = ModComponents.PLAYER_BOND.get(player);
-            return !bond.hasOwner();
+            return !bond.hasOwner() && !isForcedCollar(stack);
         }
         return true;
     }

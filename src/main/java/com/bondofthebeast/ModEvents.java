@@ -51,6 +51,7 @@ public class ModEvents {
 
                 if (player.isSneaking() && foodStack.isEmpty() && bond.getLeashPos() == null && bond.getLeashHolder().isEmpty()) {
                     if (world.isClient) return ActionResult.SUCCESS;
+                    if (bond.getForcedBond().forced || CollarItem.hasForcedCollar(pet)) return ActionResult.FAIL;
                     if (bond.getForcedBond().forced && ForcedTamingService.stage(pet) >= 3) {
                         player.sendMessage(Text.translatable("text.bondofthebeast.destroy_contract_first"), true);
                         return ActionResult.FAIL;

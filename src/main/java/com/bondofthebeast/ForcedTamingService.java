@@ -106,7 +106,7 @@ public final class ForcedTamingService {
         return true;
     }
 
-    private static boolean aimsAt(PlayerEntity user, PlayerEntity pet) {
+    public static boolean aimsAt(PlayerEntity user, PlayerEntity pet) {
         Vec3d eyes = user.getEyePos();
         return pet.getBoundingBox().expand(0.25).raycast(eyes,
                 eyes.add(user.getRotationVec(1).multiply(4))).isPresent();
@@ -117,7 +117,7 @@ public final class ForcedTamingService {
     }
 
     private static void sendProgress(PlayerEntity user, ServerPlayerEntity pet, int ticks) {
-        for (var player : new ServerPlayerEntity[]{(ServerPlayerEntity) user, pet}) {
+        for (var player : new ServerPlayerEntity[]{pet}) {
             if (player == null || !net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.canSend(player, ModPackets.COLLARING_PROGRESS_S2C)) continue;
             var buffer = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
             buffer.writeInt(ticks);
@@ -155,6 +155,7 @@ public final class ForcedTamingService {
 
     private static void equipAfterHold(ItemStack stack, ServerPlayerEntity user, ServerPlayerEntity pet) {
         if (!CollarItem.equipToPet(pet, stack, "", true)) return;
+        CollarItem.sealEquipped(pet);
         if (!user.isCreative()) stack.decrement(1);
     }
 
@@ -171,6 +172,7 @@ public final class ForcedTamingService {
         forced.lastStage = stage(pet);
         bond.setTamingState(stage(pet) >= 3 ? 2 : 1);
         CollarItem.personalizeEquipped(pet, user.getName().getString());
+        CollarItem.sealEquipped(pet);
         ModComponents.PLAYER_BOND.get(user).addPetToRegistry(pet.getUuidAsString(), pet.getGameProfile().getName());
         if (!user.isCreative()) contract.decrement(1);
         pet.sendMessage(Text.translatable("text.bondofthebeast.forced_start"), false);
@@ -182,7 +184,8 @@ public final class ForcedTamingService {
 
     public static boolean escapeApple(ServerPlayerEntity pet, ItemStack food) {
         var bond = ModComponents.PLAYER_BOND.get(pet);
-        if (!bond.hasOwner() || !bond.getForcedBond().forced || stage(pet) >= 3) return false;
+        if (bond.hasOwner() && (!bond.getForcedBond().forced || stage(pet) >= 3)) return false;
+        if (!bond.getForcedBond().forced && !CollarItem.hasForcedCollar(pet)) return false;
         return food.isOf(Items.ENCHANTED_GOLDEN_APPLE) || (stage(pet) < 2 && food.isOf(Items.GOLDEN_APPLE));
     }
 

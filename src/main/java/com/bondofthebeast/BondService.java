@@ -71,6 +71,9 @@ public final class BondService {
                 }
                 ForcedTamingService.tick(pet);
                 CollarCatalystService.tick(pet);
+                if (!b.hasOwner() && pet.age % 20 == 0 &&
+                        (ForcedTamingService.infused(pet) || CollarItem.hasForcedCollar(pet)))
+                    ModComponents.PLAYER_BOND.sync(pet);
                 VoluntaryBondService.tick(pet);
                 ItemForwardingService.tick(pet);
                 if (b.hasOwner() && pet.age % 20 == 0) PetPreviewState.get(server).update(pet);
@@ -110,7 +113,10 @@ public final class BondService {
                     for (int i = 0; i < inv.size(); i++) {
                         if (inv.getStack(i).getItem() instanceof CollarItem) {
                             ItemStack item = inv.getStack(i).copy();
-                            if (item.hasNbt()) item.getNbt().remove("OwnerName");
+                            if (item.hasNbt()) {
+                                item.getNbt().remove("OwnerName");
+                                item.getNbt().remove("ForcedCollar");
+                            }
                             inv.setStack(i, ItemStack.EMPTY);
                             pet.dropItem(item, false);
                         }
