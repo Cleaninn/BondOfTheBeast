@@ -16,6 +16,18 @@ import java.util.*;
 public class BondOfTheBeastClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.PET_STATUS_UNAVAILABLE_S2C, (client, handler, buffer, sender) -> {
+            var id = buffer.readUuid();
+            client.execute(() -> {
+                if (client.currentScreen instanceof StaffPetScreen screen && screen.showsPet(id)) screen.close();
+            });
+        });
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.UPDATE_PET_STATUS_S2C, (client, handler, buffer, sender) -> {
+            var data = readPet(buffer);
+            client.execute(() -> {
+                if (client.currentScreen instanceof StaffPetScreen screen) screen.updatePet(data);
+            });
+        });
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.COLLARING_PROGRESS_S2C, (client, handler, buffer, sender) -> {
             int ticks = buffer.readInt();
             client.execute(() -> BondHud.updateCollaring(ticks));
@@ -102,6 +114,7 @@ public class BondOfTheBeastClient implements ClientModInitializer {
         pet.escapeTicks = b.readInt(); pet.instinct = b.readFloat();
         pet.activeTicks = b.readInt(); pet.formId = b.readString();
         pet.itemForwarding = b.readBoolean();
+        pet.contractSigned = b.readBoolean();
         return pet;
     }
 }

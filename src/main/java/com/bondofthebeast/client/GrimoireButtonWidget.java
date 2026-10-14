@@ -7,8 +7,14 @@ import net.minecraft.text.Text;
 
 /** Leather plaque with parchment lettering for grimoire screens. */
 public final class GrimoireButtonWidget extends ButtonWidget {
+    private final boolean diary;
     public GrimoireButtonWidget(int x, int y, int width, int height, Text message, PressAction onPress) {
+        this(x, y, width, height, message, onPress, false);
+    }
+
+    public GrimoireButtonWidget(int x, int y, int width, int height, Text message, PressAction onPress, boolean diary) {
         super(x, y, width, height, message, onPress, DEFAULT_NARRATION_SUPPLIER);
+        this.diary = diary;
     }
 
     @Override protected net.minecraft.client.gui.tooltip.TooltipPositioner getTooltipPositioner() {
@@ -18,7 +24,8 @@ public final class GrimoireButtonWidget extends ButtonWidget {
     @Override
     protected void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
         boolean hovered = isHovered();
-        GrimoireStyle.leather(context, getX(), getY(), width, height, active && (hovered || isFocused()));
+        if (diary) PetDiaryStyle.button(context, getX(), getY(), width, height, active && (hovered || isFocused()));
+        else GrimoireStyle.leather(context, getX(), getY(), width, height, active && (hovered || isFocused()));
         if (!active) context.fill(getX() + 1, getY() + 2, getX() + width - 1, getY() + height - 2, 0x700F0C0B);
         int color = active ? 0xFFF0DCAA : 0xFFA28E73;
         if (width >= 112) {

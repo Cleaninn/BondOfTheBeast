@@ -375,5 +375,7 @@
   "tooltip.bondofthebeast.contract_voluntary": "Sneak + click: voluntary final-stage pact.",
   "text.bondofthebeast.unbound_collar_received": "You are wearing a collar, but have no owner. An empty contract can bind you.",
   "gui.bondofthebeast.control.inventory": "Items to owner",
-  "gui.bondofthebeast.control.description.inventory": "New items go to the owner. Existing belongings stay. If the owner is offline or full, items stay with the pet."
+  "gui.bondofthebeast.control.description.inventory": "New items go to the owner. Existing belongings stay. If the owner is offline or full, items stay with the pet.",
+  "gui.bondofthebeast.diary.resist": "Resist",
+  "gui.bondofthebeast.diary.resistance_cooldown": "Try again in %s s"
 }

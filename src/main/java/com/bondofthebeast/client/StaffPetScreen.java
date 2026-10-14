@@ -13,7 +13,9 @@ import net.minecraft.util.Identifier;
 
 public class StaffPetScreen extends Screen {
     private final Screen parent;
-    private final StaffMainScreen.PetData pet;
+    private StaffMainScreen.PetData pet;
+    private int refreshTicks;
+    private final java.util.List<Runnable> controlUpdates = new java.util.ArrayList<>();
     private GrimoireStyle.BookLayout book;
     private net.minecraft.client.network.OtherClientPlayerEntity preview;
 
@@ -24,6 +26,7 @@ public class StaffPetScreen extends Screen {
     }
 
     @Override protected void init() {
+        controlUpdates.clear();
         book = GrimoireStyle.layout(width, height);
         preview = previewEntity();
         action(-1, "inventory", pet.itemForwarding, ModPackets.TOGGLE_ITEM_FORWARDING_C2S, "inventory");
@@ -64,49 +67,55 @@ public class StaffPetScreen extends Screen {
     }
 
     private void action(int index, String skill, boolean value, Identifier packet, String icon, String name) {
-        boolean unlocked = available(skill);
-        if ((packet.equals(ModPackets.TOGGLE_NO_INTERACT_C2S) || packet.equals(ModPackets.TOGGLE_PACIFIST_C2S)) && !pet.isNoBreakMode) unlocked = false;
         int x = book.x(index < 0 ? 276 : 180 + index % 3 * 64);
         int y = book.y(index < 0 ? 25 : 52 + index / 3 * 34);
         Text label = Text.translatable("gui.bondofthebeast.control." + name);
-        Text state = Text.translatable(value ? "gui.bondofthebeast.on" : "gui.bondofthebeast.off");
-        Text fullLabel = Text.empty().append(label.copy().formatted(net.minecraft.util.Formatting.GOLD)).append(Text.literal(" — ")).append(state);
-        Text lockedReason = Text.translatable("gui.bondofthebeast.requires_stage",
-                BondRules.requiredStage(skill));
-        if (!pet.forced) lockedReason = Text.translatable("gui.bondofthebeast.requires_trust",
-                Text.translatable("gui.bondofthebeast.trust." + VoluntaryBondService.requiredTier(skill)));
-        if ((name.equals("interact") || name.equals("pacifist")) && !pet.isNoBreakMode) lockedReason = Text.translatable("gui.bondofthebeast.staff.requires_nobreak");
-        if (pet.escapeTicks > 0) lockedReason = Text.translatable("gui.bondofthebeast.escape_seconds", pet.escapeTicks / 20);
-        if (!pet.hasCollar) lockedReason = Text.translatable("gui.bondofthebeast.staff.no_collar_suffix");
-        if (!pet.isOnline) lockedReason = Text.translatable("gui.bondofthebeast.staff.offline");
-        Text tooltip = fullLabel.copy().append(Text.literal("\n")).append(
-                Text.translatable("gui.bondofthebeast.control.description." + name).formatted(net.minecraft.util.Formatting.RESET));
-        if (!unlocked) tooltip = tooltip.copy().append(Text.literal("\n")).append(lockedReason.copy().formatted(net.minecraft.util.Formatting.GRAY));
         var button = addDrawableChild(new GrimoireAbilityButton(x, y, book.size(60), book.size(index < 0 ? 24 : 32), label, value, icon, b -> {
             b.active = false;
             send(packet);
         }));
-        button.active = unlocked;
-        button.setTooltip(net.minecraft.client.gui.tooltip.Tooltip.of(tooltip));
+        controlUpdates.add(() -> {
+            boolean unlocked = available(skill);
+            if ((packet.equals(ModPackets.TOGGLE_NO_INTERACT_C2S) || packet.equals(ModPackets.TOGGLE_PACIFIST_C2S)) && !pet.isNoBreakMode) unlocked = false;
+            Text state = Text.translatable(value ? "gui.bondofthebeast.on" : "gui.bondofthebeast.off");
+            Text fullLabel = Text.empty().append(label.copy().formatted(net.minecraft.util.Formatting.GOLD)).append(Text.literal(" — ")).append(state);
+            Text lockedReason = Text.translatable("gui.bondofthebeast.requires_stage",
+                    BondRules.requiredStage(skill));
+            if (!pet.forced) lockedReason = Text.translatable("gui.bondofthebeast.requires_trust",
+                    Text.translatable("gui.bondofthebeast.trust." + VoluntaryBondService.requiredTier(skill)));
+            if ((name.equals("interact") || name.equals("pacifist")) && !pet.isNoBreakMode) lockedReason = Text.translatable("gui.bondofthebeast.staff.requires_nobreak");
+            if (pet.escapeTicks > 0) lockedReason = Text.translatable("gui.bondofthebeast.escape_seconds", (pet.escapeTicks + 19) / 20);
+            if (!pet.hasCollar) lockedReason = Text.translatable("gui.bondofthebeast.staff.no_collar_suffix");
+            if (!pet.isOnline) lockedReason = Text.translatable("gui.bondofthebeast.staff.offline");
+            Text tooltip = fullLabel.copy().append(Text.literal("\n")).append(
+                    Text.translatable("gui.bondofthebeast.control.description." + name).formatted(net.minecraft.util.Formatting.RESET));
+            if (!unlocked) tooltip = tooltip.copy().append(Text.literal("\n")).append(lockedReason.copy().formatted(net.minecraft.util.Formatting.GRAY));
+            button.active = unlocked;
+            button.setTooltip(net.minecraft.client.gui.tooltip.Tooltip.of(tooltip));
+        });
+        controlUpdates.get(controlUpdates.size() - 1).run();
     }
 
     private void utility(int index, String name, String skill, String icon, ButtonWidget.PressAction press) {
         Text label = Text.translatable("gui.bondofthebeast." + name);
         var button = addDrawableChild(new GrimoireAbilityButton(book.x(180 + index % 3 * 64),
                 book.y(52 + index / 3 * 34), book.size(60), book.size(32), label, null, icon, press));
-        button.active = available(skill);
-        Text tooltip = Text.empty().append(label.copy().formatted(net.minecraft.util.Formatting.GOLD))
-                .append(Text.literal("\n")).append(Text.translatable("gui.bondofthebeast." + name + ".description"));
-        if (!button.active) {
-            Text reason = !pet.isOnline ? Text.translatable("gui.bondofthebeast.staff.offline") :
-                    !pet.hasCollar ? Text.translatable("gui.bondofthebeast.staff.no_collar_suffix") :
-                    pet.escapeTicks > 0 ? Text.translatable("gui.bondofthebeast.escape_seconds", pet.escapeTicks / 20) :
-                    pet.forced ? Text.translatable("gui.bondofthebeast.requires_stage", BondRules.requiredStage(skill)) :
-                    Text.translatable("gui.bondofthebeast.requires_trust",
-                            Text.translatable("gui.bondofthebeast.trust." + VoluntaryBondService.requiredTier(skill)));
-            tooltip = tooltip.copy().append(Text.literal("\n")).append(reason.copy().formatted(net.minecraft.util.Formatting.GRAY));
-        }
-        button.setTooltip(net.minecraft.client.gui.tooltip.Tooltip.of(tooltip));
+        controlUpdates.add(() -> {
+            button.active = available(skill);
+            Text tooltip = Text.empty().append(label.copy().formatted(net.minecraft.util.Formatting.GOLD))
+                    .append(Text.literal("\n")).append(Text.translatable("gui.bondofthebeast." + name + ".description"));
+            if (!button.active) {
+                Text reason = !pet.isOnline ? Text.translatable("gui.bondofthebeast.staff.offline") :
+                        !pet.hasCollar ? Text.translatable("gui.bondofthebeast.staff.no_collar_suffix") :
+                        pet.escapeTicks > 0 ? Text.translatable("gui.bondofthebeast.escape_seconds", (pet.escapeTicks + 19) / 20) :
+                        pet.forced ? Text.translatable("gui.bondofthebeast.requires_stage", BondRules.requiredStage(skill)) :
+                        Text.translatable("gui.bondofthebeast.requires_trust",
+                                Text.translatable("gui.bondofthebeast.trust." + VoluntaryBondService.requiredTier(skill)));
+                tooltip = tooltip.copy().append(Text.literal("\n")).append(reason.copy().formatted(net.minecraft.util.Formatting.GRAY));
+            }
+            button.setTooltip(net.minecraft.client.gui.tooltip.Tooltip.of(tooltip));
+        });
+        controlUpdates.get(controlUpdates.size() - 1).run();
     }
 
     private void send(Identifier packet) {
@@ -115,10 +124,29 @@ public class StaffPetScreen extends Screen {
         ClientPlayNetworking.send(packet, buffer);
     }
 
+    public boolean showsPet(java.util.UUID id) { return pet.uuid.equals(id); }
+
+    public void updatePet(StaffMainScreen.PetData data) {
+        if (!pet.uuid.equals(data.uuid)) return;
+        boolean rebuild = pet.isSitting != data.isSitting || pet.isTeleportEnabled != data.isTeleportEnabled ||
+                pet.isProtectionMode != data.isProtectionMode || pet.isAuraEnabled != data.isAuraEnabled ||
+                pet.isVampiricMode != data.isVampiricMode || pet.isNoBreakMode != data.isNoBreakMode ||
+                pet.isNoInteractMode != data.isNoInteractMode || pet.isPacifistMode != data.isPacifistMode ||
+                pet.isAbsorbed != data.isAbsorbed || pet.armorLocked != data.armorLocked ||
+                pet.itemForwarding != data.itemForwarding || pet.forced != data.forced || !pet.formId.equals(data.formId);
+        pet = data;
+        if (rebuild) clearAndInit();
+        else controlUpdates.forEach(Runnable::run);
+    }
+
     @Override public void close() { client.setScreen(parent); }
 
     @Override public void tick() {
         PetPreview.tick(preview);
+        if (++refreshTicks >= 20) {
+            refreshTicks = 0;
+            send(ModPackets.REQUEST_PET_STATUS_C2S);
+        }
     }
 
     @Override public void render(DrawContext context, int mouseX, int mouseY, float delta) {
@@ -131,7 +159,7 @@ public class StaffPetScreen extends Screen {
         GrimoireStyle.leather(context, 42, 42, 116, 19, false);
         GrimoireStyle.fittedText(context, textRenderer, Text.literal(pet.name.split("\\|")[0]).formatted(net.minecraft.util.Formatting.BOLD), 100, 47, 96, 0xFFF1DCA7);
         Text status = !pet.isOnline ? Text.translatable("gui.bondofthebeast.staff.offline") : !pet.hasCollar ? Text.translatable("gui.bondofthebeast.staff.no_collar_suffix") :
-                pet.escapeTicks > 0 ? Text.translatable("gui.bondofthebeast.escape_seconds", pet.escapeTicks / 20) :
+                pet.escapeTicks > 0 ? Text.translatable("gui.bondofthebeast.escape_seconds", (pet.escapeTicks + 19) / 20) :
                         pet.forced ? Text.translatable(pet.formStage < 0 ? "gui.bondofthebeast.human_stage.short" : "gui.bondofthebeast.stage", pet.formStage) :
                                 Text.translatable(pet.trustTier >= 3 ? "gui.bondofthebeast.bond_complete.short" : "gui.bondofthebeast.bond_time.remaining",
                                         VoluntaryBondService.remainingSeconds(pet.trustTier, pet.activeTicks) / 3600,
@@ -158,7 +186,7 @@ public class StaffPetScreen extends Screen {
         super.render(context, mouseX, mouseY, delta);
         if (mouseX >= book.x(54) && mouseX < book.x(147) && mouseY >= book.y(68) && mouseY < book.y(147)) {
             context.drawOrderedTooltip(textRenderer, textRenderer.wrapLines(Text.translatable("gui.bondofthebeast.escape_rule." +
-                    (!pet.forced || pet.formStage >= 3 ? "contract" : pet.formStage == 2 ? "enchanted" : "apple")),
+                    (!pet.forced || pet.contractSigned ? "contract" : pet.formStage >= 2 ? "enchanted" : "apple")),
                     Math.min(200, width - 24)), mouseX, mouseY);
         }
     }

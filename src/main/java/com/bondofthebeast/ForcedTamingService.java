@@ -118,7 +118,7 @@ public final class ForcedTamingService {
     }
 
     private static void sendProgress(PlayerEntity user, ServerPlayerEntity pet, int ticks) {
-        for (var player : new ServerPlayerEntity[]{pet}) {
+        for (var player : new ServerPlayerEntity[]{user instanceof ServerPlayerEntity holder ? holder : null, pet}) {
             if (player == null || !net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.canSend(player, ModPackets.COLLARING_PROGRESS_S2C)) continue;
             var buffer = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
             buffer.writeInt(ticks);

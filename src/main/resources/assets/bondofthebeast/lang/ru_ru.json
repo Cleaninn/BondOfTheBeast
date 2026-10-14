@@ -376,5 +376,7 @@
   "tooltip.bondofthebeast.contract_voluntary": "Shift + клик: добровольный договор.",
   "text.bondofthebeast.unbound_collar_received": "На тебе ошейник, но хозяина ещё нет. Пустой контракт может связать тебя.",
   "gui.bondofthebeast.control.inventory": "Предметы хозяину",
-  "gui.bondofthebeast.control.description.inventory": "Новые предметы идут хозяину. Старые вещи остаются. Если хозяин офлайн или нет места, предметы остаются у питомца."
+  "gui.bondofthebeast.control.description.inventory": "Новые предметы идут хозяину. Старые вещи остаются. Если хозяин офлайн или нет места, предметы остаются у питомца.",
+  "gui.bondofthebeast.diary.resist": "Сопротивляться",
+  "gui.bondofthebeast.diary.resistance_cooldown": "Повторить через %s с"
 }

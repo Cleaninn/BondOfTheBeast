@@ -147,7 +147,7 @@ public class StaffMainScreen extends Screen {
         public final String name;
         public boolean isSitting, isTeleportEnabled, isProtectionMode, isAuraEnabled, isPacifistMode, isVampiricMode, isNoBreakMode, isAbsorbed, isNoInteractMode;
         public int formStage = -2, escapeTicks;
-        public boolean forced, armorLocked, itemForwarding;
+        public boolean forced, armorLocked, itemForwarding, contractSigned;
         public float instinct;
         public int bondLevel, bondExp;
         public boolean hasCollar;

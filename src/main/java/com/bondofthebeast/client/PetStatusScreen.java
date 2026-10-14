@@ -23,53 +23,53 @@ public class PetStatusScreen extends Screen {
     @Override public void close() { client.setScreen(parent); }
 
     @Override protected void init() {
-        panel = GrimoireStyle.panel(width, height, 300, 194);
+        panel = GrimoireStyle.panel(width, height, 240, 220);
         resistButton = null;
         var bond = ModComponents.PLAYER_BOND.get(client.player);
-        if (bond.getForcedBond().forced && ForcedTamingService.stage(client.player) < 3) {
-            resistButton = addDrawableChild(new GrimoireButtonWidget(panel.x(14), panel.y(136), panel.size(272), panel.size(22),
-                    Text.translatable("gui.bondofthebeast.determination"), button -> {
+        if (bond.getForcedBond().forced && !bond.getForcedBond().contractSigned) {
+            resistButton = addDrawableChild(new GrimoireButtonWidget(panel.x(30), panel.y(155), panel.size(178), panel.size(22),
+                    Text.translatable("gui.bondofthebeast.diary.resist"), button -> {
                 ClientPlayNetworking.send(ModPackets.REQUEST_ESCAPE_C2S, PacketByteBufs.create());
                 close();
-            }));
+            }, true));
+            resistButton.setTooltip(net.minecraft.client.gui.tooltip.Tooltip.of(Text.translatable("gui.bondofthebeast.determination")));
         }
-        addDrawableChild(new GrimoireButtonWidget(panel.x(14), panel.y(164), panel.size(272), panel.size(20),
-                Text.translatable("gui.back"), button -> close()));
+        addDrawableChild(new GrimoireButtonWidget(panel.x(30), panel.y(185), panel.size(178), panel.size(20),
+                Text.translatable("gui.back"), button -> close(), true));
     }
 
     @Override public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         if (resistButton != null) {
             int cooldown = ForcedTamingService.resistanceCooldownSeconds(client.player);
             resistButton.active = cooldown == 0 && !ForcedTamingService.freeWindow(client.player) &&
-                    ForcedTamingService.stage(client.player) < 3;
-            resistButton.setMessage(Text.translatable(cooldown > 0 ? "gui.bondofthebeast.resistance_cooldown" :
-                    "gui.bondofthebeast.determination", cooldown));
+                    !ModComponents.PLAYER_BOND.get(client.player).getForcedBond().contractSigned;
+            resistButton.setMessage(Text.translatable(cooldown > 0 ? "gui.bondofthebeast.diary.resistance_cooldown" :
+                    "gui.bondofthebeast.diary.resist", cooldown));
         }
-        GrimoireStyle.drawBook(context, width, height);
-        GrimoireStyle.beginPanel(context, panel);
-        GrimoireStyle.fittedText(context, textRenderer, title, 150, 12, 262, 0xFFF0DCAA);
+        PetDiaryStyle.begin(context, panel, width, height);
+        GrimoireStyle.fittedText(context, textRenderer, title, 120, 12, 174, 0xFFF0DCAA);
         var bond = ModComponents.PLAYER_BOND.get(client.player);
         boolean forced = bond.getForcedBond().forced;
         int stage = ForcedTamingService.stage(client.player);
         var trust = bond.getVoluntaryBond();
         Text state = forced ? Text.translatable(stage < 0 ? "gui.bondofthebeast.human_stage" : "gui.bondofthebeast.stage", stage)
                 : Text.translatable("gui.bondofthebeast.trust." + trust.tier);
-        GrimoireStyle.wrappedText(context, textRenderer, state, 150, 39, 268, 22, GrimoireStyle.INK);
-        context.fill(30, 64, 270, 65, 0xFFAA8B5C);
+        GrimoireStyle.wrappedText(context, textRenderer, state, 119, 42, 160, 20, GrimoireStyle.INK);
+        context.fill(43, 67, 195, 68, 0xFFAA8B5C);
         Text summary;
         Text hint;
         if (forced) {
             summary = Text.translatable(bond.getForcedBond().contractSigned ? "gui.bondofthebeast.permanent_forced_bond" : "gui.bondofthebeast.temporary_forced_bond");
             hint = bond.getForcedBond().contractSigned ? Text.translatable("gui.bondofthebeast.escape_rule.contract") :
-                    ForcedTamingService.freeWindow(client.player) ? Text.translatable("gui.bondofthebeast.escape_seconds", bond.getForcedBond().escapeTicks / 20) :
+                    ForcedTamingService.freeWindow(client.player) ? Text.translatable("gui.bondofthebeast.escape_seconds", (bond.getForcedBond().escapeTicks + 19) / 20) :
                     Text.translatable("gui.bondofthebeast.escape_rule." + (stage >= 2 ? "enchanted" : "apple"));
         } else {
             int seconds = VoluntaryBondService.remainingSeconds(trust.tier, trust.activeTicks);
             summary = Text.translatable(trust.tier >= 3 ? "gui.bondofthebeast.bond_complete" : "gui.bondofthebeast.bond_time", seconds / 3600, seconds / 60 % 60);
             hint = Text.translatable("gui.bondofthebeast.owner_controls");
         }
-        GrimoireStyle.wrappedText(context, textRenderer, summary, 150, 75, 260, 30, UiColors.BORDER);
-        GrimoireStyle.wrappedText(context, textRenderer, hint, 150, 110, 260, 20, GrimoireStyle.MUTED_INK);
+        GrimoireStyle.wrappedText(context, textRenderer, summary, 119, 77, 158, 26, GrimoireStyle.INK);
+        GrimoireStyle.wrappedText(context, textRenderer, hint, 119, 110, 158, 18, GrimoireStyle.MUTED_INK);
         context.getMatrices().pop();
         super.render(context, mouseX, mouseY, delta);
     }

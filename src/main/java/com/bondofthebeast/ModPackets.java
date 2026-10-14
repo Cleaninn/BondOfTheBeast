@@ -19,6 +19,9 @@ import java.util.Set;
 import java.util.UUID;
 
 public class ModPackets {
+    public static final Identifier REQUEST_PET_STATUS_C2S = new Identifier(BondOfTheBeast.MOD_ID, "request_pet_status_c2s");
+    public static final Identifier UPDATE_PET_STATUS_S2C = new Identifier(BondOfTheBeast.MOD_ID, "update_pet_status_s2c");
+    public static final Identifier PET_STATUS_UNAVAILABLE_S2C = new Identifier(BondOfTheBeast.MOD_ID, "pet_status_unavailable_s2c");
     public static final Identifier COLLARING_PROGRESS_S2C = new Identifier(BondOfTheBeast.MOD_ID, "collaring_progress_s2c");
     public static final Identifier OPEN_OWNER_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_owner_gui");
     public static final Identifier OPEN_PET_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_pet_gui");
@@ -48,6 +51,22 @@ public class ModPackets {
     private static boolean canPetObey(ServerPlayerEntity pet) { return BondRules.canObey(pet); }
 
     public static void registerC2SPackets() {
+        ServerPlayNetworking.registerGlobalReceiver(REQUEST_PET_STATUS_C2S, (server, owner, network, buf, sender) -> {
+            UUID id = buf.readUuid();
+            server.execute(() -> {
+                // Status must remain readable while resistance disables commands.
+                ServerPlayerEntity pet = server.getPlayerManager().getPlayer(id);
+                var reply = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+                var registry = ModComponents.PLAYER_BOND.get(owner).getRegisteredPets();
+                if (!BondRules.canOwn(owner) || (pet == null ? !registry.containsKey(id.toString()) : !BondRules.owns(owner, pet))) {
+                    reply.writeUuid(id);
+                    ServerPlayNetworking.send(owner, PET_STATUS_UNAVAILABLE_S2C, reply);
+                    return;
+                }
+                writePetData(reply, id, pet == null ? registry.get(id.toString()) : pet.getGameProfile().getName(), server);
+                ServerPlayNetworking.send(owner, UPDATE_PET_STATUS_S2C, reply);
+            });
+        });
         registerToggle(TOGGLE_ITEM_FORWARDING_C2S, "inventory", (bond, owner, pet) ->
                 bond.setItemForwarding(!bond.isItemForwarding()));
         ServerPlayNetworking.registerGlobalReceiver(REQUEST_ESCAPE_C2S, (server, player, network, buf, sender) ->
@@ -245,5 +264,6 @@ public class ModPackets {
         buf.writeInt(onlinePet == null ? 0 : ModComponents.PLAYER_BOND.get(onlinePet).getVoluntaryBond().activeTicks);
         buf.writeString(PetPreviewState.get(server).form(petUuid));
         buf.writeBoolean(onlinePet != null && ModComponents.PLAYER_BOND.get(onlinePet).isItemForwarding());
+        buf.writeBoolean(state.contractSigned);
     }
 }
