@@ -1,0 +1,23 @@
+package com.bondofthebeast.item;
+
+import dev.emi.trinkets.api.TrinketItem;
+import net.minecraft.client.item.TooltipContext;
+import net.minecraft.item.ItemStack;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+
+public class EnergySourceRingItem extends TrinketItem {
+    public EnergySourceRingItem(Settings settings) { super(settings); }
+
+    @Override
+    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+        super.appendTooltip(stack, world, tooltip, context);
+        tooltip.add(Text.translatable("tooltip.bondofthebeast.energy_source_ring").formatted(Formatting.GRAY));
+        tooltip.add(Text.translatable("tooltip.bondofthebeast.energy_source_ring.use").formatted(Formatting.GRAY));
+        tooltip.add(Text.translatable("tooltip.bondofthebeast.energy_source_ring.amount").formatted(Formatting.GRAY));
+    }
+}

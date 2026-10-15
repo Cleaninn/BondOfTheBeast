@@ -404,5 +404,9 @@
   "gui.bondofthebeast.stage_notice.pet_body": "Your owner has more control. Orders last up to %s s.",
   "item.bondofthebeast.dustguard_amulet": "Amulet of Vigilance",
   "tooltip.bondofthebeast.dustguard_amulet": "Wear on your neck to resist Lunar Oblivion Dust and forced taming.",
-  "text.bondofthebeast.cat_bond_blocks_cure": "You cannot return from cat form to human while you have an owner."
+  "text.bondofthebeast.cat_bond_blocks_cure": "You cannot return from cat form to human while you have an owner.",
+  "item.bondofthebeast.energy_source_ring": "Energy Source Ring",
+  "tooltip.bondofthebeast.energy_source_ring": "Wear this ring to feed your familiar fox.",
+  "tooltip.bondofthebeast.energy_source_ring.use": "Your collared pet right-clicks you with an empty hand.",
+  "tooltip.bondofthebeast.energy_source_ring.amount": "+70 mana and food. Cooldown: 3 s."
 }

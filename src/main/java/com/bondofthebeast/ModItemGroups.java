@@ -26,6 +26,7 @@ public class ModItemGroups {
                         entries.add(ModBlocks.PET_BED);
                         entries.add(ModItems.NECKLACE_OF_CLARITY);
                         entries.add(ModItems.DUSTGUARD_AMULET);
+                        entries.add(ModItems.ENERGY_SOURCE_RING);
                     })
                     .build());
 

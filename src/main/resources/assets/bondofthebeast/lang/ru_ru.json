@@ -405,5 +405,9 @@
   "gui.bondofthebeast.stage_notice.pet_body": "Влияние хозяина усилилось. Приказы действуют до %s с.",
   "item.bondofthebeast.dustguard_amulet": "Талисман бодрости",
   "tooltip.bondofthebeast.dustguard_amulet": "На шее защищает от пыли лунного забвения и принудительного приручения.",
-  "text.bondofthebeast.cat_bond_blocks_cure": "Пока у вас есть хозяин, вернуться из кошачьей формы в человека нельзя."
+  "text.bondofthebeast.cat_bond_blocks_cure": "Пока у вас есть хозяин, вернуться из кошачьей формы в человека нельзя.",
+  "item.bondofthebeast.energy_source_ring": "Кольцо источника",
+  "tooltip.bondofthebeast.energy_source_ring": "На пальце позволяет вашему лису-фамильяру питаться от вас.",
+  "tooltip.bondofthebeast.energy_source_ring.use": "Питомец в ошейнике: ПКМ по хозяину пустой рукой.",
+  "tooltip.bondofthebeast.energy_source_ring.amount": "+70 маны и сытость. Откат: 3 с."
 }
