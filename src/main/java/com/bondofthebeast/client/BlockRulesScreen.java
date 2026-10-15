@@ -41,6 +41,11 @@ public final class BlockRulesScreen extends Screen {
     private int x(int value) { return left + size(value); }
     private int y(int value) { return top + size(value); }
 
+    @Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) { client.setScreen(null); return true; }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
     @Override public void close() { client.setScreen(parent); }
 
     @Override public void render(DrawContext context, int mouseX, int mouseY, float delta) {

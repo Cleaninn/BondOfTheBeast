@@ -140,5 +140,10 @@ public class BlockSelectionScreen extends Screen {
         close();
     }
 
+    @Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) { client.setScreen(null); return true; }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
     @Override public void close() { client.setScreen(parent); }
 }

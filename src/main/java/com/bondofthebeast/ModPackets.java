@@ -123,11 +123,10 @@ public class ModPackets {
             b.getForcedBond().controlTicks = b.isSitting() ? 600 : 0;
         });
         registerToggle(TOGGLE_PACIFIST_C2S, "nobreak", (b, p, pet) -> {
-            if (b.isNoBreakMode()) b.setPacifistMode(!b.isPacifistMode());
+            b.setPacifistMode(!b.isPacifistMode());
         });
         registerToggle(TOGGLE_NO_BREAK_C2S, "nobreak", (b, p, pet) -> {
             b.setNoBreakMode(!b.isNoBreakMode());
-            if (!b.isNoBreakMode()) { b.setNoInteractMode(false); b.setPacifistMode(false); }
         });
         registerToggle(TOGGLE_TELEPORT_C2S, "tp", (b, p, pet) -> {
             if (LeashManager.isTethered(pet)) return;
@@ -141,7 +140,7 @@ public class ModPackets {
         });
         registerToggle(TOGGLE_VAMPIRIC_C2S, "vampiric", (b, p, pet) -> b.setVampiricMode(!b.isVampiricMode()));
         registerToggle(TOGGLE_NO_INTERACT_C2S, "nobreak", (b, p, pet) -> {
-            if (b.isNoBreakMode()) b.setNoInteractMode(!b.isNoInteractMode());
+            b.setNoInteractMode(!b.isNoInteractMode());
         });
         registerToggle(TOGGLE_ABSORB_C2S, "absorb", (b, p, pet) -> {
             if (b.isAbsorbed()) {

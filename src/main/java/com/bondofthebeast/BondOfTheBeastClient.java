@@ -30,7 +30,8 @@ public class BondOfTheBeastClient implements ClientModInitializer {
         });
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.COLLARING_PROGRESS_S2C, (client, handler, buffer, sender) -> {
             int ticks = buffer.readInt();
-            client.execute(() -> BondHud.updateCollaring(ticks));
+            boolean victim = buffer.readBoolean();
+            client.execute(() -> BondHud.updateCollaring(ticks, victim));
         });
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> BondHud.reset());
         net.minecraft.client.gui.screen.ingame.HandledScreens.register(PetArmorScreenHandler.TYPE, com.bondofthebeast.client.PetArmorScreen::new);
@@ -61,7 +62,10 @@ public class BondOfTheBeastClient implements ClientModInitializer {
 
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.OPEN_PET_STATS_GUI, (c, h, b, rs) -> {
             StaffMainScreen.PetData data = readPet(b);
-            c.execute(() -> c.setScreen(new StaffPetScreen(null, data)));
+            c.execute(() -> {
+                if (c.currentScreen instanceof StaffPetScreen screen && screen.showsPet(data.uuid)) screen.updatePet(data);
+                else c.setScreen(new StaffPetScreen(null, data));
+            });
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.OPEN_BED_GUI, (c, h, b, rs) -> {

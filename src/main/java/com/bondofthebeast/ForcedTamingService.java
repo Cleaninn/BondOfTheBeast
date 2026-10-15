@@ -122,6 +122,7 @@ public final class ForcedTamingService {
             if (player == null || !net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.canSend(player, ModPackets.COLLARING_PROGRESS_S2C)) continue;
             var buffer = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
             buffer.writeInt(ticks);
+            buffer.writeBoolean(player == pet);
             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, ModPackets.COLLARING_PROGRESS_S2C, buffer);
         }
     }

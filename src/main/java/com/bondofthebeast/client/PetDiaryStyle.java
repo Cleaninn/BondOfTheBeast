@@ -16,10 +16,6 @@ public final class PetDiaryStyle {
         matrices.translate(panel.left(), panel.top(), 0);
         matrices.scale(panel.scale(), panel.scale(), 1);
         context.drawTexture(BOOK, 0, 0, 0, 0, 240, 220, 240, 220);
-        // Replace the old icon slots with room for the current diary information.
-        blue(context, 30, 18, 178, 190);
-        context.drawTexture(BOOK, 30, 32, 178, 104, 96, 30, 44, 52, 240, 220);
-        context.drawBorder(30, 32, 178, 104, 0xFF9B805B);
     }
 
     private static void blue(DrawContext context, int x, int y, int width, int height) {
