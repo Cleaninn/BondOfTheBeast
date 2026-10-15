@@ -7,13 +7,11 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 
-import java.util.Map;
+import java.util.List;
 
 /** Shared rules used by both server actions and client presentation. */
 public final class BondRules {
-    public static final Map<String, String> SKILL_PARENTS = Map.of(
-            "sit", "", "tp", "sit", "prot", "sit", "nobreak", "sit",
-            "absorb", "tp", "vampiric", "prot", "aura", "nobreak");
+    public static final List<String> COMMANDS = List.of("sit", "tp", "prot", "nobreak", "absorb", "vampiric", "aura", "armor", "inventory");
 
     private BondRules() {}
 
@@ -47,22 +45,24 @@ public final class BondRules {
     public static boolean canObey(PlayerEntity player) {
         var bond = ModComponents.PLAYER_BOND.get(player);
         return bond.hasOwner() && !ForcedTamingService.freeWindow(player) &&
-                (!bond.getForcedBond().forced || ForcedTamingService.stage(player) >= 1);
+                (!bond.getForcedBond().forced || ForcedTamingService.stage(player) >= 0);
     }
 
     public static int requiredStage(String command) {
         return switch (command) {
-            case "sit", "nobreak", "inventory" -> 2;
-            case "armor" -> 3;
+            case "sit", "nobreak", "inventory" -> 0;
+            case "tp", "armor" -> 1;
+            case "prot", "aura" -> 2;
+            case "vampiric", "absorb" -> 3;
             default -> 99;
         };
     }
 
     public static boolean allows(PlayerEntity pet, String command) {
-        if (!canObey(pet) || !hasCollar(pet)) return false;
+        if (!COMMANDS.contains(command) || !canObey(pet) || !hasCollar(pet)) return false;
         var bond = ModComponents.PLAYER_BOND.get(pet);
         return bond.getForcedBond().forced ? ForcedTamingService.stage(pet) >= requiredStage(command) :
-                canBePet(pet) && bond.getVoluntaryBond().tier >= VoluntaryBondService.requiredTier(command);
+                canBePet(pet);
     }
 
     public static boolean hasCollar(PlayerEntity player) {

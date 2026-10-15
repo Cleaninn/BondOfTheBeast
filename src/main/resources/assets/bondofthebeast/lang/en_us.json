@@ -351,7 +351,7 @@
   "gui.bondofthebeast.control.next_level": "To next level: %s",
   "gui.bondofthebeast.control.max_level": "Maximum bond level",
   "gui.bondofthebeast.control.description.sit": "Stops the pet for 30 seconds. Press again to release it.",
-  "gui.bondofthebeast.control.description.tp": "Recalls a pet that falls behind. Tethered pets are not teleported.",
+  "gui.bondofthebeast.control.description.tp": "Returns the pet to its owner when farther than 20 blocks away.",
   "gui.bondofthebeast.control.description.prot": "Strengthens the pet and highlights the creature attacked by the owner.",
   "gui.bondofthebeast.control.description.aura": "Within 12 blocks, grants the pet resistance and the owner regeneration.",
   "gui.bondofthebeast.control.description.vampiric": "The pet's attacks restore the owner's health.",
@@ -383,5 +383,9 @@
   "gui.bondofthebeast.hud.forced_bound": "%s forcibly established a bond with you. Check your shapeshifter diary.",
   "gui.bondofthebeast.restrictions": "Restrictions",
   "gui.bondofthebeast.diary.commands": "Owner commands",
-  "gui.bondofthebeast.diary.unavailable": "Unavailable"
+  "gui.bondofthebeast.diary.unavailable": "Unavailable",
+  "gui.bondofthebeast.requires_full_form": "Requires a fully transformed animal",
+  "gui.bondofthebeast.diary.available": "Available",
+  "gui.bondofthebeast.control.armor_open": "Manage armor",
+  "gui.bondofthebeast.control.description.armor_open": "Your owner can view and change your armor."
 }

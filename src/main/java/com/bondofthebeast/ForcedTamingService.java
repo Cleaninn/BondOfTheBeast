@@ -299,11 +299,6 @@ public final class ForcedTamingService {
         if (bond.isAbsorbed() && ++state.absorbedTicks >= 1200) BondService.releaseAbsorption(pet);
         if (!bond.isAbsorbed()) state.absorbedTicks = 0;
         if (!state.forced) return;
-        if (bond.isProtectionMode()) bond.setProtectionMode(false);
-        if (bond.isAuraEnabled()) bond.setAuraEnabled(false);
-        if (bond.isVampiricMode()) bond.setVampiricMode(false);
-        if (bond.isTeleportEnabled()) bond.setTeleportEnabled(false);
-        if (bond.isAbsorbed()) BondService.releaseAbsorption(pet);
         if (!pet.isAlive()) return;
         if (!BondRules.hasCollar(pet) && !state.contractSigned) { BondService.release(pet); return; }
         if (state.lastStage != stage) {

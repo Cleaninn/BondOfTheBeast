@@ -42,15 +42,18 @@ public final class BondHud {
 
         Text message;
         boolean fitting = isCollaringVisible();
+        boolean curseWarning = state.warningTicks >= 0 &&
+                (ForcedTamingService.infused(client.player) || state.catalystWarningFromCookie) &&
+                !ForcedTamingService.freeWindow(client.player);
         if (fitting) message = Text.translatable(collaringVictim ?
                 "gui.bondofthebeast.hud.collar_victim" : "gui.bondofthebeast.hud.collar_owner");
         else if (!owner.isEmpty() && now < noticeUntil) {
             message = Text.translatable("gui.bondofthebeast.hud.forced_bound", bond.getOwnerName());
-            if (state.warningTicks >= 0) message = message.copy().append(Text.literal("\n"))
+            if (curseWarning) message = message.copy().append(Text.literal("\n"))
                     .append(Text.translatable("text.bondofthebeast.curse_countdown", (state.warningTicks + 19) / 20));
         }
         else if (state.finalWarningTicks >= 0) message = Text.translatable("text.bondofthebeast.final_countdown", (state.finalWarningTicks + 19) / 20);
-        else if (state.warningTicks >= 0) message = Text.translatable("text.bondofthebeast.curse_countdown", (state.warningTicks + 19) / 20);
+        else if (curseWarning) message = Text.translatable("text.bondofthebeast.curse_countdown", (state.warningTicks + 19) / 20);
         else return;
 
         int panelWidth = Math.min(240, client.getWindow().getScaledWidth() - 10);

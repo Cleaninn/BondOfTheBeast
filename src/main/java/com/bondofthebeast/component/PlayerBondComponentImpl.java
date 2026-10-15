@@ -17,17 +17,11 @@ import java.util.Set;
 public class PlayerBondComponentImpl implements PlayerBondComponent {
     private final PlayerEntity provider;
     private final ForcedBondState forcedBond = new ForcedBondState();
-    private final VoluntaryBondState voluntaryBond = new VoluntaryBondState();
-    @Override public VoluntaryBondState getVoluntaryBond() { return voluntaryBond; }
     @Override public ForcedBondState getForcedBond() { return forcedBond; }
     private String ownerUUID = "";
     private String ownerName = "";
     private int tamingState = 0; // 0 = Свободен, 1 = Ломается воля, 2 = Полноценный питомец
     private String petNickname = null;
-    private int bondLevel = 1;
-    private int bondExperience = 0;
-    private int skillPoints = 0;
-    private final Set<String> unlockedSkills = new HashSet<>();
     private final Map<String, String> registeredPets = new HashMap<>();
     private BlockPos bedPos = null;
     private String bedDimension = "";
@@ -54,7 +48,6 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
 
     public PlayerBondComponentImpl(PlayerEntity provider) {
         this.provider = provider;
-        this.unlockedSkills.add("sit");
     }
 
     @Override
@@ -65,7 +58,6 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     @Override
     public void readFromNbt(NbtCompound tag) {
         forcedBond.read(tag.getCompound("ForcedBond"));
-        voluntaryBond.read(tag.getCompound("VoluntaryBond"));
         this.ownerUUID = tag.getString("OwnerUUID");
         this.ownerName = tag.getString("OwnerName");
 
@@ -80,19 +72,6 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
             forcedBond.token = java.util.UUID.randomUUID().toString();
         }
         this.petNickname = tag.contains("PetNickname") ? tag.getString("PetNickname") : null;
-        this.bondLevel = Math.max(1, tag.getInt("BondLevel"));
-        this.bondExperience = tag.getInt("BondExperience");
-        this.skillPoints = tag.getInt("SkillPoints");
-
-        this.unlockedSkills.clear();
-        NbtList skillsList = tag.getList("UnlockedSkills", NbtElement.STRING_TYPE);
-        for (int i = 0; i < skillsList.size(); i++) this.unlockedSkills.add(skillsList.getString(i));
-        if (this.unlockedSkills.isEmpty()) this.unlockedSkills.add("sit");
-        if (!tag.contains("VoluntaryBond") && !forcedBond.forced && !this.ownerUUID.isEmpty()) {
-            for (String skill : this.unlockedSkills)
-                voluntaryBond.tier = Math.max(voluntaryBond.tier, Math.min(3, com.bondofthebeast.VoluntaryBondService.requiredTier(skill)));
-        }
-
         this.registeredPets.clear();
         if (tag.contains("RegisteredPets")) {
             NbtCompound petsTag = tag.getCompound("RegisteredPets");
@@ -132,19 +111,13 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     @Override
     public void writeToNbt(NbtCompound tag) {
         tag.put("ForcedBond", forcedBond.write());
-        tag.put("VoluntaryBond", voluntaryBond.write());
         tag.putString("OwnerUUID", this.ownerUUID);
         tag.putString("OwnerName", this.ownerName);
         tag.putInt("TamingState", this.tamingState);
 
         if (this.petNickname != null) tag.putString("PetNickname", this.petNickname);
-        tag.putInt("BondLevel", this.bondLevel);
-        tag.putInt("BondExperience", this.bondExperience);
-        tag.putInt("SkillPoints", this.skillPoints);
-
-        NbtList skillsList = new NbtList();
-        for (String skill : this.unlockedSkills) skillsList.add(NbtString.of(skill));
-        tag.put("UnlockedSkills", skillsList);
+        // Discard obsolete progression data when existing saves are rewritten.
+        for (String key : java.util.List.of("BondLevel", "BondExperience", "SkillPoints", "UnlockedSkills", "VoluntaryBond")) tag.remove(key);
 
         NbtCompound petsTag = new NbtCompound();
         this.registeredPets.forEach(petsTag::putString);
@@ -200,7 +173,6 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     @Override public void setOwner(String uuid, String name) {
         if (!uuid.equals(this.ownerUUID)) {
             itemForwarding = false;
-            voluntaryBond.read(new NbtCompound());
             forcedBond.read(new NbtCompound());
         }
         this.ownerUUID = uuid;
@@ -212,7 +184,6 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     @Override public void clearOwner() {
         itemForwarding = false;
         forcedBond.read(new NbtCompound());
-        voluntaryBond.read(new NbtCompound());
         this.ownerUUID = "";
         this.ownerName = "";
         this.petNickname = null;
@@ -247,71 +218,6 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
         this.petNickname = name;
         ModComponents.PLAYER_BOND.sync(this.provider);
     }
-
-    @Override public int getBondLevel() { return bondLevel; }
-
-    @Override public void setBondLevel(int level) {
-        this.bondLevel = Math.max(1, Math.min(100, level));
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public int getBondExperience() { return bondExperience; }
-
-    @Override public void setBondExperience(int exp) {
-        this.bondExperience = exp;
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public void addBondExperience(int exp) {
-        if (!hasOwner() || exp <= 0) return;
-        this.bondExperience += exp;
-        int maxExp = this.bondLevel * 100;
-        boolean leveledUp = false;
-
-        while (this.bondExperience >= maxExp && this.bondLevel < 100) {
-            this.bondExperience -= maxExp;
-            this.bondLevel++;
-            this.skillPoints++;
-            maxExp = this.bondLevel * 100;
-            leveledUp = true;
-        }
-
-        if (leveledUp && this.bondLevel >= 5 && this.provider instanceof ServerPlayerEntity sp) {
-            com.bondofthebeast.BondOfTheBeast.grantAdvancement(sp, "pet_story/bond_level");
-            ServerPlayerEntity owner = sp.getServer().getPlayerManager().getPlayer(java.util.UUID.fromString(this.ownerUUID));
-            if (owner != null) {
-                com.bondofthebeast.BondOfTheBeast.grantAdvancement(owner, "owner_story/bond_level");
-            }
-        }
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public int getSkillPoints() { return this.skillPoints; }
-
-    @Override public void setSkillPoints(int points) {
-        this.skillPoints = Math.max(0, points);
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public void addSkillPoints(int points) {
-        this.skillPoints = Math.max(0, this.skillPoints + points);
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public Set<String> getUnlockedSkills() { return this.unlockedSkills; }
-
-    @Override public void unlockSkill(String skill) {
-        this.unlockedSkills.add(skill);
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public void clearSkills() {
-        this.unlockedSkills.clear();
-        this.unlockedSkills.add("sit");
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public boolean isSkillUnlocked(String skill) { return this.unlockedSkills.contains(skill); }
 
     @Override public Map<String, String> getRegisteredPets() { return registeredPets; }
 

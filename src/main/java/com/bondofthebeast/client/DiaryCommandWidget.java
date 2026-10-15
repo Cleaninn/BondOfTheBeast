@@ -34,7 +34,7 @@ final class DiaryCommandWidget extends ButtonWidget {
             lastAvailable = unlocked;
             lastEnabled = on;
             Text status = Text.translatable(!unlocked ? "gui.bondofthebeast.diary.unavailable" :
-                    on ? "gui.bondofthebeast.on" : "gui.bondofthebeast.off");
+                    name.equals("armor_open") ? "gui.bondofthebeast.diary.available" : on ? "gui.bondofthebeast.on" : "gui.bondofthebeast.off");
             Text tooltip = getMessage().copy().append(Text.literal(" — ")).append(status)
                     .append(Text.literal("\n")).append(Text.translatable("gui.bondofthebeast.control.description." + name));
             setTooltip(Tooltip.of(tooltip));

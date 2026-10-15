@@ -38,18 +38,17 @@ public class PetStatusScreen extends Screen {
             }, true));
         }
         command("sit", "sit", "sit", bond::isSitting);
-        if (!bond.getForcedBond().forced) {
-            command("tp", "tp", "tp", bond::isTeleportEnabled);
-            command("prot", "prot", "prot", bond::isProtectionMode);
-            command("aura", "aura", "aura", bond::isAuraEnabled);
-            command("vampiric", "vampiric", "vampiric", bond::isVampiricMode);
-            command("absorb", "absorb", "absorb", bond::isAbsorbed);
-        }
+        command("tp", "tp", "tp", bond::isTeleportEnabled);
+        command("prot", "prot", "prot", bond::isProtectionMode);
+        command("aura", "aura", "aura", bond::isAuraEnabled);
+        command("vampiric", "vampiric", "vampiric", bond::isVampiricMode);
+        command("absorb", "absorb", "absorb", bond::isAbsorbed);
         command("inventory", "inventory", "inventory", bond::isItemForwarding);
         command("nobreak", "nobreak", "nobreak", bond::isNoBreakMode);
         command("interact", "interact", "nobreak", bond::isNoInteractMode);
         command("pacifist", "pacifist", "nobreak", bond::isPacifistMode);
         command("armor_lock", "armor_lock", "armor", () -> bond.getForcedBond().armorLocked);
+        command("armor_open", "armor", "armor", () -> true);
     }
 
     private void command(String name, String glyph, String skill, java.util.function.BooleanSupplier enabled) {
@@ -64,7 +63,7 @@ public class PetStatusScreen extends Screen {
         try {
             var uuid = java.util.UUID.fromString(bond.getOwnerUUID());
             var data = new StaffMainScreen.PetData(uuid, bond.getOwnerName(), false, false, false, false, false,
-                    false, false, false, false, 1, 0, false, 0, java.util.Set.of(), java.util.Set.of(), java.util.Set.of(), true);
+                    false, false, false, false, false, java.util.Set.of(), java.util.Set.of(), java.util.Set.of(), true);
             var live = client.world.getPlayerByUuid(uuid);
             if (live != null) data.formId = net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(live).getCurrentForm().getIDString();
             return PetPreview.create(client, data);

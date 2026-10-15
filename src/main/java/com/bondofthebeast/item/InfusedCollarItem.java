@@ -6,6 +6,12 @@ import com.bondofthebeast.CollarItem;
 public class InfusedCollarItem extends CollarItem {
     public InfusedCollarItem(Settings settings) { super(settings); }
     @Override protected boolean canSelfEquipFromAir() { return false; }
+    @Override public void onUnequip(net.minecraft.item.ItemStack stack, dev.emi.trinkets.api.SlotReference slot,
+                                    net.minecraft.entity.LivingEntity entity) {
+        super.onUnequip(stack, slot, entity);
+        if (entity instanceof net.minecraft.server.network.ServerPlayerEntity player)
+            com.bondofthebeast.CollarCatalystService.reservoirRemoved(player);
+    }
     @Override public void appendTooltip(net.minecraft.item.ItemStack stack, net.minecraft.world.World world,
             java.util.List<net.minecraft.text.Text> tooltip, net.minecraft.client.item.TooltipContext context) {
         super.appendTooltip(stack, world, tooltip, context);

@@ -29,7 +29,6 @@ public class ModPackets {
     public static final Identifier OPEN_PET_STATS_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_pet_stats_gui");
     public static final Identifier OPEN_BED_GUI = new Identifier(BondOfTheBeast.MOD_ID, "open_bed_gui");
     public static final Identifier SIGN_CONTRACT_C2S = new Identifier(BondOfTheBeast.MOD_ID, "sign_contract_c2s");
-    public static final Identifier UNLOCK_SKILL_C2S = new Identifier(BondOfTheBeast.MOD_ID, "unlock_skill_c2s");
     public static final Identifier UPDATE_BED_C2S = new Identifier(BondOfTheBeast.MOD_ID, "update_bed_c2s");
     public static final Identifier TOGGLE_PET_STATE_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_pet_state_c2s");
     public static final Identifier TOGGLE_TELEPORT_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_teleport_c2s");
@@ -87,16 +86,6 @@ public class ModPackets {
                     ItemStack stack = player.getMainHandStack();
                     if (stack.getItem() instanceof ContractItem contract) contract.finalizeContract(stack, player);
                 }));
-        ServerPlayNetworking.registerGlobalReceiver(UNLOCK_SKILL_C2S, (server, player, handler, buf, sender) -> {
-            UUID id = buf.readUuid(); String skill = buf.readString(32);
-            server.execute(() -> {
-                ServerPlayerEntity pet = controlledPet(player, id);
-                if (pet == null) return;
-                var bond = ModComponents.PLAYER_BOND.get(pet);
-                // Legacy purchase channel: stage unlocks are automatic and never spend points.
-                refresh(player, pet);
-            });
-        });
         ServerPlayNetworking.registerGlobalReceiver(UPDATE_BLOCK_LISTS_C2S, (server, player, handler, buf, sender) -> {
             UUID id = buf.readUuid(); int type = buf.readInt(); int size = buf.readInt();
             if (size < 0 || size > 4096 || (type != 0 && type != 1)) return;
@@ -236,9 +225,8 @@ public class ModPackets {
             buf.writeBoolean(petBond.isSitting()); buf.writeBoolean(petBond.isTeleportEnabled()); buf.writeBoolean(petBond.isProtectionMode());
             buf.writeBoolean(petBond.isAuraEnabled()); buf.writeBoolean(petBond.isPacifistMode()); buf.writeBoolean(petBond.isVampiricMode());
             buf.writeBoolean(petBond.isNoBreakMode()); buf.writeBoolean(petBond.isAbsorbed()); buf.writeBoolean(petBond.isNoInteractMode());
-            buf.writeInt(petBond.getBondLevel()); buf.writeInt(petBond.getBondExperience()); buf.writeBoolean(hasCollar);
-            buf.writeInt(petBond.getSkillPoints());
-            Set<String> skills = new java.util.HashSet<>(); for (String command : java.util.List.of("sit", "tp", "prot", "nobreak", "absorb", "vampiric", "aura", "armor", "inventory")) if (BondRules.allows(onlinePet, command)) skills.add(command); buf.writeInt(skills.size()); for(String s : skills) buf.writeString(s);
+            buf.writeBoolean(hasCollar);
+            Set<String> skills = new java.util.HashSet<>(); for (String command : BondRules.COMMANDS) if (BondRules.allows(onlinePet, command)) skills.add(command); buf.writeInt(skills.size()); for(String s : skills) buf.writeString(s);
             Set<String> black = petBond.getBlacklistedBlocks(); buf.writeInt(black.size()); for(String s : black) buf.writeString(s);
             Set<String> white = petBond.getWhitelistedBlocks(); buf.writeInt(white.size()); for(String s : white) buf.writeString(s);
             buf.writeBoolean(true);
@@ -247,20 +235,16 @@ public class ModPackets {
             buf.writeBoolean(false); buf.writeBoolean(false); buf.writeBoolean(false);
             buf.writeBoolean(false); buf.writeBoolean(false); buf.writeBoolean(false);
             buf.writeBoolean(false); buf.writeBoolean(false); buf.writeBoolean(false);
-            buf.writeInt(1); buf.writeInt(0);
-            buf.writeBoolean(true); // Теперь фейково говорим GUI, что ошейник есть (чтобы пустить в меню выбора)
+            buf.writeBoolean(false);
             buf.writeInt(0);
-            buf.writeInt(1); buf.writeString("sit");
             buf.writeInt(0);
             buf.writeInt(0);
             buf.writeBoolean(false);
         }
         buf.writeInt(onlinePet == null ? -2 : ForcedTamingService.stage(onlinePet));
         var state = onlinePet == null ? new com.bondofthebeast.component.ForcedBondState() : ModComponents.PLAYER_BOND.get(onlinePet).getForcedBond();
-        buf.writeInt(onlinePet == null ? 0 : ModComponents.PLAYER_BOND.get(onlinePet).getVoluntaryBond().tier);
         buf.writeBoolean(state.forced); buf.writeBoolean(state.armorLocked); buf.writeInt(state.escapeTicks);
         buf.writeFloat(onlinePet == null ? 0 : net.onixary.shapeShifterCurseFabric.player_form.instinct.RegPlayerInstinctComponent.PLAYER_INSTINCT_COMP.get(onlinePet).instinctValue);
-        buf.writeInt(onlinePet == null ? 0 : ModComponents.PLAYER_BOND.get(onlinePet).getVoluntaryBond().activeTicks);
         buf.writeString(PetPreviewState.get(server).form(petUuid));
         buf.writeBoolean(onlinePet != null && ModComponents.PLAYER_BOND.get(onlinePet).isItemForwarding());
         buf.writeBoolean(state.contractSigned);

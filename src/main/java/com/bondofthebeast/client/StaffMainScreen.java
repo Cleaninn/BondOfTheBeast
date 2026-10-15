@@ -149,23 +149,20 @@ public class StaffMainScreen extends Screen {
         public int formStage = -2, escapeTicks;
         public boolean forced, armorLocked, itemForwarding, contractSigned;
         public float instinct;
-        public int bondLevel, bondExp;
         public boolean hasCollar;
-        public int skillPoints;
-        public int trustTier, activeTicks;
         public String formId = "shape-shifter-curse:original_before_enable";
         public Set<String> unlockedSkills;
         public Set<String> blacklistedBlocks;
         public Set<String> whitelistedBlocks;
         public boolean isOnline;
 
-        public PetData(UUID uuid, String name, boolean sitting, boolean tp, boolean prot, boolean aura, boolean pacifist, boolean vampiric, boolean noBreak, boolean absorbed, boolean noInteract, int level, int exp, boolean collar, int skillPoints, Set<String> unlockedSkills, Set<String> black, Set<String> white, boolean isOnline) {
+        public PetData(UUID uuid, String name, boolean sitting, boolean tp, boolean prot, boolean aura, boolean pacifist, boolean vampiric, boolean noBreak, boolean absorbed, boolean noInteract, boolean collar, Set<String> unlockedSkills, Set<String> black, Set<String> white, boolean isOnline) {
             this.uuid = uuid; this.name = name; this.isSitting = sitting; this.isTeleportEnabled = tp;
             this.isProtectionMode = prot; this.isAuraEnabled = aura; this.isPacifistMode = pacifist;
             this.isVampiricMode = vampiric; this.isNoBreakMode = noBreak; this.isAbsorbed = absorbed;
             this.isNoInteractMode = noInteract;
-            this.bondLevel = level; this.bondExp = exp; this.hasCollar = collar;
-            this.skillPoints = skillPoints; this.unlockedSkills = unlockedSkills;
+            this.hasCollar = collar;
+            this.unlockedSkills = unlockedSkills;
             this.blacklistedBlocks = black; this.whitelistedBlocks = white; this.isOnline = isOnline;
         }
     }

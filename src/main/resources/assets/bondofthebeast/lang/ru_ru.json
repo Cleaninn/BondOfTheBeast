@@ -352,7 +352,7 @@
   "gui.bondofthebeast.control.next_level": "До следующего уровня: %s",
   "gui.bondofthebeast.control.max_level": "Связь достигла предела",
   "gui.bondofthebeast.control.description.sit": "Останавливает питомца на 30 секунд. Повторное нажатие освобождает его.",
-  "gui.bondofthebeast.control.description.tp": "Возвращает отставшего питомца к хозяину. Привязанный питомец не переносится.",
+  "gui.bondofthebeast.control.description.tp": "Питомец возвращается к хозяину, если отойдёт дальше 20 блоков.",
   "gui.bondofthebeast.control.description.prot": "Усиливает питомца и подсвечивает существо, атакованное хозяином.",
   "gui.bondofthebeast.control.description.aura": "В пределах 12 блоков даёт питомцу сопротивление урону, а хозяину — регенерацию.",
   "gui.bondofthebeast.control.description.vampiric": "Атаки питомца восстанавливают здоровье хозяина.",
@@ -384,5 +384,9 @@
   "gui.bondofthebeast.hud.forced_bound": "%s насильно установил с вами связь. Проверьте дневник оборотня.",
   "gui.bondofthebeast.restrictions": "Ограничения",
   "gui.bondofthebeast.diary.commands": "Команды хозяина",
-  "gui.bondofthebeast.diary.unavailable": "Недоступно"
+  "gui.bondofthebeast.diary.unavailable": "Недоступно",
+  "gui.bondofthebeast.requires_full_form": "Нужна полная звериная форма",
+  "gui.bondofthebeast.diary.available": "Доступно",
+  "gui.bondofthebeast.control.armor_open": "Управление бронёй",
+  "gui.bondofthebeast.control.description.armor_open": "Хозяин может просматривать и менять вашу броню."
 }

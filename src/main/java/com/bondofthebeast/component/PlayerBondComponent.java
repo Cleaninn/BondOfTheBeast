@@ -11,7 +11,6 @@ import java.util.Set;
 public interface PlayerBondComponent extends Component, AutoSyncedComponent {
     boolean hasOwner();
     ForcedBondState getForcedBond();
-    VoluntaryBondState getVoluntaryBond();
     String getBedDimension();
     String getLeashHolder();
     BlockPos getLeashPos();
@@ -36,21 +35,6 @@ public interface PlayerBondComponent extends Component, AutoSyncedComponent {
     @Nullable
     String getPetNickname();
     void setPetNickname(@Nullable String name);
-
-    int getBondLevel();
-    void setBondLevel(int level);
-    int getBondExperience();
-    void setBondExperience(int exp);
-    void addBondExperience(int exp);
-
-    int getSkillPoints();
-    void setSkillPoints(int points);
-    void addSkillPoints(int points);
-
-    Set<String> getUnlockedSkills();
-    void unlockSkill(String skill);
-    void clearSkills();
-    boolean isSkillUnlocked(String skill);
 
     Map<String, String> getRegisteredPets();
     void addPetToRegistry(String uuid, String name);

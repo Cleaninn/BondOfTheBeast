@@ -240,7 +240,7 @@ public class ModEvents {
                     }
 
                     double d = player.squaredDistanceTo(owner);
-                    if (!ownerBond.isSitting() && ownerBond.isTeleportEnabled() && BondRules.allows(player, "tp") && !LeashManager.isTethered(player) && d > 400.0 && d <= 10000.0) {
+                    if (!ownerBond.isSitting() && ownerBond.isTeleportEnabled() && BondRules.allows(player, "tp") && !LeashManager.isTethered(player) && d > 400.0) {
                         tryTeleportPet(player, owner);
                     }
 

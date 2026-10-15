@@ -74,7 +74,6 @@ public final class BondService {
                 if (!b.hasOwner() && pet.age % 20 == 0 &&
                         (ForcedTamingService.infused(pet) || CollarItem.hasForcedCollar(pet)))
                     ModComponents.PLAYER_BOND.sync(pet);
-                VoluntaryBondService.tick(pet);
                 ItemForwardingService.tick(pet);
                 if (b.hasOwner() && pet.age % 20 == 0) PetPreviewState.get(server).update(pet);
 
@@ -133,10 +132,6 @@ public final class BondService {
         clearBed(pet);
         removeCollars(pet);
         b.clearOwner();
-        b.clearSkills();
-        b.setBondLevel(1);
-        b.setBondExperience(0);
-        b.setSkillPoints(0);
     }
 
     public static void releaseContract(MinecraftServer server, String petId, String ownerId, String token) {

@@ -1,7 +1,6 @@
 package com.bondofthebeast.client;
 
 import com.bondofthebeast.BondRules;
-import com.bondofthebeast.VoluntaryBondService;
 import com.bondofthebeast.ModPackets;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -30,25 +29,19 @@ public class StaffPetScreen extends Screen {
         book = GrimoireStyle.layout(width, height);
         preview = previewEntity();
         action(0, "sit", pet.isSitting, ModPackets.TOGGLE_PET_STATE_C2S, "sit");
-        if (pet.forced) {
-            action(1, "armor", pet.armorLocked, ModPackets.TOGGLE_ARMOR_C2S, "armor_lock", "armor_lock");
-            utility(2, "armor_open", "armor", "armor", b -> send(ModPackets.OPEN_ARMOR_C2S));
-            action(3, "inventory", pet.itemForwarding, ModPackets.TOGGLE_ITEM_FORWARDING_C2S, "inventory");
-        } else {
-            action(1, "tp", pet.isTeleportEnabled, ModPackets.TOGGLE_TELEPORT_C2S, "tp");
-            action(2, "prot", pet.isProtectionMode, ModPackets.TOGGLE_PROTECTION_C2S, "prot");
-            action(3, "aura", pet.isAuraEnabled, ModPackets.TOGGLE_AURA_C2S, "aura");
-            action(4, "vampiric", pet.isVampiricMode, ModPackets.TOGGLE_VAMPIRIC_C2S, "vampiric");
-            action(5, "absorb", pet.isAbsorbed, ModPackets.TOGGLE_ABSORB_C2S, "absorb");
-            action(6, "armor", pet.armorLocked, ModPackets.TOGGLE_ARMOR_C2S, "armor_lock", "armor_lock");
-            utility(7, "armor_open", "armor", "armor", b -> send(ModPackets.OPEN_ARMOR_C2S));
-            action(8, "inventory", pet.itemForwarding, ModPackets.TOGGLE_ITEM_FORWARDING_C2S, "inventory");
-        }
+        action(1, "tp", pet.isTeleportEnabled, ModPackets.TOGGLE_TELEPORT_C2S, "tp");
+        action(2, "prot", pet.isProtectionMode, ModPackets.TOGGLE_PROTECTION_C2S, "prot");
+        action(3, "aura", pet.isAuraEnabled, ModPackets.TOGGLE_AURA_C2S, "aura");
+        action(4, "vampiric", pet.isVampiricMode, ModPackets.TOGGLE_VAMPIRIC_C2S, "vampiric");
+        action(5, "absorb", pet.isAbsorbed, ModPackets.TOGGLE_ABSORB_C2S, "absorb");
+        action(6, "armor", pet.armorLocked, ModPackets.TOGGLE_ARMOR_C2S, "armor_lock", "armor_lock");
+        utility(7, "armor_open", "armor", "armor", b -> send(ModPackets.OPEN_ARMOR_C2S));
+        action(8, "inventory", pet.itemForwarding, ModPackets.TOGGLE_ITEM_FORWARDING_C2S, "inventory");
         action(12, "nobreak", pet.isNoBreakMode, ModPackets.TOGGLE_NO_BREAK_C2S, "nobreak");
         action(13, "nobreak", pet.isNoInteractMode, ModPackets.TOGGLE_NO_INTERACT_C2S, "interact", "interact");
         action(14, "nobreak", pet.isPacifistMode, ModPackets.TOGGLE_PACIFIST_C2S, "pacifist", "pacifist");
         utility(15, "block_rules", "nobreak", "blocks", b -> client.setScreen(new BlockRulesScreen(this, pet)));
-        addDrawableChild(new GrimoireBackButton(book.x(344), book.y(25), book.size(24),
+        addDrawableChild(new GrimoireBackButton(book.x(344), book.y(16), book.size(22),
                 Text.translatable(parent == null ? "gui.bondofthebeast.staff.back_tooltip" :
                         "gui.bondofthebeast.back_to_pets"), b -> close()));
     }
@@ -79,8 +72,7 @@ public class StaffPetScreen extends Screen {
             Text fullLabel = Text.empty().append(label.copy().formatted(net.minecraft.util.Formatting.GOLD)).append(Text.literal(" — ")).append(state);
             Text lockedReason = Text.translatable("gui.bondofthebeast.requires_stage",
                     BondRules.requiredStage(skill) + 1);
-            if (!pet.forced) lockedReason = Text.translatable("gui.bondofthebeast.requires_trust",
-                    Text.translatable("gui.bondofthebeast.trust." + VoluntaryBondService.requiredTier(skill)));
+            if (!pet.forced) lockedReason = Text.translatable("gui.bondofthebeast.requires_full_form");
             if (pet.escapeTicks > 0) lockedReason = Text.translatable("gui.bondofthebeast.escape_seconds", (pet.escapeTicks + 19) / 20);
             if (!pet.hasCollar) lockedReason = Text.translatable("gui.bondofthebeast.staff.no_collar_suffix");
             if (!pet.isOnline) lockedReason = Text.translatable("gui.bondofthebeast.staff.offline");
@@ -106,8 +98,7 @@ public class StaffPetScreen extends Screen {
                         !pet.hasCollar ? Text.translatable("gui.bondofthebeast.staff.no_collar_suffix") :
                         pet.escapeTicks > 0 ? Text.translatable("gui.bondofthebeast.escape_seconds", (pet.escapeTicks + 19) / 20) :
                         pet.forced ? Text.translatable("gui.bondofthebeast.requires_stage", BondRules.requiredStage(skill) + 1) :
-                        Text.translatable("gui.bondofthebeast.requires_trust",
-                                Text.translatable("gui.bondofthebeast.trust." + VoluntaryBondService.requiredTier(skill)));
+                        Text.translatable("gui.bondofthebeast.requires_full_form");
                 tooltip = tooltip.copy().append(Text.literal("\n")).append(reason.copy().formatted(net.minecraft.util.Formatting.GRAY));
             }
             button.setTooltip(net.minecraft.client.gui.tooltip.Tooltip.of(tooltip));
@@ -168,18 +159,15 @@ public class StaffPetScreen extends Screen {
                     looking ? net.minecraft.util.math.MathHelper.clamp((book.y(106) - mouseY) / book.scale(), -10, 10) : 0);
             context.disableScissor();
         }
-        GrimoireStyle.fittedText(context, textRenderer,
-                Text.translatable("gui.bondofthebeast.staff.level", pet.bondLevel), 100, 153, 130, 0xFFEAD4A2);
-        int filled = pet.bondLevel >= 100 ? 102 : Math.max(0, Math.min(102, pet.bondExp * 102 / Math.max(1, pet.bondLevel * 100)));
-        context.fill(47, 167, 153, 175, 0xFF30202A);
-        context.drawBorder(47, 167, 106, 8, 0xFFAF925E);
-        context.fill(49, 169, 49 + filled, 173, 0xFF9C606A);
-        if (pet.escapeTicks > 0) GrimoireStyle.fittedText(context, textRenderer,
-                Text.translatable("gui.bondofthebeast.escape_seconds", (pet.escapeTicks + 19) / 20), 100, 179, 132, 0xFFEAD4A2);
         Text stage = !pet.isOnline ? Text.translatable("gui.bondofthebeast.staff.offline") :
                 pet.formStage < 0 ? Text.translatable("gui.bondofthebeast.human_stage.short") :
                 Text.translatable("gui.bondofthebeast.stage", pet.formStage + 1);
-        GrimoireStyle.fittedText(context, textRenderer, stage, 100, 196, 130, 0xFFEAD4A2);
+        GrimoireStyle.paper(context, 45, 159, 110, 24);
+        context.drawBorder(45, 159, 110, 24, 0xFFC3A46D);
+        GrimoireStyle.fittedText(context, textRenderer, stage.copy().formatted(net.minecraft.util.Formatting.BOLD),
+                100, 167, 98, GrimoireStyle.INK);
+        if (pet.escapeTicks > 0) GrimoireStyle.fittedText(context, textRenderer,
+                Text.translatable("gui.bondofthebeast.escape_seconds", (pet.escapeTicks + 19) / 20), 100, 189, 130, 0xFFEAD4A2);
         context.drawBorder(176, 143, 196, 54, 0xFF976B54);
         GrimoireStyle.fittedText(context, textRenderer, Text.translatable("gui.bondofthebeast.restrictions"),
                 274, 149, 180, 0xFFEAD4A2);
