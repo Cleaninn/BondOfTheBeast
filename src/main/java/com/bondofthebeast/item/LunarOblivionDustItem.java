@@ -41,6 +41,7 @@ public class LunarOblivionDustItem extends Item {
             world.playSound(null, user.getX(), user.getY(), user.getZ(), SoundEvents.BLOCK_POWDER_SNOW_STEP, SoundCategory.PLAYERS, 1.5F, 0.8F);
 
             for (PlayerEntity target : world.getEntitiesByClass(PlayerEntity.class, area, p -> p != user && !p.isCreative() && !p.isSpectator() && !com.bondofthebeast.ForcedTamingService.freeWindow(p) && user.canSee(p))) {
+                if (com.bondofthebeast.BondRules.hasDustProtection(target)) continue;
                 // Оставляем только Замедление 99 (как маркер для миксина) и Слепоту
                 target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, com.bondofthebeast.ForcedTamingService.STUN_TICKS, 99, false, true, true));
                 target.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, com.bondofthebeast.ForcedTamingService.STUN_TICKS, 0, false, true, true));

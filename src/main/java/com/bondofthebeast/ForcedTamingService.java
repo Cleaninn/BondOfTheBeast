@@ -82,7 +82,7 @@ public final class ForcedTamingService {
     }
 
     public static ActionResult start(ItemStack stack, PlayerEntity user, ServerPlayerEntity pet, Hand hand) {
-        if (pet == user || !BondRules.canOwn(user) || !BondRules.hasOpenedBook(pet) || pet.isCreative() || pet.isSpectator()) return ActionResult.FAIL;
+        if (pet == user || !BondRules.canOwn(user) || !BondRules.hasOpenedBook(pet) || BondRules.protectedFromForcedTaming(pet) || pet.isCreative() || pet.isSpectator()) return ActionResult.FAIL;
         if (!stunned(pet)) return ActionResult.PASS;
         if (!canCollar(user, pet) || !aimsAt(user, pet)) return ActionResult.FAIL;
         var attempt = COLLARING.get(user.getUuid());
@@ -96,7 +96,7 @@ public final class ForcedTamingService {
 
     private static boolean canCollar(PlayerEntity user, ServerPlayerEntity pet) {
         if (!user.isAlive() || !pet.isAlive() || user.isSpectator() || pet == user || !BondRules.canOwn(user) ||
-                !BondRules.hasOpenedBook(pet) || pet.isCreative() || pet.isSpectator() || freeWindow(pet) ||
+                !BondRules.hasOpenedBook(pet) || BondRules.protectedFromForcedTaming(pet) || pet.isCreative() || pet.isSpectator() || freeWindow(pet) ||
                 user.getWorld() != pet.getWorld() || user.squaredDistanceTo(pet) > 16 || !user.canSee(pet)) return false;
         var bond = ModComponents.PLAYER_BOND.get(pet);
         if (bond.hasOwner()) return false;
@@ -178,7 +178,7 @@ public final class ForcedTamingService {
 
     public static ActionResult startFromContract(ItemStack contract, ServerPlayerEntity user, ServerPlayerEntity pet) {
         if (!user.isAlive() || !pet.isAlive() || user.isSpectator() || pet == user || !BondRules.canOwn(user) ||
-                !BondRules.hasOpenedBook(pet) || pet.isCreative() || pet.isSpectator() || freeWindow(pet) || !BondRules.hasCollar(pet) ||
+                !BondRules.hasOpenedBook(pet) || BondRules.isAllay(pet) || pet.isCreative() || pet.isSpectator() || freeWindow(pet) || !BondRules.hasCollar(pet) ||
                 user.getWorld() != pet.getWorld() || user.squaredDistanceTo(pet) > 16 || !user.canSee(pet)) return ActionResult.FAIL;
         var bond = ModComponents.PLAYER_BOND.get(pet);
         if (!BondRules.owns(user, pet) || !bond.getForcedBond().forced || !canFinalizeForced(pet)) return ActionResult.FAIL;

@@ -27,6 +27,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.GameMode;
+import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
+import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 
 public class ModEvents {
     private static int tickCounter = 0;
@@ -35,6 +37,16 @@ public class ModEvents {
     }
 
     public static void registerEvents() {
+        UseItemCallback.EVENT.register((player, world, hand) -> {
+            ItemStack stack = player.getStackInHand(hand);
+            if (BondRules.blocksHumanReturn(player, RegPlayerForms.ORIGINAL_SHIFTER) &&
+                    (stack.isOf(RegCustomItem.INHIBITOR) || stack.isOf(RegCustomItem.POWERFUL_INHIBITOR) ||
+                     stack.isOf(RegCustomItem.CREATIVE_INHIBITOR))) {
+                if (!world.isClient) player.sendMessage(Text.translatable("text.bondofthebeast.cat_bond_blocks_cure"), true);
+                return net.minecraft.util.TypedActionResult.fail(stack);
+            }
+            return net.minecraft.util.TypedActionResult.pass(stack);
+        });
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
             if (!(entity instanceof PlayerEntity pet)) return ActionResult.PASS;
             if (hand != Hand.MAIN_HAND) return ActionResult.PASS;

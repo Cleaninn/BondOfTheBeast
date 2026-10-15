@@ -26,6 +26,7 @@ public final class BondService {
             ServerPlayerEntity player = handler.player;
             ModPackets.syncConfig(player);
             PendingBondsState.get(server).apply(player);
+            if (BondRules.isAllay(player) && ModComponents.PLAYER_BOND.get(player).hasOwner()) release(player);
             var b = ModComponents.PLAYER_BOND.get(player);
             if (b.isAbsorbed()) releaseAbsorption(player);
             if (!b.getLeashHolder().isEmpty()) LeashManager.detach(player);
@@ -47,6 +48,7 @@ public final class BondService {
             for (ServerPlayerEntity pet : server.getPlayerManager().getPlayerList()) {
                 ForcedTamingService.tickCollaring(pet);
                 var b = ModComponents.PLAYER_BOND.get(pet);
+                if (b.hasOwner() && BondRules.isAllay(pet)) { release(pet); continue; }
                 LeashManager.tick(pet);
                 if (!BondRules.allows(pet, "sit") && b.isSitting()) b.setSitting(false);
                 if (!BondRules.allows(pet, "nobreak")) {

@@ -38,6 +38,8 @@ public class CollarItem extends TrinketItem {
     public ActionResult useOnEntity(ItemStack stack, PlayerEntity user, LivingEntity entity, Hand hand) {
         if (!(entity instanceof PlayerEntity targetPet)) return ActionResult.PASS;
         if (!BondRules.hasOpenedBook(targetPet)) return ActionResult.FAIL;
+        if (BondRules.isAllay(targetPet) || (!ModComponents.PLAYER_BOND.get(targetPet).hasOwner() &&
+                BondRules.protectedFromForcedTaming(targetPet))) return ActionResult.FAIL;
 
         World world = user.getWorld();
         if (!ModComponents.PLAYER_BOND.get(targetPet).hasOwner() && !ForcedTamingService.stunned(targetPet)) return ActionResult.PASS;

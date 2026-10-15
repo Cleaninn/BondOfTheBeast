@@ -401,5 +401,8 @@
   "gui.bondofthebeast.stage_notice.owner": "Pet reached stage %s",
   "gui.bondofthebeast.stage_notice.pet": "You reached stage %s",
   "gui.bondofthebeast.stage_notice.owner_body": "Your control over %s grows. Orders last up to %s s.",
-  "gui.bondofthebeast.stage_notice.pet_body": "Your owner has more control. Orders last up to %s s."
+  "gui.bondofthebeast.stage_notice.pet_body": "Your owner has more control. Orders last up to %s s.",
+  "item.bondofthebeast.dustguard_amulet": "Amulet of Vigilance",
+  "tooltip.bondofthebeast.dustguard_amulet": "Wear on your neck to resist Lunar Oblivion Dust and forced taming.",
+  "text.bondofthebeast.cat_bond_blocks_cure": "You cannot return from cat form to human while you have an owner."
 }

@@ -402,5 +402,8 @@
   "gui.bondofthebeast.stage_notice.owner": "Новая стадия питомца: %s",
   "gui.bondofthebeast.stage_notice.pet": "Вы перешли на стадию %s",
   "gui.bondofthebeast.stage_notice.owner_body": "%s поддаётся сильнее. Приказы действуют до %s с.",
-  "gui.bondofthebeast.stage_notice.pet_body": "Влияние хозяина усилилось. Приказы действуют до %s с."
+  "gui.bondofthebeast.stage_notice.pet_body": "Влияние хозяина усилилось. Приказы действуют до %s с.",
+  "item.bondofthebeast.dustguard_amulet": "Талисман бодрости",
+  "tooltip.bondofthebeast.dustguard_amulet": "На шее защищает от пыли лунного забвения и принудительного приручения.",
+  "text.bondofthebeast.cat_bond_blocks_cure": "Пока у вас есть хозяин, вернуться из кошачьей формы в человека нельзя."
 }

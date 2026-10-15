@@ -162,6 +162,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     @Override public String getOwnerName() { return ownerName; }
 
     @Override public void setOwner(String uuid, String name) {
+        if (com.bondofthebeast.BondRules.isAllay(provider)) return;
         if (!uuid.equals(this.ownerUUID)) {
             itemForwarding = false;
             forcedBond.read(new NbtCompound());
