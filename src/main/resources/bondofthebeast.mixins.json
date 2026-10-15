@@ -13,6 +13,7 @@
     "PlayerStunMixin",
     "GoldenAppleEscapeMixin",
     "BondCombatMixin",
+    "EnderContractSlotMixin",
     "ForcedInstinctMixin",
     "BookActivationTransformMixin",
     "BookActivationFormMixin",

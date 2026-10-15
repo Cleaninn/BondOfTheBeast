@@ -209,13 +209,14 @@ public final class ForcedTamingService {
         }
         forced.escapeTicks = ESCAPE_TICKS;
         forced.resistanceCooldownTicks = RESISTANCE_COOLDOWN_TICKS;
-        forced.escapeCharge = 0;
+        forced.commandTicks.clear();
         forced.finalWarningTicks = -1;
         var instinct = net.onixary.shapeShifterCurseFabric.player_form.instinct.RegPlayerInstinctComponent.PLAYER_INSTINCT_COMP.get(pet);
         instinct.instinctValue = Math.min(95, instinct.instinctValue);
         net.onixary.shapeShifterCurseFabric.player_form.instinct.RegPlayerInstinctComponent.PLAYER_INSTINCT_COMP.sync(pet);
         bond.setSitting(false);
         bond.setTeleportEnabled(false);
+        bond.setItemForwarding(false);
         bond.setNoBreakMode(false);
         bond.setNoInteractMode(false);
         bond.setPacifistMode(false);
@@ -226,7 +227,6 @@ public final class ForcedTamingService {
         var slow = pet.getStatusEffect(StatusEffects.SLOWNESS);
         if (slow != null && slow.getAmplifier() == 99) pet.removeStatusEffect(StatusEffects.SLOWNESS);
         pet.removeStatusEffect(StatusEffects.BLINDNESS);
-        pet.sendMessage(Text.translatable("text.bondofthebeast.escape_window"), false);
         ModComponents.PLAYER_BOND.sync(pet);
     }
 
@@ -291,23 +291,19 @@ public final class ForcedTamingService {
         int stage = stage(pet);
         if (state.escapeTicks > 0) state.escapeTicks--;
         if (state.resistanceCooldownTicks > 0) state.resistanceCooldownTicks--;
-        if (state.forced && !state.contractSigned && state.escapeTicks == 0 && state.resistanceCooldownTicks == 0) {
-            state.escapeCharge = pet.isSneaking() ? state.escapeCharge + 1 : 0;
-            if (state.escapeCharge >= 60) determination(pet);
-        } else state.escapeCharge = 0;
-        if (state.controlTicks > 0 && --state.controlTicks == 0) bond.setSitting(false);
-        if (bond.isAbsorbed() && ++state.absorbedTicks >= 1200) BondService.releaseAbsorption(pet);
-        if (!bond.isAbsorbed()) state.absorbedTicks = 0;
+        CommandControl.tick(pet);
         if (!state.forced) return;
         if (!pet.isAlive()) return;
         if (!BondRules.hasCollar(pet) && !state.contractSigned) { BondService.release(pet); return; }
         if (state.lastStage != stage) {
+            CommandControl.stageChanged(pet, state.lastStage);
+            int previousStage = state.lastStage;
             state.lastStage = stage;
             bond.setTamingState(state.contractSigned ? 2 : 1);
             state.warningTicks = -1;
             state.catalystWarningFromCookie = false;
             state.finalWarningTicks = -1;
-            pet.sendMessage(Text.translatable("text.bondofthebeast.stage_changed", stage), false);
+            if (stage > previousStage && stage >= 0 && !state.contractSigned) ModPackets.notifyStage(pet);
         }
         if (state.contractPending) issueContract(pet);
         if (pet.age % 20 == 0) ModComponents.PLAYER_BOND.sync(pet);

@@ -48,7 +48,6 @@ public class ModEvents {
                     return ForcedTamingService.feedCatalyst(player, (ServerPlayerEntity) pet, foodStack);
                 }
 
-
                 if (player.isSneaking() && foodStack.isEmpty() && bond.getLeashPos() == null && bond.getLeashHolder().isEmpty()) {
                     if (world.isClient) return ActionResult.SUCCESS;
                     if (bond.getForcedBond().forced || CollarItem.hasForcedCollar(pet)) return ActionResult.FAIL;
@@ -139,22 +138,11 @@ public class ModEvents {
                     sp.sendMessage(Text.translatable("text.bondofthebeast.damage_blocked_pet").formatted(Formatting.RED), true);
                     return ActionResult.FAIL;
                 }
-                var targetBond = ModComponents.PLAYER_BOND.get(targetPlayer);
-                if (targetBond.hasOwner() && targetBond.getOwnerUUID().equals(sp.getUuidAsString())) {
-                    sp.sendMessage(Text.translatable("text.bondofthebeast.damage_blocked_owner").formatted(Formatting.RED), true);
-                    return ActionResult.FAIL;
-                }
+
             }
             if (bond.hasOwner() && bond.isPacifistMode() && canPetObey(sp)) {
                 sp.sendMessage(Text.translatable("text.bondofthebeast.command.pacifist_warning").formatted(Formatting.RED), true);
                 return ActionResult.FAIL;
-            }
-            if (!(entity instanceof LivingEntity targetLiving)) return ActionResult.PASS;
-            for (ServerPlayerEntity p : sp.getServer().getPlayerManager().getPlayerList()) {
-                PlayerBondComponent pBond = ModComponents.PLAYER_BOND.get(p);
-                if (pBond.hasOwner() && pBond.getOwnerUUID().equals(sp.getUuidAsString()) && pBond.isProtectionMode() && BondRules.allows(p, "prot") && canPetObey(p)) {
-                    targetLiving.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 100, 0, false, false));
-                }
             }
             return ActionResult.PASS;
         });
@@ -173,11 +161,11 @@ public class ModEvents {
                 }
             }
             String blockId = Registries.BLOCK.getId(state.getBlock()).toString();
-            if (bond.getBlacklistedBlocks().contains(blockId)) {
+            if ((com.bondofthebeast.CommandControl.blockListsActive(player) && bond.getBlacklistedBlocks().contains(blockId))) {
                 if (!world.isClient) player.sendMessage(Text.translatable("text.bondofthebeast.blacklisted_warning").formatted(Formatting.DARK_RED), true);
                 return ActionResult.FAIL;
             }
-            if (bond.isNoBreakMode() && !bond.getWhitelistedBlocks().contains(blockId)) {
+            if (bond.isNoBreakMode() && !(com.bondofthebeast.CommandControl.blockListsActive(player) && bond.getWhitelistedBlocks().contains(blockId))) {
                 if (!world.isClient) player.sendMessage(Text.translatable("text.bondofthebeast.soft_paws_warning").formatted(Formatting.RED), true);
                 return ActionResult.FAIL;
             }
@@ -197,8 +185,8 @@ public class ModEvents {
                 }
             }
             String blockId = Registries.BLOCK.getId(state.getBlock()).toString();
-            if (bond.getBlacklistedBlocks().contains(blockId)) return false;
-            if (bond.isNoBreakMode() && !bond.getWhitelistedBlocks().contains(blockId)) return false;
+            if ((com.bondofthebeast.CommandControl.blockListsActive(player) && bond.getBlacklistedBlocks().contains(blockId))) return false;
+            if (bond.isNoBreakMode() && !(com.bondofthebeast.CommandControl.blockListsActive(player) && bond.getWhitelistedBlocks().contains(blockId))) return false;
             return true;
         });
 
@@ -210,7 +198,7 @@ public class ModEvents {
             }
             if (!BondRules.allows(player, "nobreak")) return ActionResult.PASS;
             String blockId = Registries.BLOCK.getId(world.getBlockState(hitResult.getBlockPos()).getBlock()).toString();
-            if (bond.getBlacklistedBlocks().contains(blockId)) {
+            if ((com.bondofthebeast.CommandControl.blockListsActive(player) && bond.getBlacklistedBlocks().contains(blockId))) {
                 if (!world.isClient) player.sendMessage(Text.translatable("text.bondofthebeast.blacklisted_interact_warning").formatted(Formatting.DARK_RED), true);
                 return ActionResult.FAIL;
             }
@@ -242,15 +230,6 @@ public class ModEvents {
                     double d = player.squaredDistanceTo(owner);
                     if (!ownerBond.isSitting() && ownerBond.isTeleportEnabled() && BondRules.allows(player, "tp") && !LeashManager.isTethered(player) && d > 400.0) {
                         tryTeleportPet(player, owner);
-                    }
-
-                    if (d <= 144.0 && BondRules.allows(player, "aura") && ownerBond.isAuraEnabled()) {
-                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, 60, 0, true, false, true));
-                        owner.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 60, 0, true, false, true));
-                    }
-
-                    if (BondRules.allows(player, "prot") && ownerBond.isProtectionMode()) {
-                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, 60, 0, true, false, true));
                     }
                 }
             }

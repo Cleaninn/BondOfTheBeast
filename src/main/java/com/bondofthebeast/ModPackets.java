@@ -19,6 +19,28 @@ import java.util.Set;
 import java.util.UUID;
 
 public class ModPackets {
+    public static final Identifier SYNC_CONFIG_S2C = new Identifier(BondOfTheBeast.MOD_ID, "sync_config_s2c");
+    public static final Identifier STAGE_NOTICE_S2C = new Identifier(BondOfTheBeast.MOD_ID, "stage_notice_s2c");
+
+    public static void syncConfig(ServerPlayerEntity player) {
+        var buffer = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+        buffer.writeBoolean(BondConfig.get().blockSignedContractsInEnderChests);
+        for (int seconds : BondConfig.get().forcedCommandSecondsByStage) buffer.writeInt(seconds);
+        ServerPlayNetworking.send(player, SYNC_CONFIG_S2C, buffer);
+    }
+    public static void notifyStage(ServerPlayerEntity pet) {
+        ServerPlayerEntity owner = BondRules.owner(pet);
+        for (var viewer : new ServerPlayerEntity[]{pet, owner}) {
+            if (viewer == null) continue;
+            var buffer = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+            buffer.writeString(pet.getGameProfile().getName());
+            buffer.writeInt(ForcedTamingService.stage(pet) + 1);
+            buffer.writeInt(CommandControl.durationTicks(pet) / 20);
+            buffer.writeBoolean(viewer == owner);
+            ServerPlayNetworking.send(viewer, STAGE_NOTICE_S2C, buffer);
+        }
+    }
+
     public static final Identifier REQUEST_PET_STATUS_C2S = new Identifier(BondOfTheBeast.MOD_ID, "request_pet_status_c2s");
     public static final Identifier UPDATE_PET_STATUS_S2C = new Identifier(BondOfTheBeast.MOD_ID, "update_pet_status_s2c");
     public static final Identifier PET_STATUS_UNAVAILABLE_S2C = new Identifier(BondOfTheBeast.MOD_ID, "pet_status_unavailable_s2c");
@@ -32,10 +54,7 @@ public class ModPackets {
     public static final Identifier UPDATE_BED_C2S = new Identifier(BondOfTheBeast.MOD_ID, "update_bed_c2s");
     public static final Identifier TOGGLE_PET_STATE_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_pet_state_c2s");
     public static final Identifier TOGGLE_TELEPORT_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_teleport_c2s");
-    public static final Identifier TOGGLE_PROTECTION_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_protection_c2s");
-    public static final Identifier TOGGLE_AURA_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_aura_c2s");
     public static final Identifier TOGGLE_PACIFIST_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_pacifist_c2s");
-    public static final Identifier TOGGLE_VAMPIRIC_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_vampiric_c2s");
     public static final Identifier TOGGLE_NO_BREAK_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_no_break_c2s");
     public static final Identifier TOGGLE_ABSORB_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_absorb_c2s");
     public static final Identifier TOGGLE_NO_INTERACT_C2S = new Identifier(BondOfTheBeast.MOD_ID, "toggle_no_interact_c2s");
@@ -74,11 +93,15 @@ public class ModPackets {
             UUID id = buf.readUuid();
             server.execute(() -> {
                 ServerPlayerEntity pet = controlledPet(owner, id);
-                if (pet != null && BondRules.allows(pet, "armor")) PetArmorScreenHandler.open(owner, pet);
+                if (pet != null && BondRules.allows(pet, "armor")) {
+                    CommandControl.start(pet, "armor_access");
+                    PetArmorScreenHandler.open(owner, pet);
+                }
             });
         });
         registerToggle(TOGGLE_ARMOR_C2S, "armor", (b, owner, pet) -> {
             b.getForcedBond().armorLocked = !b.getForcedBond().armorLocked;
+            CommandControl.start(pet, "armor_lock");
             ModComponents.PLAYER_BOND.sync(pet);
         });
         ServerPlayNetworking.registerGlobalReceiver(SIGN_CONTRACT_C2S, (server, player, handler, buf, sender) ->
@@ -100,6 +123,7 @@ public class ModPackets {
                 var bond = ModComponents.PLAYER_BOND.get(pet);
                 if (!BondRules.allows(pet, "nobreak")) return;
                 if (type == 0) bond.setBlacklistedBlocks(blocks); else bond.setWhitelistedBlocks(blocks);
+                CommandControl.start(pet, "blocks");
                 refresh(player, pet);
             });
         });
@@ -109,7 +133,6 @@ public class ModPackets {
         });
         registerToggle(TOGGLE_PET_STATE_C2S, "sit", (b, p, pet) -> {
             b.setSitting(!b.isSitting());
-            b.getForcedBond().controlTicks = b.isSitting() ? 600 : 0;
         });
         registerToggle(TOGGLE_PACIFIST_C2S, "nobreak", (b, p, pet) -> {
             b.setPacifistMode(!b.isPacifistMode());
@@ -121,13 +144,6 @@ public class ModPackets {
             if (LeashManager.isTethered(pet)) return;
             b.setTeleportEnabled(!b.isTeleportEnabled());
         });
-        registerToggle(TOGGLE_PROTECTION_C2S, "prot", (b, p, pet) -> {
-            b.setProtectionMode(!b.isProtectionMode());
-        });
-        registerToggle(TOGGLE_AURA_C2S, "aura", (b, p, pet) -> {
-            b.setAuraEnabled(!b.isAuraEnabled());
-        });
-        registerToggle(TOGGLE_VAMPIRIC_C2S, "vampiric", (b, p, pet) -> b.setVampiricMode(!b.isVampiricMode()));
         registerToggle(TOGGLE_NO_INTERACT_C2S, "nobreak", (b, p, pet) -> {
             b.setNoInteractMode(!b.isNoInteractMode());
         });
@@ -205,7 +221,12 @@ public class ModPackets {
                 ServerPlayerEntity pet = controlledPet(owner, petId);
                 if (pet == null) return;
                 var bond = ModComponents.PLAYER_BOND.get(pet);
-                if (BondRules.allows(pet, skill)) handler.handle(bond, owner, pet);
+                if (BondRules.allows(pet, skill)) {
+                    handler.handle(bond, owner, pet);
+                    String command = id.equals(TOGGLE_NO_INTERACT_C2S) ? "interact" :
+                            id.equals(TOGGLE_PACIFIST_C2S) ? "pacifist" : skill;
+                    CommandControl.start(pet, command);
+                }
                 refresh(owner, pet);
             });
         });
@@ -222,8 +243,7 @@ public class ModPackets {
             String nickname = petBond.getPetNickname();
             String username = onlinePet.getGameProfile().getName();
             buf.writeString((nickname != null && !nickname.isEmpty()) ? nickname + "|" + username : username + "|" + username);
-            buf.writeBoolean(petBond.isSitting()); buf.writeBoolean(petBond.isTeleportEnabled()); buf.writeBoolean(petBond.isProtectionMode());
-            buf.writeBoolean(petBond.isAuraEnabled()); buf.writeBoolean(petBond.isPacifistMode()); buf.writeBoolean(petBond.isVampiricMode());
+            buf.writeBoolean(petBond.isSitting()); buf.writeBoolean(petBond.isTeleportEnabled()); buf.writeBoolean(petBond.isPacifistMode());
             buf.writeBoolean(petBond.isNoBreakMode()); buf.writeBoolean(petBond.isAbsorbed()); buf.writeBoolean(petBond.isNoInteractMode());
             buf.writeBoolean(hasCollar);
             Set<String> skills = new java.util.HashSet<>(); for (String command : BondRules.COMMANDS) if (BondRules.allows(onlinePet, command)) skills.add(command); buf.writeInt(skills.size()); for(String s : skills) buf.writeString(s);
@@ -232,7 +252,6 @@ public class ModPackets {
             buf.writeBoolean(true);
         } else {
             buf.writeString(fallbackName + "|" + fallbackName);
-            buf.writeBoolean(false); buf.writeBoolean(false); buf.writeBoolean(false);
             buf.writeBoolean(false); buf.writeBoolean(false); buf.writeBoolean(false);
             buf.writeBoolean(false); buf.writeBoolean(false); buf.writeBoolean(false);
             buf.writeBoolean(false);
@@ -248,5 +267,8 @@ public class ModPackets {
         buf.writeString(PetPreviewState.get(server).form(petUuid));
         buf.writeBoolean(onlinePet != null && ModComponents.PLAYER_BOND.get(onlinePet).isItemForwarding());
         buf.writeBoolean(state.contractSigned);
+        buf.writeInt(onlinePet == null ? 0 : CommandControl.durationTicks(onlinePet));
+        buf.writeInt(state.commandTicks.size());
+        state.commandTicks.forEach((key, ticks) -> { buf.writeString(key); buf.writeInt(ticks); });
     }
 }

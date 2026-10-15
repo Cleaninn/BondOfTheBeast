@@ -30,13 +30,10 @@ public class StaffPetScreen extends Screen {
         preview = previewEntity();
         action(0, "sit", pet.isSitting, ModPackets.TOGGLE_PET_STATE_C2S, "sit");
         action(1, "tp", pet.isTeleportEnabled, ModPackets.TOGGLE_TELEPORT_C2S, "tp");
-        action(2, "prot", pet.isProtectionMode, ModPackets.TOGGLE_PROTECTION_C2S, "prot");
-        action(3, "aura", pet.isAuraEnabled, ModPackets.TOGGLE_AURA_C2S, "aura");
-        action(4, "vampiric", pet.isVampiricMode, ModPackets.TOGGLE_VAMPIRIC_C2S, "vampiric");
-        action(5, "absorb", pet.isAbsorbed, ModPackets.TOGGLE_ABSORB_C2S, "absorb");
-        action(6, "armor", pet.armorLocked, ModPackets.TOGGLE_ARMOR_C2S, "armor_lock", "armor_lock");
-        utility(7, "armor_open", "armor", "armor", b -> send(ModPackets.OPEN_ARMOR_C2S));
-        action(8, "inventory", pet.itemForwarding, ModPackets.TOGGLE_ITEM_FORWARDING_C2S, "inventory");
+        action(2, "absorb", pet.isAbsorbed, ModPackets.TOGGLE_ABSORB_C2S, "absorb");
+        action(3, "armor", pet.armorLocked, ModPackets.TOGGLE_ARMOR_C2S, "armor_lock", "armor_lock");
+        utility(4, "armor_open", "armor", "armor", b -> send(ModPackets.OPEN_ARMOR_C2S));
+        action(5, "inventory", pet.itemForwarding, ModPackets.TOGGLE_ITEM_FORWARDING_C2S, "inventory");
         action(12, "nobreak", pet.isNoBreakMode, ModPackets.TOGGLE_NO_BREAK_C2S, "nobreak");
         action(13, "nobreak", pet.isNoInteractMode, ModPackets.TOGGLE_NO_INTERACT_C2S, "interact", "interact");
         action(14, "nobreak", pet.isPacifistMode, ModPackets.TOGGLE_PACIFIST_C2S, "pacifist", "pacifist");
@@ -47,7 +44,7 @@ public class StaffPetScreen extends Screen {
     }
 
     private int buttonX(int index) { return index >= 12 ? 180 + (index - 12) * 48 : 180 + index % 3 * 64; }
-    private int buttonY(int index) { return index >= 12 ? 164 : 48 + index / 3 * 32; }
+    private int buttonY(int index) { return index >= 12 ? 164 : 52 + index / 3 * 38; }
     private int buttonWidth(int index) { return index >= 12 ? 44 : 60; }
 
     private boolean available(String skill) {
@@ -62,7 +59,7 @@ public class StaffPetScreen extends Screen {
         int x = book.x(buttonX(index));
         int y = book.y(buttonY(index));
         Text label = Text.translatable("gui.bondofthebeast.control." + name);
-        var button = addDrawableChild(new GrimoireAbilityButton(x, y, book.size(buttonWidth(index)), book.size(28), label, value, icon, b -> {
+        var button = addDrawableChild(new GrimoireAbilityButton(x, y, book.size(buttonWidth(index)), book.size(index >= 12 ? 28 : 32), label, value, icon, b -> {
             b.active = false;
             send(packet);
         }));
@@ -80,6 +77,12 @@ public class StaffPetScreen extends Screen {
                     Text.translatable("gui.bondofthebeast.control.description." + name).formatted(net.minecraft.util.Formatting.RESET));
             if (!unlocked) tooltip = tooltip.copy().append(Text.literal("\n")).append(lockedReason.copy().formatted(net.minecraft.util.Formatting.GRAY));
             button.active = unlocked;
+            if (pet.commandDurationTicks > 0) {
+                String command = name.equals("armor_open") ? "armor_access" : name.equals("block_rules") ? "blocks" : name;
+                int ticks = pet.commandTicks.getOrDefault(command, 0);
+                tooltip = tooltip.copy().append(Text.literal("\n")).append(Text.translatable(ticks > 0 ?
+                        "gui.bondofthebeast.order.remaining" : "gui.bondofthebeast.order.duration", (ticks > 0 ? ticks + 19 : pet.commandDurationTicks + 19) / 20));
+            }
             button.setTooltip(net.minecraft.client.gui.tooltip.Tooltip.of(tooltip));
         });
         controlUpdates.get(controlUpdates.size() - 1).run();
@@ -88,7 +91,7 @@ public class StaffPetScreen extends Screen {
     private void utility(int index, String name, String skill, String icon, ButtonWidget.PressAction press) {
         Text label = Text.translatable("gui.bondofthebeast." + name);
         var button = addDrawableChild(new GrimoireAbilityButton(book.x(buttonX(index)),
-                book.y(buttonY(index)), book.size(buttonWidth(index)), book.size(28), label, null, icon, press));
+                book.y(buttonY(index)), book.size(buttonWidth(index)), book.size(index >= 12 ? 28 : 32), label, null, icon, press));
         controlUpdates.add(() -> {
             button.active = available(skill);
             Text tooltip = Text.empty().append(label.copy().formatted(net.minecraft.util.Formatting.GOLD))
@@ -100,6 +103,12 @@ public class StaffPetScreen extends Screen {
                         pet.forced ? Text.translatable("gui.bondofthebeast.requires_stage", BondRules.requiredStage(skill) + 1) :
                         Text.translatable("gui.bondofthebeast.requires_full_form");
                 tooltip = tooltip.copy().append(Text.literal("\n")).append(reason.copy().formatted(net.minecraft.util.Formatting.GRAY));
+            }
+            if (pet.commandDurationTicks > 0) {
+                String command = name.equals("armor_open") ? "armor_access" : name.equals("block_rules") ? "blocks" : name;
+                int ticks = pet.commandTicks.getOrDefault(command, 0);
+                tooltip = tooltip.copy().append(Text.literal("\n")).append(Text.translatable(ticks > 0 ?
+                        "gui.bondofthebeast.order.remaining" : "gui.bondofthebeast.order.duration", (ticks > 0 ? ticks + 19 : pet.commandDurationTicks + 19) / 20));
             }
             button.setTooltip(net.minecraft.client.gui.tooltip.Tooltip.of(tooltip));
         });
@@ -117,8 +126,7 @@ public class StaffPetScreen extends Screen {
     public void updatePet(StaffMainScreen.PetData data) {
         if (!pet.uuid.equals(data.uuid)) return;
         boolean rebuild = pet.isSitting != data.isSitting || pet.isTeleportEnabled != data.isTeleportEnabled ||
-                pet.isProtectionMode != data.isProtectionMode || pet.isAuraEnabled != data.isAuraEnabled ||
-                pet.isVampiricMode != data.isVampiricMode || pet.isNoBreakMode != data.isNoBreakMode ||
+                pet.isNoBreakMode != data.isNoBreakMode ||
                 pet.isNoInteractMode != data.isNoInteractMode || pet.isPacifistMode != data.isPacifistMode ||
                 pet.isAbsorbed != data.isAbsorbed || pet.armorLocked != data.armorLocked ||
                 pet.itemForwarding != data.itemForwarding || pet.forced != data.forced || !pet.formId.equals(data.formId);
@@ -159,15 +167,19 @@ public class StaffPetScreen extends Screen {
                     looking ? net.minecraft.util.math.MathHelper.clamp((book.y(106) - mouseY) / book.scale(), -10, 10) : 0);
             context.disableScissor();
         }
-        Text stage = !pet.isOnline ? Text.translatable("gui.bondofthebeast.staff.offline") :
-                pet.formStage < 0 ? Text.translatable("gui.bondofthebeast.human_stage.short") :
-                Text.translatable("gui.bondofthebeast.stage", pet.formStage + 1);
-        GrimoireStyle.paper(context, 45, 159, 110, 24);
-        context.drawBorder(45, 159, 110, 24, 0xFFC3A46D);
-        GrimoireStyle.fittedText(context, textRenderer, stage.copy().formatted(net.minecraft.util.Formatting.BOLD),
-                100, 167, 98, GrimoireStyle.INK);
+        boolean bound = pet.contractSigned || !pet.forced;
+        Text status = !pet.isOnline ? Text.translatable("gui.bondofthebeast.staff.offline") : bound ?
+                Text.translatable("gui.bondofthebeast.contract_bound.title") : pet.formStage < 0 ?
+                Text.translatable("gui.bondofthebeast.collar_only") : Text.translatable("gui.bondofthebeast.stage", pet.formStage + 1);
+        GrimoireStyle.fittedText(context, textRenderer, status, 100, 160, 132, 0xFFEAD4A2, 0.95F);
+        context.fill(58, 173, 142, 174, 0xFF936B50);
+        context.fill(96, 172, 104, 175, 0xFFD1B279);
+        Text guidance = Text.translatable(bound ? "gui.bondofthebeast.contract_bound.description" :
+                pet.formStage < 0 ? "gui.bondofthebeast.transform_to_command" :
+                pet.formStage >= 3 ? "gui.bondofthebeast.contract_to_complete" : "gui.bondofthebeast.transform_for_control");
+        if (pet.isOnline) GrimoireStyle.wrappedText(context, textRenderer, guidance, 100, 181, 130, 25, 0xFFBDA783);
         if (pet.escapeTicks > 0) GrimoireStyle.fittedText(context, textRenderer,
-                Text.translatable("gui.bondofthebeast.escape_seconds", (pet.escapeTicks + 19) / 20), 100, 189, 130, 0xFFEAD4A2);
+                Text.translatable("gui.bondofthebeast.escape_seconds", (pet.escapeTicks + 19) / 20), 274, 130, 180, 0xFFEAD4A2, 0.8F);
         context.drawBorder(176, 143, 196, 54, 0xFF976B54);
         GrimoireStyle.fittedText(context, textRenderer, Text.translatable("gui.bondofthebeast.restrictions"),
                 274, 149, 180, 0xFFEAD4A2);

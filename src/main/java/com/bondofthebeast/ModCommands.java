@@ -35,6 +35,12 @@ public class ModCommands {
         rootCommand.then(CommandManager.literal("clear").then(CommandManager.argument("target", EntityArgumentType.player()).executes(ModCommands::clearBond)));
         rootCommand.then(CommandManager.literal("staffint").then(CommandManager.argument("target", EntityArgumentType.player()).executes(ModCommands::openStaffInterfaceWithTarget)).executes(ModCommands::openStaffInterface));
 
+        rootCommand.then(CommandManager.literal("reload").executes(context -> {
+            BondConfig.load();
+            for (var player : context.getSource().getServer().getPlayerManager().getPlayerList()) ModPackets.syncConfig(player);
+            context.getSource().sendFeedback(() -> Text.translatable("text.bondofthebeast.config_reloaded"), false);
+            return 1;
+        }));
         dispatcher.register(rootCommand);
     }
 
@@ -93,8 +99,6 @@ public class ModCommands {
         boolean tpEnabled = bond.isTeleportEnabled();
         status.append(Text.translatable("command.bondofthebeast.status.tp_enabled").formatted(Formatting.WHITE)).append(Text.translatable(tpEnabled ? "command.bondofthebeast.status.on" : "command.bondofthebeast.status.off").formatted(tpEnabled ? Formatting.GREEN : Formatting.RED)).append("\n");
 
-        boolean protEnabled = bond.isProtectionMode();
-        status.append(Text.translatable("command.bondofthebeast.status.protection").formatted(Formatting.WHITE)).append(Text.translatable(protEnabled ? "command.bondofthebeast.status.on" : "command.bondofthebeast.status.off").formatted(protEnabled ? Formatting.GREEN : Formatting.RED));
 
         context.getSource().sendFeedback(() -> status, false);
         return 1;

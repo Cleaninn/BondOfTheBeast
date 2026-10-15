@@ -24,6 +24,7 @@ public final class BondService {
         });
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayerEntity player = handler.player;
+            ModPackets.syncConfig(player);
             PendingBondsState.get(server).apply(player);
             var b = ModComponents.PLAYER_BOND.get(player);
             if (b.isAbsorbed()) releaseAbsorption(player);
@@ -48,7 +49,6 @@ public final class BondService {
                 var b = ModComponents.PLAYER_BOND.get(pet);
                 LeashManager.tick(pet);
                 if (!BondRules.allows(pet, "sit") && b.isSitting()) b.setSitting(false);
-                if (b.isSitting() && b.getForcedBond().controlTicks <= 0) b.getForcedBond().controlTicks = 600;
                 if (!BondRules.allows(pet, "nobreak")) {
                     if (b.isNoBreakMode()) b.setNoBreakMode(false);
                     if (b.isNoInteractMode()) b.setNoInteractMode(false);
@@ -99,7 +99,6 @@ public final class BondService {
     public static void releaseAbsorption(ServerPlayerEntity pet) {
         var b = ModComponents.PLAYER_BOND.get(pet);
         if (!b.isAbsorbed()) return;
-        b.getForcedBond().absorbedTicks = 0;
         b.setAbsorbed(false);
         pet.setCameraEntity(pet);
         GameMode previous = GameMode.byName(b.getAbsorbedGameMode(), GameMode.SURVIVAL);

@@ -16,6 +16,16 @@ import java.util.*;
 public class BondOfTheBeastClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.SYNC_CONFIG_S2C, (client, handler, buffer, sender) -> {
+            boolean block = buffer.readBoolean();
+            int[] seconds = new int[4];
+            for (int i = 0; i < 4; i++) seconds[i] = buffer.readInt();
+            client.execute(() -> BondConfig.applyServerSettings(block, seconds));
+        });
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.STAGE_NOTICE_S2C, (client, handler, buffer, sender) -> {
+            String pet = buffer.readString(); int stage = buffer.readInt(), seconds = buffer.readInt(); boolean owner = buffer.readBoolean();
+            client.execute(() -> BondHud.stageNotice(pet, stage, seconds, owner));
+        });
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.PET_STATUS_UNAVAILABLE_S2C, (client, handler, buffer, sender) -> {
             var id = buffer.readUuid();
             client.execute(() -> {
@@ -33,7 +43,7 @@ public class BondOfTheBeastClient implements ClientModInitializer {
             boolean victim = buffer.readBoolean();
             client.execute(() -> BondHud.updateCollaring(ticks, victim));
         });
-        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> BondHud.reset());
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { BondHud.reset(); BondConfig.load(); });
         net.minecraft.client.gui.screen.ingame.HandledScreens.register(PetArmorScreenHandler.TYPE, com.bondofthebeast.client.PetArmorScreen::new);
         var statusKey = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(
                 new net.minecraft.client.option.KeyBinding("key.bondofthebeast.status", org.lwjgl.glfw.GLFW.GLFW_KEY_G, "category.bondofthebeast"));
@@ -96,16 +106,16 @@ public class BondOfTheBeastClient implements ClientModInitializer {
                 }
 
                 String blockId = Registries.BLOCK.getId(state.getBlock()).toString();
-                if (bond.getBlacklistedBlocks().contains(blockId)) return ActionResult.FAIL;
-                if (bond.isNoBreakMode() && !bond.getWhitelistedBlocks().contains(blockId)) return ActionResult.FAIL;
+                if ((com.bondofthebeast.CommandControl.blockListsActive(player) && bond.getBlacklistedBlocks().contains(blockId))) return ActionResult.FAIL;
+                if (bond.isNoBreakMode() && !(com.bondofthebeast.CommandControl.blockListsActive(player) && bond.getWhitelistedBlocks().contains(blockId))) return ActionResult.FAIL;
             }
             return ActionResult.PASS;
         });
     }
     private StaffMainScreen.PetData readPet(PacketByteBuf b) {
         UUID uuid = b.readUuid(); String name = b.readString();
-        boolean sitting = b.readBoolean(); boolean tp = b.readBoolean(); boolean prot = b.readBoolean(); boolean aura = b.readBoolean();
-        boolean pacifist = b.readBoolean(); boolean vampiric = b.readBoolean(); boolean noBreak = b.readBoolean(); boolean absorbed = b.readBoolean();
+        boolean sitting = b.readBoolean(); boolean tp = b.readBoolean();
+        boolean pacifist = b.readBoolean(); boolean noBreak = b.readBoolean(); boolean absorbed = b.readBoolean();
         boolean noInteract = b.readBoolean();
         boolean collar = b.readBoolean();
         int skillsSize = b.readInt();
@@ -113,12 +123,15 @@ public class BondOfTheBeastClient implements ClientModInitializer {
         int blackSize = b.readInt(); Set<String> black = new HashSet<>(); for (int i = 0; i < blackSize; i++) black.add(b.readString());
         int whiteSize = b.readInt(); Set<String> white = new HashSet<>(); for (int i = 0; i < whiteSize; i++) white.add(b.readString());
         boolean isOnline = b.readBoolean();
-        var pet = new StaffMainScreen.PetData(uuid, name, sitting, tp, prot, aura, pacifist, vampiric, noBreak, absorbed, noInteract, collar, unlockedSkills, black, white, isOnline);
+        var pet = new StaffMainScreen.PetData(uuid, name, sitting, tp, pacifist, noBreak, absorbed, noInteract, collar, unlockedSkills, black, white, isOnline);
         pet.formStage = b.readInt(); pet.forced = b.readBoolean(); pet.armorLocked = b.readBoolean();
         pet.escapeTicks = b.readInt(); pet.instinct = b.readFloat();
         pet.formId = b.readString();
         pet.itemForwarding = b.readBoolean();
         pet.contractSigned = b.readBoolean();
+        pet.commandDurationTicks = b.readInt();
+        int commands = b.readInt();
+        for (int i = 0; i < commands; i++) pet.commandTicks.put(b.readString(), b.readInt());
         return pet;
     }
 }

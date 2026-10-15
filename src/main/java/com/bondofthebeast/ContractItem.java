@@ -211,6 +211,8 @@ public class ContractItem extends Item {
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
         NbtCompound nbt = stack.getNbt();
+        if (BondConfig.get().blockSignedContractsInEnderChests && ContractStorageRules.containsSignedContract(stack))
+            tooltip.add(Text.translatable("tooltip.bondofthebeast.contract_no_ender").formatted(Formatting.GRAY));
         if (nbt == null || (!nbt.contains("OwnerUUID") && !nbt.contains("PetUUID"))) {
             tooltip.add(Text.translatable("tooltip.bondofthebeast.contract_collared").formatted(Formatting.GRAY));
             tooltip.add(Text.translatable("tooltip.bondofthebeast.contract_voluntary").formatted(Formatting.GRAY));

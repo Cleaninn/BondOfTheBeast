@@ -16,7 +16,7 @@ public abstract class BondCombatMixin {
     private void botb$protectBond(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         if (!(source.getAttacker() instanceof ServerPlayerEntity attacker)) return;
         if ((Object) this instanceof ServerPlayerEntity target &&
-                (BondRules.owns(attacker, target) || BondRules.owns(target, attacker))) {
+                BondRules.owns(target, attacker)) {
             cir.setReturnValue(false);
             return;
         }
@@ -24,15 +24,4 @@ public abstract class BondCombatMixin {
         if (bond.hasOwner() && BondRules.canObey(attacker) && bond.isPacifistMode()) cir.setReturnValue(false);
     }
 
-    @Inject(method = "damage", at = @At("RETURN"))
-    private void botb$vampirism(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-        if (!cir.getReturnValueZ() || amount <= 0 || !(source.getAttacker() instanceof ServerPlayerEntity pet)) return;
-        var bond = ModComponents.PLAYER_BOND.get(pet);
-        if (!bond.hasOwner() || !BondRules.canObey(pet) || !bond.isVampiricMode() ||
-                !BondRules.allows(pet, "vampiric") || !BondRules.hasCollar(pet)) return;
-        float heal = Math.min(2, amount * 0.2f);
-        pet.heal(heal);
-        var owner = BondRules.owner(pet);
-        if (owner != null && owner.getWorld() == pet.getWorld() && owner.squaredDistanceTo(pet) <= 144) owner.heal(heal * 0.5f);
-    }
 }

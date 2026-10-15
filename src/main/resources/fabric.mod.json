@@ -3,7 +3,7 @@
   "id": "bondofthebeast",
   "version": "${version}",
   "name": "Bond of the Beast - Shape Shifter Curse Addon",
-  "description": "An addon for Shape Shifter Curse. Adds voluntary final-form contracts, gradual bond progression, collars, pet beds, leashes, owner commands and a separate forced-taming path.",
+  "description": "An addon for Shape Shifter Curse. Adds voluntary final-form contracts, transformation-based command progression, collars, pet beds, leashes, owner commands and a separate forced-taming path.",
   "authors": [
     "Cleanin"
   ],

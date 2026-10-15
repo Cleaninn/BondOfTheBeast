@@ -145,10 +145,12 @@ public class StaffMainScreen extends Screen {
     public static class PetData {
         public final UUID uuid;
         public final String name;
-        public boolean isSitting, isTeleportEnabled, isProtectionMode, isAuraEnabled, isPacifistMode, isVampiricMode, isNoBreakMode, isAbsorbed, isNoInteractMode;
+        public boolean isSitting, isTeleportEnabled, isPacifistMode, isNoBreakMode, isAbsorbed, isNoInteractMode;
         public int formStage = -2, escapeTicks;
         public boolean forced, armorLocked, itemForwarding, contractSigned;
         public float instinct;
+        public int commandDurationTicks;
+        public final java.util.Map<String, Integer> commandTicks = new java.util.HashMap<>();
         public boolean hasCollar;
         public String formId = "shape-shifter-curse:original_before_enable";
         public Set<String> unlockedSkills;
@@ -156,10 +158,10 @@ public class StaffMainScreen extends Screen {
         public Set<String> whitelistedBlocks;
         public boolean isOnline;
 
-        public PetData(UUID uuid, String name, boolean sitting, boolean tp, boolean prot, boolean aura, boolean pacifist, boolean vampiric, boolean noBreak, boolean absorbed, boolean noInteract, boolean collar, Set<String> unlockedSkills, Set<String> black, Set<String> white, boolean isOnline) {
+        public PetData(UUID uuid, String name, boolean sitting, boolean tp, boolean pacifist, boolean noBreak, boolean absorbed, boolean noInteract, boolean collar, Set<String> unlockedSkills, Set<String> black, Set<String> white, boolean isOnline) {
             this.uuid = uuid; this.name = name; this.isSitting = sitting; this.isTeleportEnabled = tp;
-            this.isProtectionMode = prot; this.isAuraEnabled = aura; this.isPacifistMode = pacifist;
-            this.isVampiricMode = vampiric; this.isNoBreakMode = noBreak; this.isAbsorbed = absorbed;
+            this.isPacifistMode = pacifist;
+            this.isNoBreakMode = noBreak; this.isAbsorbed = absorbed;
             this.isNoInteractMode = noInteract;
             this.hasCollar = collar;
             this.unlockedSkills = unlockedSkills;

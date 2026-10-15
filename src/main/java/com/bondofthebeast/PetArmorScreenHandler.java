@@ -56,7 +56,7 @@ public class PetArmorScreenHandler extends ScreenHandler {
 
     @Override public boolean canUse(PlayerEntity owner) {
         return pet == null || (pet.isAlive() && pet.getWorld() == owner.getWorld() && owner.squaredDistanceTo(pet) <= 64 &&
-                BondRules.canOwn(owner) && BondRules.owns(owner, pet) && BondRules.allows(pet, "armor"));
+                BondRules.canOwn(owner) && BondRules.owns(owner, pet) && BondRules.allows(pet, "armor") && CommandControl.active(pet, "armor_access"));
     }
 
     @Override public ItemStack quickMove(PlayerEntity player, int index) {

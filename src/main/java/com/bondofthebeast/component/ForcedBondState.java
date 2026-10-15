@@ -12,13 +12,11 @@ public final class ForcedBondState {
     public int catalystStages;
     public int escapeTicks;
     public int resistanceCooldownTicks;
-    public int escapeCharge;
-    public int controlTicks;
-    public int absorbedTicks;
     public int lastStage = -99;
     public boolean armorLocked;
     public boolean contractSigned;
     public boolean contractPending;
+    public final java.util.Map<String, Integer> commandTicks = new java.util.HashMap<>();
 
     public NbtCompound write() {
         NbtCompound tag = new NbtCompound();
@@ -30,12 +28,13 @@ public final class ForcedBondState {
         tag.putInt("CatalystStages", catalystStages);
         tag.putInt("EscapeTicks", escapeTicks);
         tag.putInt("ResistanceCooldownTicks", resistanceCooldownTicks);
-        tag.putInt("ControlTicks", controlTicks);
-        tag.putInt("AbsorbedTicks", absorbedTicks);
         tag.putInt("LastStage", lastStage);
         tag.putBoolean("ArmorLocked", armorLocked);
         tag.putBoolean("ContractSigned", contractSigned);
         tag.putBoolean("ContractPending", contractPending);
+        NbtCompound commands = new NbtCompound();
+        commandTicks.forEach(commands::putInt);
+        tag.put("CommandTicks", commands);
         return tag;
     }
 
@@ -48,12 +47,15 @@ public final class ForcedBondState {
         catalystStages = tag.getInt("CatalystStages");
         escapeTicks = Math.max(0, Math.min(2400, tag.getInt("EscapeTicks")));
         resistanceCooldownTicks = Math.max(0, Math.min(6000, tag.getInt("ResistanceCooldownTicks")));
-        controlTicks = Math.max(0, Math.min(600, tag.getInt("ControlTicks")));
-        absorbedTicks = Math.max(0, Math.min(1200, tag.getInt("AbsorbedTicks")));
         lastStage = tag.contains("LastStage") ? tag.getInt("LastStage") : -99;
         armorLocked = tag.getBoolean("ArmorLocked");
         contractSigned = tag.getBoolean("ContractSigned");
         contractPending = tag.getBoolean("ContractPending") && !contractSigned;
-        escapeCharge = 0;
+        commandTicks.clear();
+        var commands = tag.getCompound("CommandTicks");
+        for (String key : commands.getKeys()) {
+            int ticks = Math.max(0, Math.min(72000, commands.getInt(key)));
+            if (ticks > 0) commandTicks.put(key, ticks);
+        }
     }
 }

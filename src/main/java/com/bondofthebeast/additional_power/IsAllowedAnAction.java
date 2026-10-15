@@ -21,9 +21,6 @@ public class IsAllowedAnAction {
             case "pacifism" -> bond.isPacifistMode();
             case "sit" -> bond.isSitting();
             case "tp" -> bond.isTeleportEnabled();
-            case "prot" -> bond.isProtectionMode();
-            case "aura" -> bond.isAuraEnabled();
-            case "vampiric" -> bond.isVampiricMode();
             case "nobreak" -> bond.isNoBreakMode();
             case "armor" -> bond.getForcedBond().armorLocked;
             case "inventory" -> bond.isItemForwarding();

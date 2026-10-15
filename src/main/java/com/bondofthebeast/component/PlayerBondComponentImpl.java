@@ -34,10 +34,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
 
     private boolean sitting = false;
     private boolean teleportEnabled = false;
-    private boolean protectionMode = false;
-    private boolean auraEnabled = false;
     private boolean pacifistMode = false;
-    private boolean vampiricMode = false;
     private boolean noBreakMode = false;
     private boolean absorbed = false;
     private boolean noInteractMode = false;
@@ -90,10 +87,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
         this.absorbedGameMode = tag.contains("AbsorbedGameMode") ? tag.getString("AbsorbedGameMode") : "survival";
         this.sitting = tag.getBoolean("IsSitting");
         this.teleportEnabled = tag.getBoolean("TeleportEnabled");
-        this.protectionMode = tag.getBoolean("ProtectionMode");
-        this.auraEnabled = tag.getBoolean("AuraEnabled");
         this.pacifistMode = tag.getBoolean("PacifistMode");
-        this.vampiricMode = tag.getBoolean("VampiricMode");
         this.noBreakMode = tag.getBoolean("NoBreakMode");
         this.absorbed = tag.getBoolean("Absorbed");
         this.noInteractMode = tag.getBoolean("NoInteractMode");
@@ -117,7 +111,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
 
         if (this.petNickname != null) tag.putString("PetNickname", this.petNickname);
         // Discard obsolete progression data when existing saves are rewritten.
-        for (String key : java.util.List.of("BondLevel", "BondExperience", "SkillPoints", "UnlockedSkills", "VoluntaryBond")) tag.remove(key);
+        for (String key : java.util.List.of("BondLevel", "BondExperience", "SkillPoints", "UnlockedSkills", "VoluntaryBond", "ProtectionMode", "AuraEnabled", "VampiricMode")) tag.remove(key);
 
         NbtCompound petsTag = new NbtCompound();
         this.registeredPets.forEach(petsTag::putString);
@@ -138,10 +132,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
         tag.putString("AbsorbedGameMode", this.absorbedGameMode);
         tag.putBoolean("IsSitting", this.sitting);
         tag.putBoolean("TeleportEnabled", this.teleportEnabled);
-        tag.putBoolean("ProtectionMode", this.protectionMode);
-        tag.putBoolean("AuraEnabled", this.auraEnabled);
         tag.putBoolean("PacifistMode", this.pacifistMode);
-        tag.putBoolean("VampiricMode", this.vampiricMode);
         tag.putBoolean("NoBreakMode", this.noBreakMode);
         tag.putBoolean("Absorbed", this.absorbed);
         tag.putBoolean("NoInteractMode", this.noInteractMode);
@@ -194,10 +185,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
         }
         this.sitting = false;
         this.teleportEnabled = false;
-        this.protectionMode = false;
-        this.auraEnabled = false;
         this.pacifistMode = false;
-        this.vampiricMode = false;
         this.noBreakMode = false;
         this.noInteractMode = false;
         this.tamingTicks = 0;
@@ -253,31 +241,10 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
         ModComponents.PLAYER_BOND.sync(this.provider);
     }
 
-    @Override public boolean isProtectionMode() { return protectionMode; }
-
-    @Override public void setProtectionMode(boolean protectionMode) {
-        this.protectionMode = protectionMode;
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public boolean isAuraEnabled() { return auraEnabled; }
-
-    @Override public void setAuraEnabled(boolean auraEnabled) {
-        this.auraEnabled = auraEnabled;
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
     @Override public boolean isPacifistMode() { return pacifistMode; }
 
     @Override public void setPacifistMode(boolean pacifistMode) {
         this.pacifistMode = pacifistMode;
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public boolean isVampiricMode() { return vampiricMode; }
-
-    @Override public void setVampiricMode(boolean vampiricMode) {
-        this.vampiricMode = vampiricMode;
         ModComponents.PLAYER_BOND.sync(this.provider);
     }
 

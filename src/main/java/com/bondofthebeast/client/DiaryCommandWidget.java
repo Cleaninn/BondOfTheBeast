@@ -16,6 +16,7 @@ final class DiaryCommandWidget extends ButtonWidget {
     private final BooleanSupplier enabled;
     private boolean lastAvailable, lastEnabled;
     private boolean initialized;
+    private int lastSeconds = -1;
 
     DiaryCommandWidget(int x, int y, int width, int height, String name, String glyph,
                        BooleanSupplier available, BooleanSupplier enabled) {
@@ -29,14 +30,23 @@ final class DiaryCommandWidget extends ButtonWidget {
     @Override protected void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
         boolean unlocked = available.getAsBoolean();
         boolean on = enabled.getAsBoolean() && unlocked;
-        if (!initialized || unlocked != lastAvailable || on != lastEnabled) {
+        var client = net.minecraft.client.MinecraftClient.getInstance();
+        var bond = com.bondofthebeast.component.ModComponents.PLAYER_BOND.get(client.player);
+        String command = name.equals("armor_open") ? "armor_access" : name;
+        int ticks = bond.getForcedBond().commandTicks.getOrDefault(command, 0);
+        int seconds = (ticks + 19) / 20;
+        if (!initialized || unlocked != lastAvailable || on != lastEnabled || seconds != lastSeconds) {
             initialized = true;
+            lastSeconds = seconds;
             lastAvailable = unlocked;
             lastEnabled = on;
             Text status = Text.translatable(!unlocked ? "gui.bondofthebeast.diary.unavailable" :
                     name.equals("armor_open") ? "gui.bondofthebeast.diary.available" : on ? "gui.bondofthebeast.on" : "gui.bondofthebeast.off");
             Text tooltip = getMessage().copy().append(Text.literal(" — ")).append(status)
                     .append(Text.literal("\n")).append(Text.translatable("gui.bondofthebeast.control.description." + name));
+            int duration = com.bondofthebeast.CommandControl.durationTicks(client.player);
+            if (duration > 0) tooltip = tooltip.copy().append(Text.literal("\n")).append(Text.translatable(seconds > 0 ?
+                    "gui.bondofthebeast.order.remaining" : "gui.bondofthebeast.order.duration", seconds > 0 ? seconds : (duration + 19) / 20));
             setTooltip(Tooltip.of(tooltip));
         }
         PetDiaryStyle.button(context, getX(), getY(), width, height, isHovered());

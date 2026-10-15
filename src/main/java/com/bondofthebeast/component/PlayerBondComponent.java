@@ -47,14 +47,8 @@ public interface PlayerBondComponent extends Component, AutoSyncedComponent {
     void setSitting(boolean sitting);
     boolean isTeleportEnabled();
     void setTeleportEnabled(boolean teleportEnabled);
-    boolean isProtectionMode();
-    void setProtectionMode(boolean protectionMode);
-    boolean isAuraEnabled();
-    void setAuraEnabled(boolean auraEnabled);
     boolean isPacifistMode();
     void setPacifistMode(boolean pacifistMode);
-    boolean isVampiricMode();
-    void setVampiricMode(boolean vampiricMode);
     boolean isNoBreakMode();
     void setNoBreakMode(boolean noBreakMode);
     boolean isAbsorbed();

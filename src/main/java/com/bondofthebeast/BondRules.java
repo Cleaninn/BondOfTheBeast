@@ -11,7 +11,7 @@ import java.util.List;
 
 /** Shared rules used by both server actions and client presentation. */
 public final class BondRules {
-    public static final List<String> COMMANDS = List.of("sit", "tp", "prot", "nobreak", "absorb", "vampiric", "aura", "armor", "inventory");
+    public static final List<String> COMMANDS = List.of("sit", "tp", "nobreak", "absorb", "armor", "inventory");
 
     private BondRules() {}
 
@@ -45,15 +45,15 @@ public final class BondRules {
     public static boolean canObey(PlayerEntity player) {
         var bond = ModComponents.PLAYER_BOND.get(player);
         return bond.hasOwner() && !ForcedTamingService.freeWindow(player) &&
-                (!bond.getForcedBond().forced || ForcedTamingService.stage(player) >= 0);
+                (!CommandControl.temporary(player) || ForcedTamingService.stage(player) >= 0);
     }
 
     public static int requiredStage(String command) {
         return switch (command) {
-            case "sit", "nobreak", "inventory" -> 0;
-            case "tp", "armor" -> 1;
-            case "prot", "aura" -> 2;
-            case "vampiric", "absorb" -> 3;
+            case "sit", "nobreak" -> 0;
+            case "tp", "inventory" -> 1;
+            case "armor" -> 2;
+            case "absorb" -> 3;
             default -> 99;
         };
     }
@@ -61,8 +61,8 @@ public final class BondRules {
     public static boolean allows(PlayerEntity pet, String command) {
         if (!COMMANDS.contains(command) || !canObey(pet) || !hasCollar(pet)) return false;
         var bond = ModComponents.PLAYER_BOND.get(pet);
-        return bond.getForcedBond().forced ? ForcedTamingService.stage(pet) >= requiredStage(command) :
-                canBePet(pet);
+        return !CommandControl.temporary(pet) || ForcedTamingService.canFinalizeForced(pet) ||
+                ForcedTamingService.stage(pet) >= requiredStage(command);
     }
 
     public static boolean hasCollar(PlayerEntity player) {

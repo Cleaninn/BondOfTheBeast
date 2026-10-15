@@ -19,6 +19,7 @@ public class BondOfTheBeast implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        BondConfig.load();
         ModItems.registerModItems();
         ModBlocks.registerModBlocks();
         ModBlockEntities.registerBlockEntities();
