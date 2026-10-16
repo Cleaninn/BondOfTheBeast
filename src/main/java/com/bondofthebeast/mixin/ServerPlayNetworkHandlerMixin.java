@@ -21,17 +21,14 @@ public class ServerPlayNetworkHandlerMixin {
     @Inject(method = "onPlayerMove", at = @At("HEAD"), cancellable = true)
     private void lockSittingPosition(PlayerMoveC2SPacket packet, CallbackInfo ci) {
         if (ModComponents.PLAYER_BOND.get(this.player).isSitting()) {
-            // Проверяем, изменились ли координаты X, Y или Z
             if (packet.changesPosition()) {
                 double dx = Math.abs(packet.getX(this.player.getX()) - this.player.getX());
                 double dz = Math.abs(packet.getZ(this.player.getZ()) - this.player.getZ());
 
-                // Если игрок сдвинулся больше чем на мизерное расстояние
-                if (dx > 0.01 || dz > 0.01) {
+                double upward = packet.getY(this.player.getY()) - this.player.getY();
+                if (dx > 1.0E-7 || dz > 1.0E-7 || upward > Math.max(0, player.getVelocity().y) + 1.0E-7) {
                     this.player.requestTeleport(this.player.getX(), this.player.getY(), this.player.getZ());
                     ci.cancel();
-                    // Reject the attempted displacement after correcting the client position.
-                    // Это предотвратит kick за "Invalid movement".
                 }
             }
         } else if (com.bondofthebeast.ForcedTamingService.stunned(player) && packet.changesPosition()) {

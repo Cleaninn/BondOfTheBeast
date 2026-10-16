@@ -176,12 +176,14 @@ public class PetBedScreen extends Screen {
                 String time = seconds >= 3600 ? String.format(java.util.Locale.ROOT, "%d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
                         : String.format(java.util.Locale.ROOT, "%d:%02d", seconds / 60, seconds % 60);
                 duration = registeredPets.get(selectedUUID).temporary ? Text.translatable("gui.bondofthebeast.bed.chain_duration", time)
-                        : Text.translatable("gui.bondofthebeast.bed.chain_permanent");
+                        : Text.empty();
             }
             if (!selectedUUID.isEmpty() && !registeredPets.get(selectedUUID).hasCollar)
                 duration = Text.translatable("gui.bondofthebeast.bed.no_collar");
-            context.fill(16, 164, 260, 183, 0x183A2625);
-            GrimoireStyle.fittedText(context, textRenderer, duration, 138, 170, 232, GrimoireStyle.INK, 0.85F);
+            if (!duration.getString().isEmpty()) {
+                context.fill(16, 164, 260, 183, 0x183A2625);
+                GrimoireStyle.fittedText(context, textRenderer, duration, 138, 170, 232, GrimoireStyle.INK, 0.85F);
+            }
         }
         context.getMatrices().pop();
         super.render(context, mouseX, mouseY, delta);

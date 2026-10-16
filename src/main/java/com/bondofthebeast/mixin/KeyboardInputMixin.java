@@ -27,10 +27,7 @@ public class KeyboardInputMixin {
                 input.pressingRight = false;
                 input.jumping = false;
 
-                if (bond.isAbsorbed()) {
-                    input.sneaking = false;
-
-                }
+                input.sneaking = bond.isSitting() && !bond.isAbsorbed();
             }
         }
     }

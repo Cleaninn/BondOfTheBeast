@@ -17,6 +17,11 @@ public abstract class PlayerStunMixin {
     @ModifyVariable(method = "travel", at = @At("HEAD"), argsOnly = true)
     private Vec3d injectStunMovement(Vec3d movementInput) {
         if ((Object) this instanceof PlayerEntity player) {
+            if (com.bondofthebeast.component.ModComponents.PLAYER_BOND.get(player).isSitting()) {
+                player.setVelocity(0, player.getVelocity().y, 0);
+                player.setSprinting(false);
+                return Vec3d.ZERO;
+            }
             if (player.hasStatusEffect(StatusEffects.SLOWNESS) &&
                     player.getStatusEffect(StatusEffects.SLOWNESS).getAmplifier() == 99) {
                 Vec3d dodge = movementInput.lengthSquared() > 0 ? movementInput.normalize()
@@ -33,6 +38,10 @@ public abstract class PlayerStunMixin {
     @Inject(method = "jump", at = @At("HEAD"), cancellable = true)
     private void injectStunJump(CallbackInfo ci) {
         if ((Object) this instanceof PlayerEntity player) {
+            if (com.bondofthebeast.component.ModComponents.PLAYER_BOND.get(player).isSitting()) {
+                ci.cancel();
+                return;
+            }
             if (player.hasStatusEffect(StatusEffects.SLOWNESS) &&
                     player.getStatusEffect(StatusEffects.SLOWNESS).getAmplifier() == 99) {
                 // Прерываем выполнение метода jump(), игрок даже не оторвется от земли

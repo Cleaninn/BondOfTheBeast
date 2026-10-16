@@ -58,10 +58,12 @@ final class PetPreview {
             var bondData = new NbtCompound();
             bondData.putBoolean("IsSitting", pet.isSitting);
             com.bondofthebeast.component.ModComponents.PLAYER_BOND.get(entity).readFromNbt(bondData);
+            entity.setSneaking(pet.isSitting);
+            entity.setPose(pet.isSitting ? net.minecraft.entity.EntityPose.CROUCHING : net.minecraft.entity.EntityPose.STANDING);
             entity.setOnGround(true);
             var data = new AnimSystem.AnimSystemData(entity);
             data.playerForm = form;
-            var controller = form.getAnimStateController(entity, data, pet.isSitting ? AnimRegistries.ANIM_STATE_RIDE : AnimRegistries.ANIM_STATE_IDLE);
+            var controller = form.getAnimStateController(entity, data, AnimRegistries.ANIM_STATE_IDLE);
             if (controller != null) {
                 if (!controller.isRegistered(entity, data)) controller.registerAnim(entity, data);
                 var holder = controller.getAnimation(entity, data);
