@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Bond of the Beast: a guide to player bonds, collars, commands and transformation.">
+  <title>Bond of the Beast · Wiki</title>
+  <link rel="icon" href="assets/icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="content.js" defer></script>
+  <script src="app.js" defer></script>
+  <script src="media-viewer.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main-content" data-i18n="skip">Skip to content</a>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="#home"><img src="assets/renders/command_scepter.svg" width="48" height="48" alt=""><span>Bond of<br>the Beast<small data-i18n="fieldGuide">THE FIELD GUIDE</small></span></a>
+    <nav id="navigation" aria-label="Wiki sections" data-i18n-label="sections"></nav>
+    <div class="sidebar-foot"><a href="#description" data-i18n="description">Read the mod description ↗</a><p data-i18n="addon">A Shape Shifter Curse addon</p><a class="source-link" data-i18n="source" href="https://github.com/Cleaninn/BondOfTheBeast" target="_blank" rel="noreferrer">Source on GitHub ↗</a></div>
+  </aside>
+  <div class="mobile-shade" id="shade"></div>
+  <div class="workspace">
+    <header class="topbar">
+      <button class="menu-button" id="menu-button" data-i18n-label="navigation" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+      <div class="breadcrumb"><a href="#home" data-i18n="wiki">Wiki</a><span>/</span><span id="breadcrumb-title">Overview</span></div>
+      <div class="search-wrap"><label class="search-box"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="search" data-i18n-label="search" type="search" placeholder="Search the guide…" aria-label="Search the wiki" autocomplete="off" aria-controls="search-results" aria-expanded="false"><kbd>Ctrl K</kbd></label><div id="search-results" class="search-results" hidden></div></div>
+      <div class="language-switch" role="group" aria-label="Language" data-i18n-label="language"><button type="button" data-language="en" lang="en" aria-label="English" aria-pressed="true">EN</button><button type="button" data-language="ru" lang="ru" aria-label="Русский" aria-pressed="false">RU</button></div>
+    </header>
+    <div class="page-layout">
+      <main id="main-content" tabindex="-1">
+        <div class="page-eyebrow" id="page-eyebrow"></div>
+        <div id="page-content"></div>
+        <nav class="page-turns" id="page-turns" data-i18n-label="adjacent" aria-label="Adjacent articles"></nav>
+        <footer class="page-footer"><span>Bond of the Beast</span><button id="print-button" data-i18n="print" type="button">Print article ↗</button></footer>
+      </main>
+      <aside class="contents" data-i18n-label="contentsLabel" aria-label="On this page"><div class="contents-inner"><p data-i18n="contents">ON THIS PAGE</p><nav id="contents-links"></nav><div class="edition-note"><span class="small-rule"></span><strong data-i18n="about">About this guide</strong><p data-i18n="note">Server settings may change temporary order durations.</p></div></div></aside>
+    </div>
+  </div>
+  <dialog class="shot-dialog" id="shot-dialog" aria-labelledby="shot-caption"><button class="shot-close" id="shot-close" data-i18n-label="close" type="button" aria-label="Close screenshot">×</button><img id="shot-image" alt=""><p id="shot-caption"></p></dialog>
+  <noscript>This wiki needs JavaScript for navigation, search and language selection.</noscript>
+</body>
+</html>

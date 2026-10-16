@@ -1,0 +1,10 @@
+Bond of the Beast artwork and item models: Cleanin. MIT license in ASSET-LICENSE.txt.
+
+Vanilla ingredient sprites and block models: Minecraft Java Edition, Mojang Studios / Microsoft.
+Extracted from the locally installed Minecraft 1.20.1 client for the crafting illustrations.
+
+Shapeshifter book and Moondust Crystal Shard artwork: Shape Shifter Curse by onixary and XuHaoNan.
+Source: locally installed Shape Shifter Curse 1.9.2, whose mod metadata declares the MIT license.
+
+The crafting layouts are generated from Bond of the Beast's original recipe JSON files.
+The grimoire, shapeshifter book, Pet Bed, wool and slab are native model renders.
