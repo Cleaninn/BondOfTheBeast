@@ -38,7 +38,7 @@ public final class PetLeashRenderer {
             } else if (bond.getBedPos() != null && dimension.equals(bond.getBedDimension()) &&
                     world.getBlockEntity(bond.getBedPos()) instanceof PetBedBlockEntity bed &&
                     pet.getUuidAsString().equals(bed.getBoundPetUUID()) && bed.isChainActive()) {
-                anchor = bond.getBedPos().toCenterPos().add(0, -0.25, 0);
+                anchor = bond.getBedPos().toCenterPos().add(0, -0.375, 0);
                 chain = true;
             }
             if (anchor == null) continue;

@@ -236,6 +236,7 @@ public final class ForcedTamingService {
 
     public static ActionResult feedCatalyst(PlayerEntity owner, ServerPlayerEntity pet, ItemStack stack) {
         if (!isCatalyst(stack)) return ActionResult.PASS;
+        boolean cookieItem = stack.getItem() instanceof com.bondofthebeast.item.CatalystCookieItem;
         if (!BondRules.hasOpenedBook(pet) || !BondRules.owns(owner, pet) || !BondRules.canOwn(owner) || !BondRules.hasCollar(pet) || freeWindow(pet)) return ActionResult.FAIL;
         int stage = stage(pet);
         if (stage < -1 || stage >= 3) return ActionResult.FAIL;
@@ -243,23 +244,22 @@ public final class ForcedTamingService {
         if (stack.getItem() instanceof com.bondofthebeast.item.CatalystCookieItem cookie && cookie.isEcho()) {
             var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).getCurrentForm();
             if (stage != 2 || form.getGroup() == null || !form.getGroup().hasForm(3)) {
-                owner.sendMessage(Text.translatable("text.bondofthebeast.echo_cookie_stage"), true);
                 return ActionResult.FAIL;
             }
             long now = pet.getServer().getOverworld().getTime();
             long remaining = state.thirdStageReachedAt < 0 ? 12000 : Math.max(0, 12000 - (now - state.thirdStageReachedAt));
             if (remaining > 0) {
-                owner.sendMessage(Text.translatable("text.bondofthebeast.echo_cookie_wait", (remaining + 19) / 20), true);
                 return ActionResult.FAIL;
             }
-            net.onixary.shapeShifterCurseFabric.player_form.transform.TransformRelatedItems.OnUsePowerfulCatalyst(pet);
+            net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager.handleDirectTransform(pet, form.getGroup().getForm(3), false);
             if (!owner.isCreative()) stack.decrement(1);
             pet.getHungerManager().add(2, 0.1f);
             return ActionResult.SUCCESS;
         }
         int bit = 1 << (stage + 2);
         if ((state.catalystStages & bit) != 0) {
-            owner.sendMessage(Text.translatable("text.bondofthebeast.catalyst_stage_used"), true);
+            if (!cookieItem)
+                owner.sendMessage(Text.translatable("text.bondofthebeast.catalyst_stage_used"), true);
             return ActionResult.FAIL;
         }
         if (stage < 0 && !EffectManager.hasTransformativeEffect(pet)) return ActionResult.FAIL;
@@ -268,13 +268,14 @@ public final class ForcedTamingService {
             state.warningTicks = WARNING_TICKS;
             state.catalystWarningFromCookie = true;
         } else {
-            if (stack.getItem() instanceof com.bondofthebeast.item.CatalystCookieItem)
+            if (cookieItem)
                 InstinctManager.applyEffect(pet, "FORM_USE_CATALYST", 0.975f, 40);
             else InstinctManager.applyImmediateEffect(pet, "botb_owner_cookie", 25);
         }
         if (!owner.isCreative()) stack.decrement(1);
         pet.getHungerManager().add(2, 0.1f);
-        owner.sendMessage(Text.translatable("text.bondofthebeast.catalyst_given"), true);
+        if (!cookieItem)
+            owner.sendMessage(Text.translatable("text.bondofthebeast.catalyst_given"), true);
         ModComponents.PLAYER_BOND.sync(pet);
         return ActionResult.SUCCESS;
     }

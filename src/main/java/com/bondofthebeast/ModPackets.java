@@ -21,6 +21,30 @@ import java.util.UUID;
 public class ModPackets {
     public static final Identifier SYNC_CONFIG_S2C = new Identifier(BondOfTheBeast.MOD_ID, "sync_config_s2c");
     public static final Identifier STAGE_NOTICE_S2C = new Identifier(BondOfTheBeast.MOD_ID, "stage_notice_s2c");
+    public static final Identifier PET_INSTINCT_S2C = new Identifier(BondOfTheBeast.MOD_ID, "pet_instinct_s2c");
+
+    public static void syncPetInstinct(MinecraftServer server) {
+        var byOwner = new java.util.HashMap<UUID, java.util.List<ServerPlayerEntity>>();
+        for (var pet : server.getPlayerManager().getPlayerList()) {
+            if (!CommandControl.temporary(pet)) continue;
+            var owner = BondRules.owner(pet);
+            if (owner != null && BondRules.canOwn(owner))
+                byOwner.computeIfAbsent(owner.getUuid(), key -> new java.util.ArrayList<>()).add(pet);
+        }
+        for (var owner : server.getPlayerManager().getPlayerList()) {
+            var pets = byOwner.getOrDefault(owner.getUuid(), java.util.List.of());
+            var buffer = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+            buffer.writeVarInt(pets.size());
+            if (pets.size() > 1) pets.sort(java.util.Comparator.comparing(pet -> pet.getGameProfile().getName()));
+            for (var pet : pets) {
+                var bond = ModComponents.PLAYER_BOND.get(pet);
+                buffer.writeUuid(pet.getUuid());
+                buffer.writeString(bond.getPetNickname() == null ? pet.getGameProfile().getName() : bond.getPetNickname());
+                buffer.writeFloat(net.onixary.shapeShifterCurseFabric.player_form.instinct.RegPlayerInstinctComponent.PLAYER_INSTINCT_COMP.get(pet).instinctValue);
+            }
+            ServerPlayNetworking.send(owner, PET_INSTINCT_S2C, buffer);
+        }
+    }
 
     public static void syncConfig(ServerPlayerEntity player) {
         var buffer = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
@@ -176,7 +200,7 @@ public class ModPackets {
     }
 
     private static void updateBed(ServerPlayerEntity owner, BlockPos pos, String petId, int radius) {
-        if (!canOwnerCommand(owner) || radius < 0 || radius > 50 || owner.squaredDistanceTo(pos.toCenterPos()) > 64 ||
+        if (!canOwnerCommand(owner) || radius < 0 || owner.squaredDistanceTo(pos.toCenterPos()) > 64 ||
                 !(owner.getServerWorld().getBlockEntity(pos) instanceof PetBedBlockEntity bed) ||
                 bed.getCachedState().get(com.bondofthebeast.block.PetBedBlock.PART) != net.minecraft.block.enums.BedPart.HEAD) return;
         var ownerBond = ModComponents.PLAYER_BOND.get(owner);

@@ -160,7 +160,7 @@ public final class LeashManager {
             }
             var bed = (PetBedBlockEntity) world.getBlockEntity(b.getBedPos());
             radius = bed.getChainRadius();
-            anchor = b.getBedPos().toCenterPos();
+            anchor = b.getBedPos().toCenterPos().add(0, -0.375, 0);
         }
         if (anchor == null || pet.isSleeping()) return;
         Vec3d delta = anchor.subtract(pet.getPos());

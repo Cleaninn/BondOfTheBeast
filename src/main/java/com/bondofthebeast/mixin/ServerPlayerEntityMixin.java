@@ -72,16 +72,27 @@ public abstract class ServerPlayerEntityMixin {
         var bond = ModComponents.PLAYER_BOND.get(player);
 
         if (bond.hasOwner()) {
-            int formCategory = getPlayerFormCategory(player);
-            if (formCategory == 2) {
-                return;
-            }
-            Block block = player.getWorld().getBlockState(pos).getBlock();
-            if (!(block instanceof PetBedBlock)) {
+            BlockPos head = pos;
+            var state = player.getWorld().getBlockState(pos);
+            if (state.getBlock() instanceof PetBedBlock && state.get(PetBedBlock.PART) == net.minecraft.block.enums.BedPart.FOOT)
+                head = pos.offset(state.get(PetBedBlock.FACING));
+            if (!(state.getBlock() instanceof PetBedBlock) || !head.equals(bond.getBedPos()) ||
+                    !player.getWorld().getRegistryKey().getValue().toString().equals(bond.getBedDimension()) ||
+                    !(player.getWorld().getBlockEntity(head) instanceof PetBedBlockEntity bed) ||
+                    !player.getUuidAsString().equals(bed.getBoundPetUUID())) {
                 player.sendMessage(Text.translatable("text.bondofthebeast.cannot_sleep_here_human").formatted(Formatting.RED), true);
                 cir.setReturnValue(Either.left(PlayerEntity.SleepFailureReason.OTHER_PROBLEM));
             }
         }
+    }
+
+    @Inject(method = "setSpawnPoint", at = @At("HEAD"), cancellable = true)
+    private void botb$onlyAssignedRespawn(net.minecraft.registry.RegistryKey<World> dimension, BlockPos pos,
+                                         float angle, boolean forced, boolean sendMessage, CallbackInfo ci) {
+        var bond = ModComponents.PLAYER_BOND.get((ServerPlayerEntity) (Object) this);
+        // Null clears a released/broken bed. Only the owner's assigned bed may set a new point.
+        if (bond.hasOwner() && pos != null && (bond.getBedPos() == null ||
+                !pos.equals(bond.getBedPos().up()) || !dimension.getValue().toString().equals(bond.getBedDimension()))) ci.cancel();
     }
 
     @Inject(method = "sleep", at = @At("RETURN"))

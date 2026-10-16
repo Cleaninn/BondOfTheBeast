@@ -145,6 +145,7 @@ public class ContractItem extends Item {
             ServerPlayerEntity owner = ownerSigning ? signer : other;
             ServerPlayerEntity pet = ownerSigning ? other : signer;
             if (!BondRules.canOwn(owner) || !BondRules.canBePet(pet) || ModComponents.PLAYER_BOND.get(pet).hasOwner()) return;
+            if (petSigning && owner.isCreative() && owner.getInventory().getEmptySlot() < 0) return;
         } catch (IllegalArgumentException e) { return; }
 
         if (nbt.contains("PetUUID") && !nbt.contains("OwnerUUID")) {
@@ -183,6 +184,10 @@ public class ContractItem extends Item {
 
                     BondOfTheBeast.grantAdvancement(owner, "owner_story/tame_pet");
                     BondOfTheBeast.grantAdvancement((ServerPlayerEntity) player, "pet_story/root");
+                    ItemStack signed = stack.copyWithCount(1);
+                    stack.decrement(1);
+                    owner.getInventory().offerOrDrop(signed);
+                    owner.currentScreenHandler.sendContentUpdates();
                 }
             }
         }
@@ -214,7 +219,6 @@ public class ContractItem extends Item {
         if (BondConfig.get().blockSignedContractsInEnderChests && ContractStorageRules.containsSignedContract(stack))
             tooltip.add(Text.translatable("tooltip.bondofthebeast.contract_no_ender").formatted(Formatting.GRAY));
         if (nbt == null || (!nbt.contains("OwnerUUID") && !nbt.contains("PetUUID"))) {
-            tooltip.add(Text.translatable("tooltip.bondofthebeast.contract_collared").formatted(Formatting.GRAY));
             tooltip.add(Text.translatable("tooltip.bondofthebeast.contract_voluntary").formatted(Formatting.GRAY));
         }
         if (nbt == null) {

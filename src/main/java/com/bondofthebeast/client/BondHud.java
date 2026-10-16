@@ -40,6 +40,7 @@ public final class BondHud {
     }
 
     public static void reset() {
+        PetInstinctHud.reset();
         collaringTicks = -1;
         previousOwner = "";
         noticeUntil = 0;
@@ -59,6 +60,7 @@ public final class BondHud {
     public static void render(DrawContext context, float delta) {
         var client = MinecraftClient.getInstance();
         if (client.player == null || client.options.hudHidden) return;
+        PetInstinctHud.render(context, client);
         var bond = ModComponents.PLAYER_BOND.get(client.player);
         var state = bond.getForcedBond();
         long now = net.minecraft.util.Util.getMeasuringTimeMs();

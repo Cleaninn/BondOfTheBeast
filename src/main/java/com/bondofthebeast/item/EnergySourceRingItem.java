@@ -17,7 +17,5 @@ public class EnergySourceRingItem extends TrinketItem {
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
         super.appendTooltip(stack, world, tooltip, context);
         tooltip.add(Text.translatable("tooltip.bondofthebeast.energy_source_ring").formatted(Formatting.GRAY));
-        tooltip.add(Text.translatable("tooltip.bondofthebeast.energy_source_ring.use").formatted(Formatting.GRAY));
-        tooltip.add(Text.translatable("tooltip.bondofthebeast.energy_source_ring.amount").formatted(Formatting.GRAY));
     }
 }

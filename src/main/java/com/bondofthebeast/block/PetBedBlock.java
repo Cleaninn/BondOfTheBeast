@@ -109,7 +109,7 @@ public class PetBedBlock extends BlockWithEntity {
                 buf.writeBlockPos(headPos);
                 buf.writeString(petId == null ? "" : petId);
                 buf.writeInt(bed.getChainRadius());
-                buf.writeInt(bed.remainingChainSeconds());
+                buf.writeLong(bed.remainingChainSeconds());
                 buf.writeInt(pets.size());
                 for (var entry : pets.entrySet()) {
                     buf.writeString(entry.getKey());
@@ -122,6 +122,10 @@ public class PetBedBlock extends BlockWithEntity {
                 return ActionResult.CONSUME;
             }
 
+            if (isPet) {
+                player.sendMessage(Text.translatable("text.bondofthebeast.must_be_bound_by_master").formatted(net.minecraft.util.Formatting.RED), true);
+                return ActionResult.FAIL;
+            }
             if (formCategory == -1) {
                 player.sendMessage(Text.translatable("text.bondofthebeast.humans_sleep_on_beds").formatted(net.minecraft.util.Formatting.RED), true);
                 return ActionResult.FAIL;

@@ -28,6 +28,10 @@ public final class BondService {
             PendingBondsState.get(server).apply(player);
             if (BondRules.isAllay(player) && ModComponents.PLAYER_BOND.get(player).hasOwner()) release(player);
             var b = ModComponents.PLAYER_BOND.get(player);
+            if (b.hasOwner() && player.getSpawnPointPosition() != null && (b.getBedPos() == null ||
+                    !b.getBedPos().up().equals(player.getSpawnPointPosition()) ||
+                    !b.getBedDimension().equals(player.getSpawnPointDimension().getValue().toString())))
+                player.setSpawnPoint(player.getSpawnPointDimension(), null, 0, false, false);
             if (b.isAbsorbed()) releaseAbsorption(player);
             if (!b.getLeashHolder().isEmpty()) LeashManager.detach(player);
             ItemForwardingService.baseline(player);
@@ -80,6 +84,7 @@ public final class BondService {
                 if (b.hasOwner() && pet.age % 20 == 0) PetPreviewState.get(server).update(pet);
 
             }
+            if (server.getTicks() % 10 == 0) ModPackets.syncPetInstinct(server);
         });
     }
 

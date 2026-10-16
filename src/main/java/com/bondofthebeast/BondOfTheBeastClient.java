@@ -16,6 +16,12 @@ import java.util.*;
 public class BondOfTheBeastClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.PET_INSTINCT_S2C, (client, handler, buffer, sender) -> {
+            int count = buffer.readVarInt();
+            var pets = new ArrayList<PetInstinctHud.Pet>();
+            for (int i = 0; i < count; i++) pets.add(new PetInstinctHud.Pet(buffer.readUuid(), buffer.readString(), buffer.readFloat()));
+            client.execute(() -> PetInstinctHud.update(pets));
+        });
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.SYNC_CONFIG_S2C, (client, handler, buffer, sender) -> {
             boolean block = buffer.readBoolean();
             int[] seconds = new int[4];
@@ -82,7 +88,7 @@ public class BondOfTheBeastClient implements ClientModInitializer {
             BlockPos pos = b.readBlockPos();
             String petUUID = b.readString();
             int radius = b.readInt();
-            int chainSeconds = b.readInt();
+            long chainSeconds = b.readLong();
             int petCount = b.readInt();
             Map<String, PetBedScreen.PetOption> pets = new HashMap<>();
             for (int i = 0; i < petCount; i++) {

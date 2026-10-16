@@ -64,7 +64,7 @@ public class PetBedBlockEntity extends BlockEntity {
     public void readNbt(NbtCompound nbt) {
         super.readNbt(nbt);
         this.boundPetUUID = nbt.getString("BoundPetUUID");
-        this.chainRadius = Math.max(0, Math.min(50, nbt.getInt("ChainRadius")));
+        this.chainRadius = Math.max(0, nbt.getInt("ChainRadius"));
         this.chainStartedAt = nbt.contains("ChainStartedAt") ? nbt.getLong("ChainStartedAt") : -1;
         this.chainExpiresAt = nbt.contains("ChainExpiresAt") ? nbt.getLong("ChainExpiresAt") : -1;
         if (nbt.contains("IsWaitingForPet")) {
@@ -98,13 +98,13 @@ public class PetBedBlockEntity extends BlockEntity {
 
     public int getChainRadius() { return chainRadius; }
     public long getChainStartedAt() { return chainStartedAt; }
-    public static int chainDurationSeconds(int radius) { return 300 + Math.max(1, Math.min(50, radius)) * 60; }
-    public int remainingChainSeconds() {
-        return chainRadius == 0 ? 0 : chainExpiresAt < 0 ? -1 : (int) Math.max(0, (chainExpiresAt - world.getTime() + 19) / 20);
+    public static long chainDurationSeconds(int radius) { return 300L + Math.max(1, radius) * 60L; }
+    public long remainingChainSeconds() {
+        return chainRadius == 0 ? 0 : chainExpiresAt < 0 ? -1 : Math.max(0, (chainExpiresAt - world.getTime() + 19) / 20);
     }
     public boolean isChainActive() { return chainRadius > 0 && (chainExpiresAt < 0 || world.getTime() < chainExpiresAt); }
     public void configureChain(@Nullable ServerPlayerEntity pet, int radius, long previousStart) {
-        chainRadius = Math.max(0, Math.min(50, radius));
+        chainRadius = Math.max(0, radius);
         if (chainRadius > 0 && pet != null && com.bondofthebeast.CommandControl.temporary(pet)) {
             chainStartedAt = previousStart >= 0 ? previousStart : world.getTime();
             chainExpiresAt = chainStartedAt + chainDurationSeconds(chainRadius) * 20L;
@@ -113,7 +113,7 @@ public class PetBedBlockEntity extends BlockEntity {
         world.updateListeners(pos, getCachedState(), getCachedState(), 3);
     }
     public void setChainRadius(int radius) {
-        this.chainRadius = Math.max(0, Math.min(50, radius));
+        this.chainRadius = Math.max(0, radius);
         if (chainRadius == 0) { chainStartedAt = -1; chainExpiresAt = -1; }
         markDirty();
         world.updateListeners(pos, getCachedState(), getCachedState(), 3);

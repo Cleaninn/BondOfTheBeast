@@ -164,6 +164,10 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     @Override public void setOwner(String uuid, String name) {
         if (com.bondofthebeast.BondRules.isAllay(provider)) return;
         if (!uuid.equals(this.ownerUUID)) {
+            if (provider instanceof ServerPlayerEntity sp) {
+                com.bondofthebeast.BondService.clearBed(sp);
+                sp.setSpawnPoint(sp.getSpawnPointDimension(), null, 0, false, false);
+            }
             itemForwarding = false;
             long reachedAt = forcedBond.thirdStageReachedAt;
             forcedBond.read(new NbtCompound());
