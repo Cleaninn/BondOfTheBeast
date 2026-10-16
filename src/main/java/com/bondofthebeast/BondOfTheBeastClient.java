@@ -16,7 +16,58 @@ import java.util.*;
 public class BondOfTheBeastClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.PET_FEEDING_S2C, (client, handler, buffer, sender) -> {
+            UUID pet = buffer.readUuid();
+            var food = buffer.readItemStack();
+            client.execute(() -> PetFeedingVisual.play(pet, food));
+        });
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.PET_INSTINCT_S2C, (client, handler, buffer, sender) -> {
+            int count = buffer.readVarInt();
+            var pets = new ArrayList<PetInstinctHud.Pet>();
+            for (int i = 0; i < count; i++) pets.add(new PetInstinctHud.Pet(buffer.readUuid(), buffer.readString(), buffer.readFloat()));
+            client.execute(() -> PetInstinctHud.update(pets));
+        });
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.SYNC_CONFIG_S2C, (client, handler, buffer, sender) -> {
+            boolean block = buffer.readBoolean();
+            int[] seconds = new int[4];
+            for (int i = 0; i < 4; i++) seconds[i] = buffer.readInt();
+            client.execute(() -> BondConfig.applyServerSettings(block, seconds));
+        });
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.STAGE_NOTICE_S2C, (client, handler, buffer, sender) -> {
+            String pet = buffer.readString(); int stage = buffer.readInt(), seconds = buffer.readInt(); boolean owner = buffer.readBoolean();
+            client.execute(() -> BondHud.stageNotice(pet, stage, seconds, owner));
+        });
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.PET_STATUS_UNAVAILABLE_S2C, (client, handler, buffer, sender) -> {
+            var id = buffer.readUuid();
+            client.execute(() -> {
+                if (client.currentScreen instanceof StaffPetScreen screen && screen.showsPet(id)) screen.close();
+            });
+        });
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.UPDATE_PET_STATUS_S2C, (client, handler, buffer, sender) -> {
+            var data = readPet(buffer);
+            client.execute(() -> {
+                if (client.currentScreen instanceof StaffPetScreen screen) screen.updatePet(data);
+            });
+        });
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.COLLARING_PROGRESS_S2C, (client, handler, buffer, sender) -> {
+            int ticks = buffer.readInt();
+            boolean victim = buffer.readBoolean();
+            client.execute(() -> BondHud.updateCollaring(ticks, victim));
+        });
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { BondHud.reset(); PetFeedingVisual.reset(); BondConfig.load(); });
+        net.minecraft.client.gui.screen.ingame.HandledScreens.register(PetArmorScreenHandler.TYPE, com.bondofthebeast.client.PetArmorScreen::new);
+        var statusKey = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(
+                new net.minecraft.client.option.KeyBinding("key.bondofthebeast.status", org.lwjgl.glfw.GLFW.GLFW_KEY_G, "category.bondofthebeast"));
+
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            PetFeedingVisual.tick(client);
+            while (statusKey.wasPressed()) if (client.player != null && ModComponents.PLAYER_BOND.get(client.player).hasOwner()) client.setScreen(new PetStatusScreen());
+        });
+        net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register(com.bondofthebeast.client.BondHud::render);
         TrinketRendererRegistry.registerRenderer(ModItems.COLLAR, new CollarRenderer());
+        TrinketRendererRegistry.registerRenderer(ModItems.INFUSED_COLLAR, new CollarRenderer());
+        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(PetLeashRenderer::render);
+        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(PetFeedingVisual::render);
 
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.OPEN_OWNER_GUI, (c, h, b, rs) -> c.execute(() -> c.setScreen(new ContractScreen(false))));
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.OPEN_PET_GUI, (c, h, b, rs) -> c.execute(() -> c.setScreen(new ContractScreen(true))));
@@ -25,32 +76,39 @@ public class BondOfTheBeastClient implements ClientModInitializer {
             int count = b.readInt();
             List<StaffMainScreen.PetData> pets = new ArrayList<>();
             for (int i = 0; i < count; i++) pets.add(readPet(b));
-            c.execute(() -> c.setScreen(new StaffMainScreen(pets)));
+            c.execute(() -> {
+                var selection = new StaffMainScreen(pets);
+                if (pets.size() == 1) selection.rememberSelection(pets.get(0).uuid);
+                c.setScreen(pets.size() == 1 ? new StaffPetScreen(selection, pets.get(0)) : selection);
+            });
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.OPEN_PET_STATS_GUI, (c, h, b, rs) -> {
             StaffMainScreen.PetData data = readPet(b);
-            c.execute(() -> c.setScreen(new StaffPetScreen(null, data)));
+            c.execute(() -> {
+                if (c.currentScreen instanceof StaffPetScreen screen && screen.showsPet(data.uuid)) screen.updatePet(data);
+                else c.setScreen(new StaffPetScreen(null, data));
+            });
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.OPEN_BED_GUI, (c, h, b, rs) -> {
             BlockPos pos = b.readBlockPos();
             String petUUID = b.readString();
             int radius = b.readInt();
+            long chainSeconds = b.readLong();
             int petCount = b.readInt();
             Map<String, PetBedScreen.PetOption> pets = new HashMap<>();
             for (int i = 0; i < petCount; i++) {
                 String uuid = b.readString();
                 String name = b.readString();
                 boolean hasCollar = b.readBoolean();
-                pets.put(uuid, new PetBedScreen.PetOption(name, hasCollar));
+                pets.put(uuid, new PetBedScreen.PetOption(name, hasCollar, b.readBoolean()));
             }
-            c.execute(() -> c.setScreen(new PetBedScreen(pos, petUUID, radius, pets)));
+            c.execute(() -> c.setScreen(new PetBedScreen(pos, petUUID, radius, chainSeconds, pets)));
         });
-
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             var bond = ModComponents.PLAYER_BOND.get(player);
-            if (bond.hasOwner()) {
+            if (BondRules.allows(player, "nobreak")) {
                 net.minecraft.block.BlockState state = world.getBlockState(pos);
 
                 // Проверяем, не бьет ли питомец любую из частей своей лежанки
@@ -62,24 +120,32 @@ public class BondOfTheBeastClient implements ClientModInitializer {
                 }
 
                 String blockId = Registries.BLOCK.getId(state.getBlock()).toString();
-                if (bond.getBlacklistedBlocks().contains(blockId)) return ActionResult.FAIL;
-                if (bond.isNoBreakMode() && !bond.getWhitelistedBlocks().contains(blockId)) return ActionResult.FAIL;
+                if ((com.bondofthebeast.CommandControl.blockListsActive(player) && bond.getBlacklistedBlocks().contains(blockId))) return ActionResult.FAIL;
+                if (bond.isNoBreakMode() && !(com.bondofthebeast.CommandControl.blockListsActive(player) && bond.getWhitelistedBlocks().contains(blockId))) return ActionResult.FAIL;
             }
             return ActionResult.PASS;
         });
     }
-
     private StaffMainScreen.PetData readPet(PacketByteBuf b) {
         UUID uuid = b.readUuid(); String name = b.readString();
-        boolean sitting = b.readBoolean(); boolean tp = b.readBoolean(); boolean prot = b.readBoolean(); boolean aura = b.readBoolean();
-        boolean pacifist = b.readBoolean(); boolean vampiric = b.readBoolean(); boolean noBreak = b.readBoolean(); boolean absorbed = b.readBoolean();
+        boolean sitting = b.readBoolean(); boolean tp = b.readBoolean();
+        boolean pacifist = b.readBoolean(); boolean noBreak = b.readBoolean(); boolean absorbed = b.readBoolean();
         boolean noInteract = b.readBoolean();
-        int level = b.readInt(); int exp = b.readInt(); boolean collar = b.readBoolean();
-        int skillPoints = b.readInt(); int skillsSize = b.readInt();
+        boolean collar = b.readBoolean();
+        int skillsSize = b.readInt();
         Set<String> unlockedSkills = new HashSet<>(); for (int i = 0; i < skillsSize; i++) unlockedSkills.add(b.readString());
         int blackSize = b.readInt(); Set<String> black = new HashSet<>(); for (int i = 0; i < blackSize; i++) black.add(b.readString());
         int whiteSize = b.readInt(); Set<String> white = new HashSet<>(); for (int i = 0; i < whiteSize; i++) white.add(b.readString());
         boolean isOnline = b.readBoolean();
-        return new StaffMainScreen.PetData(uuid, name, sitting, tp, prot, aura, pacifist, vampiric, noBreak, absorbed, noInteract, level, exp, collar, skillPoints, unlockedSkills, black, white, isOnline);
+        var pet = new StaffMainScreen.PetData(uuid, name, sitting, tp, pacifist, noBreak, absorbed, noInteract, collar, unlockedSkills, black, white, isOnline);
+        pet.formStage = b.readInt(); pet.forced = b.readBoolean(); pet.armorLocked = b.readBoolean();
+        pet.escapeTicks = b.readInt(); pet.instinct = b.readFloat();
+        pet.formId = b.readString();
+        pet.itemForwarding = b.readBoolean();
+        pet.contractSigned = b.readBoolean();
+        pet.commandDurationTicks = b.readInt();
+        int commands = b.readInt();
+        for (int i = 0; i < commands; i++) pet.commandTicks.put(b.readString(), b.readInt());
+        return pet;
     }
 }

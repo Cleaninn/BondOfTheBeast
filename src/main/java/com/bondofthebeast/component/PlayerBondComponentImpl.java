@@ -16,33 +16,35 @@ import java.util.Set;
 
 public class PlayerBondComponentImpl implements PlayerBondComponent {
     private final PlayerEntity provider;
+    private final ForcedBondState forcedBond = new ForcedBondState();
+    @Override public ForcedBondState getForcedBond() { return forcedBond; }
     private String ownerUUID = "";
     private String ownerName = "";
     private int tamingState = 0; // 0 = Свободен, 1 = Ломается воля, 2 = Полноценный питомец
     private String petNickname = null;
-    private int bondLevel = 1;
-    private int bondExperience = 0;
-    private int skillPoints = 0;
-    private final Set<String> unlockedSkills = new HashSet<>();
     private final Map<String, String> registeredPets = new HashMap<>();
     private BlockPos bedPos = null;
+    private String bedDimension = "";
+    private String leashHolder = "";
+    private BlockPos leashPos;
+    private String leashDimension = "";
+    private boolean leashPaid;
+    private int tamingTicks;
+    private String absorbedGameMode = "survival";
 
     private boolean sitting = false;
     private boolean teleportEnabled = false;
-    private boolean protectionMode = false;
-    private boolean auraEnabled = false;
     private boolean pacifistMode = false;
-    private boolean vampiricMode = false;
     private boolean noBreakMode = false;
     private boolean absorbed = false;
     private boolean noInteractMode = false;
+    private boolean itemForwarding;
 
     private Set<String> blacklistedBlocks = new HashSet<>();
     private Set<String> whitelistedBlocks = new HashSet<>();
 
     public PlayerBondComponentImpl(PlayerEntity provider) {
         this.provider = provider;
-        this.unlockedSkills.add("sit");
     }
 
     @Override
@@ -52,6 +54,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
 
     @Override
     public void readFromNbt(NbtCompound tag) {
+        forcedBond.read(tag.getCompound("ForcedBond"));
         this.ownerUUID = tag.getString("OwnerUUID");
         this.ownerName = tag.getString("OwnerName");
 
@@ -61,16 +64,11 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
             this.tamingState = this.ownerUUID.isEmpty() ? 0 : 2;
         }
 
+        if (!tag.contains("ForcedBond") && this.tamingState == 1 && !this.ownerUUID.isEmpty()) {
+            forcedBond.forced = true;
+            forcedBond.token = java.util.UUID.randomUUID().toString();
+        }
         this.petNickname = tag.contains("PetNickname") ? tag.getString("PetNickname") : null;
-        this.bondLevel = Math.max(1, tag.getInt("BondLevel"));
-        this.bondExperience = tag.getInt("BondExperience");
-        this.skillPoints = tag.getInt("SkillPoints");
-
-        this.unlockedSkills.clear();
-        NbtList skillsList = tag.getList("UnlockedSkills", NbtElement.STRING_TYPE);
-        for (int i = 0; i < skillsList.size(); i++) this.unlockedSkills.add(skillsList.getString(i));
-        if (this.unlockedSkills.isEmpty()) this.unlockedSkills.add("sit");
-
         this.registeredPets.clear();
         if (tag.contains("RegisteredPets")) {
             NbtCompound petsTag = tag.getCompound("RegisteredPets");
@@ -79,15 +77,21 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
 
         this.bedPos = tag.contains("BedX") ? new BlockPos(tag.getInt("BedX"), tag.getInt("BedY"), tag.getInt("BedZ")) : null;
 
+        this.bedDimension = tag.contains("BedDimension") ? tag.getString("BedDimension") :
+                (provider instanceof ServerPlayerEntity sp ? sp.getSpawnPointDimension().getValue().toString() : provider.getWorld().getRegistryKey().getValue().toString());
+        this.leashHolder = tag.getString("LeashHolder");
+        this.leashPos = tag.contains("LeashPos") ? BlockPos.fromLong(tag.getLong("LeashPos")) : null;
+        this.leashDimension = tag.getString("LeashDimension");
+        this.leashPaid = tag.getBoolean("LeashPaid");
+        this.tamingTicks = Math.max(0, tag.getInt("TamingTicks"));
+        this.absorbedGameMode = tag.contains("AbsorbedGameMode") ? tag.getString("AbsorbedGameMode") : "survival";
         this.sitting = tag.getBoolean("IsSitting");
         this.teleportEnabled = tag.getBoolean("TeleportEnabled");
-        this.protectionMode = tag.getBoolean("ProtectionMode");
-        this.auraEnabled = tag.getBoolean("AuraEnabled");
         this.pacifistMode = tag.getBoolean("PacifistMode");
-        this.vampiricMode = tag.getBoolean("VampiricMode");
         this.noBreakMode = tag.getBoolean("NoBreakMode");
         this.absorbed = tag.getBoolean("Absorbed");
         this.noInteractMode = tag.getBoolean("NoInteractMode");
+        this.itemForwarding = tag.getBoolean("ItemForwarding");
 
         this.blacklistedBlocks.clear();
         NbtList blackList = tag.getList("BlacklistedBlocks", NbtElement.STRING_TYPE);
@@ -100,18 +104,14 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
 
     @Override
     public void writeToNbt(NbtCompound tag) {
+        tag.put("ForcedBond", forcedBond.write());
         tag.putString("OwnerUUID", this.ownerUUID);
         tag.putString("OwnerName", this.ownerName);
         tag.putInt("TamingState", this.tamingState);
 
         if (this.petNickname != null) tag.putString("PetNickname", this.petNickname);
-        tag.putInt("BondLevel", this.bondLevel);
-        tag.putInt("BondExperience", this.bondExperience);
-        tag.putInt("SkillPoints", this.skillPoints);
-
-        NbtList skillsList = new NbtList();
-        for (String skill : this.unlockedSkills) skillsList.add(NbtString.of(skill));
-        tag.put("UnlockedSkills", skillsList);
+        // Discard obsolete progression data when existing saves are rewritten.
+        for (String key : java.util.List.of("BondLevel", "BondExperience", "SkillPoints", "UnlockedSkills", "VoluntaryBond", "ProtectionMode", "AuraEnabled", "VampiricMode")) tag.remove(key);
 
         NbtCompound petsTag = new NbtCompound();
         this.registeredPets.forEach(petsTag::putString);
@@ -123,15 +123,20 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
             tag.putInt("BedZ", bedPos.getZ());
         }
 
+        tag.putString("BedDimension", this.bedDimension);
+        tag.putString("LeashHolder", this.leashHolder);
+        if (this.leashPos != null) tag.putLong("LeashPos", this.leashPos.asLong());
+        tag.putString("LeashDimension", this.leashDimension);
+        tag.putBoolean("LeashPaid", this.leashPaid);
+        tag.putInt("TamingTicks", this.tamingTicks);
+        tag.putString("AbsorbedGameMode", this.absorbedGameMode);
         tag.putBoolean("IsSitting", this.sitting);
         tag.putBoolean("TeleportEnabled", this.teleportEnabled);
-        tag.putBoolean("ProtectionMode", this.protectionMode);
-        tag.putBoolean("AuraEnabled", this.auraEnabled);
         tag.putBoolean("PacifistMode", this.pacifistMode);
-        tag.putBoolean("VampiricMode", this.vampiricMode);
         tag.putBoolean("NoBreakMode", this.noBreakMode);
         tag.putBoolean("Absorbed", this.absorbed);
         tag.putBoolean("NoInteractMode", this.noInteractMode);
+        tag.putBoolean("ItemForwarding", this.itemForwarding);
 
         NbtList blackList = new NbtList();
         for (String id : this.blacklistedBlocks) blackList.add(NbtString.of(id));
@@ -157,6 +162,17 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     @Override public String getOwnerName() { return ownerName; }
 
     @Override public void setOwner(String uuid, String name) {
+        if (com.bondofthebeast.BondRules.isAllay(provider)) return;
+        if (!uuid.equals(this.ownerUUID)) {
+            if (provider instanceof ServerPlayerEntity sp) {
+                com.bondofthebeast.BondService.clearBed(sp);
+                sp.setSpawnPoint(sp.getSpawnPointDimension(), null, 0, false, false);
+            }
+            itemForwarding = false;
+            long reachedAt = forcedBond.thirdStageReachedAt;
+            forcedBond.read(new NbtCompound());
+            forcedBond.thirdStageReachedAt = reachedAt;
+        }
         this.ownerUUID = uuid;
         this.ownerName = name;
         this.tamingState = 2; // При стандартном контракте сразу ставим стадию полного подчинения
@@ -164,102 +180,41 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
     }
 
     @Override public void clearOwner() {
+        itemForwarding = false;
+        long reachedAt = forcedBond.thirdStageReachedAt;
+        forcedBond.read(new NbtCompound());
+        forcedBond.thirdStageReachedAt = reachedAt;
         this.ownerUUID = "";
         this.ownerName = "";
         this.petNickname = null;
+        if (provider instanceof ServerPlayerEntity sp) {
+            com.bondofthebeast.LeashManager.detach(sp);
+            com.bondofthebeast.BondService.releaseAbsorption(sp);
+            com.bondofthebeast.BondService.clearBed(sp);
+        }
+        this.sitting = false;
+        this.teleportEnabled = false;
+        this.pacifistMode = false;
+        this.noBreakMode = false;
+        this.noInteractMode = false;
+        this.tamingTicks = 0;
         this.tamingState = 0; // Сбрасываем стадию при разрыве связи
         ModComponents.PLAYER_BOND.sync(this.provider);
     }
 
     @Nullable @Override public String getPetNickname() { return petNickname; }
 
+    @Override public boolean isItemForwarding() { return itemForwarding; }
+    @Override public void setItemForwarding(boolean forwarding) {
+        itemForwarding = forwarding;
+        if (provider instanceof ServerPlayerEntity player) com.bondofthebeast.ItemForwardingService.baseline(player);
+        ModComponents.PLAYER_BOND.sync(provider);
+    }
+
     @Override public void setPetNickname(@Nullable String name) {
         this.petNickname = name;
         ModComponents.PLAYER_BOND.sync(this.provider);
     }
-
-    @Override public int getBondLevel() { return bondLevel; }
-
-    @Override public void setBondLevel(int level) {
-        this.bondLevel = level;
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public int getBondExperience() { return bondExperience; }
-
-    @Override public void setBondExperience(int exp) {
-        this.bondExperience = exp;
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public void addBondExperience(int exp) {
-        int stage = -1;
-        try {
-            var sscComp = net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(this.provider);
-            if (sscComp != null && sscComp.getCurrentForm() != null) {
-                stage = sscComp.getCurrentForm().getIndex();
-            }
-        } catch (Exception ignored) {}
-
-        if (stage == 2) {
-            if (this.bondLevel > 1) {
-                this.bondLevel = 1;
-                this.bondExperience = 0;
-            }
-            if (this.bondLevel >= 1) {
-                ModComponents.PLAYER_BOND.sync(this.provider);
-                return;
-            }
-        }
-
-        this.bondExperience += exp;
-        int maxExp = this.bondLevel * 100;
-        boolean leveledUp = false;
-
-        while (this.bondExperience >= maxExp) {
-            this.bondExperience -= maxExp;
-            this.bondLevel++;
-            this.skillPoints++;
-            maxExp = this.bondLevel * 100;
-            leveledUp = true;
-        }
-
-        if (leveledUp && this.bondLevel >= 5 && this.provider instanceof ServerPlayerEntity sp) {
-            com.bondofthebeast.BondOfTheBeast.grantAdvancement(sp, "pet_story/bond_level");
-            ServerPlayerEntity owner = sp.getServer().getPlayerManager().getPlayer(java.util.UUID.fromString(this.ownerUUID));
-            if (owner != null) {
-                com.bondofthebeast.BondOfTheBeast.grantAdvancement(owner, "owner_story/bond_level");
-            }
-        }
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public int getSkillPoints() { return this.skillPoints; }
-
-    @Override public void setSkillPoints(int points) {
-        this.skillPoints = points;
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public void addSkillPoints(int points) {
-        this.skillPoints += points;
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public Set<String> getUnlockedSkills() { return this.unlockedSkills; }
-
-    @Override public void unlockSkill(String skill) {
-        this.unlockedSkills.add(skill);
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public void clearSkills() {
-        this.unlockedSkills.clear();
-        this.unlockedSkills.add("sit");
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public boolean isSkillUnlocked(String skill) { return this.unlockedSkills.contains(skill); }
 
     @Override public Map<String, String> getRegisteredPets() { return registeredPets; }
 
@@ -277,6 +232,7 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
 
     @Override public void setBedPos(BlockPos pos) {
         this.bedPos = pos;
+        this.bedDimension = pos == null ? "" : this.provider.getWorld().getRegistryKey().getValue().toString();
         ModComponents.PLAYER_BOND.sync(this.provider);
     }
 
@@ -294,31 +250,10 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
         ModComponents.PLAYER_BOND.sync(this.provider);
     }
 
-    @Override public boolean isProtectionMode() { return protectionMode; }
-
-    @Override public void setProtectionMode(boolean protectionMode) {
-        this.protectionMode = protectionMode;
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public boolean isAuraEnabled() { return auraEnabled; }
-
-    @Override public void setAuraEnabled(boolean auraEnabled) {
-        this.auraEnabled = auraEnabled;
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
     @Override public boolean isPacifistMode() { return pacifistMode; }
 
     @Override public void setPacifistMode(boolean pacifistMode) {
         this.pacifistMode = pacifistMode;
-        ModComponents.PLAYER_BOND.sync(this.provider);
-    }
-
-    @Override public boolean isVampiricMode() { return vampiricMode; }
-
-    @Override public void setVampiricMode(boolean vampiricMode) {
-        this.vampiricMode = vampiricMode;
         ModComponents.PLAYER_BOND.sync(this.provider);
     }
 
@@ -356,4 +291,20 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
         this.whitelistedBlocks = new HashSet<>(blocks);
         ModComponents.PLAYER_BOND.sync(this.provider);
     }
+    @Override public String getBedDimension() { return bedDimension; }
+    @Override public String getLeashHolder() { return leashHolder; }
+    @Override public BlockPos getLeashPos() { return leashPos; }
+    @Override public String getLeashDimension() { return leashDimension; }
+    @Override public boolean isLeashPaid() { return leashPaid; }
+    @Override public void setLeash(String holder, BlockPos pos, String dimension, boolean paid) {
+        leashHolder = holder;
+        leashPos = pos;
+        leashDimension = dimension;
+        leashPaid = paid;
+        ModComponents.PLAYER_BOND.sync(provider);
+    }
+    @Override public int getTamingTicks() { return tamingTicks; }
+    @Override public void setTamingTicks(int ticks) { tamingTicks = Math.max(0, ticks); }
+    @Override public String getAbsorbedGameMode() { return absorbedGameMode; }
+    @Override public void setAbsorbedGameMode(String mode) { absorbedGameMode = mode; }
 }

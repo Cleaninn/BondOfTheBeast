@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " S ",
+    "SAS",
+    " M "
+  ],
+  "key": {
+    "S": { "item": "minecraft:string" },
+    "A": { "item": "minecraft:amethyst_shard" },
+    "M": { "item": "minecraft:milk_bucket" }
+  },
+  "result": { "item": "bondofthebeast:dustguard_amulet", "count": 1 }
+}

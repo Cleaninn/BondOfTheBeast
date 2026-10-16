@@ -17,6 +17,9 @@ public class NecklaceOfClarity extends TrinketItem {
 
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+        super.appendTooltip(stack, world, tooltip, context);
         tooltip.add(Text.translatable("item.bondofthebeast.necklace_of_clarity.tooltip").formatted(Formatting.YELLOW));
+        tooltip.add(Text.translatable("item.bondofthebeast.necklace_of_clarity.conditions").formatted(Formatting.GRAY));
+        tooltip.add(Text.translatable("item.bondofthebeast.necklace_of_clarity.limits").formatted(Formatting.GRAY));
     }
 }

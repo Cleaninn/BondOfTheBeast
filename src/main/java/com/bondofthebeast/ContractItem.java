@@ -2,7 +2,6 @@ package com.bondofthebeast;
 
 import com.bondofthebeast.component.ModComponents;
 import com.bondofthebeast.component.PlayerBondComponent;
-import dev.emi.trinkets.api.TrinketsApi;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.client.item.TooltipContext;
@@ -21,28 +20,28 @@ import org.jetbrains.annotations.Nullable;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.UUID;
 
 public class ContractItem extends Item {
-    private static final Logger log = LoggerFactory.getLogger(ContractItem.class);
-
     public ContractItem(Settings settings) {
         super(settings);
     }
 
     @Override
     public ActionResult useOnEntity(ItemStack stack, PlayerEntity user, LivingEntity entity, Hand hand) {
-        if (!(entity instanceof ServerPlayerEntity targetPlayer)) return ActionResult.PASS;
+        if (!(entity instanceof PlayerEntity)) return ActionResult.PASS;
         if (user.getWorld().isClient) return ActionResult.SUCCESS;
+        if (!(entity instanceof ServerPlayerEntity targetPlayer) || !(user instanceof ServerPlayerEntity serverUser)) return ActionResult.PASS;
 
         NbtCompound nbt = stack.getOrCreateNbt();
-        ServerPlayerEntity serverUser = (ServerPlayerEntity) user;
 
         if (nbt.contains("OwnerUUID") && nbt.contains("PetUUID")) return ActionResult.PASS;
+
+        if (!nbt.contains("OwnerUUID") && !nbt.contains("PetUUID") && !user.isSneaking() &&
+                BondRules.canOwn(user) && BondRules.hasCollar(targetPlayer)) {
+            return ForcedTamingService.startFromContract(stack, serverUser, targetPlayer);
+        }
 
         if (nbt.contains("OwnerUUID") && nbt.getString("OwnerUUID").equals(user.getUuidAsString())) {
             user.sendMessage(Text.translatable("text.bondofthebeast.give_to_pet").formatted(Formatting.YELLOW), true);
@@ -54,15 +53,11 @@ public class ContractItem extends Item {
             return ActionResult.FAIL;
         }
 
-        int userIndex = getFormIndex(user);
-        boolean ClearMindUser = TrinketsApi.getTrinketComponent(user).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
-        boolean isUserPet = isPlayerFeral(user) || (userIndex >= 2 && !ClearMindUser);
-        boolean isUserOwner = !isUserPet;
+        boolean isUserPet = BondRules.canBePet(user);
+        boolean isUserOwner = BondRules.canOwn(user);
 
-        int targetIndex = getFormIndex(targetPlayer);
-        boolean ClearMindTarget = TrinketsApi.getTrinketComponent(targetPlayer).map(c -> c.isEquipped(st -> st.getItem() instanceof NecklaceOfClarity)).orElse(false);
-        boolean isTargetPet = isPlayerFeral(targetPlayer) || (targetIndex == 2 && !ClearMindTarget) || targetIndex > 2;
-        boolean isTargetOwner = !isTargetPet;
+        boolean isTargetPet = BondRules.canBePet(targetPlayer);
+        boolean isTargetOwner = BondRules.canOwn(targetPlayer);
 
         PlayerBondComponent userBond = ModComponents.PLAYER_BOND.get(user);
         PlayerBondComponent targetBond = ModComponents.PLAYER_BOND.get(targetPlayer);
@@ -139,6 +134,20 @@ public class ContractItem extends Item {
         NbtCompound nbt = stack.getOrCreateNbt();
         if (player.getWorld().isClient) return;
 
+        if (!(player instanceof ServerPlayerEntity signer)) return;
+        try {
+            boolean ownerSigning = nbt.contains("PetUUID") && !nbt.contains("OwnerUUID");
+            boolean petSigning = nbt.contains("OwnerUUID") && !nbt.contains("PetUUID");
+            if (!ownerSigning && !petSigning) return;
+            ServerPlayerEntity other = signer.getServer().getPlayerManager().getPlayer(
+                    UUID.fromString(nbt.getString(ownerSigning ? "PetUUID" : "OwnerUUID")));
+            if (other == null || other == signer || other.getWorld() != signer.getWorld() || signer.squaredDistanceTo(other) > 64) return;
+            ServerPlayerEntity owner = ownerSigning ? signer : other;
+            ServerPlayerEntity pet = ownerSigning ? other : signer;
+            if (!BondRules.canOwn(owner) || !BondRules.canBePet(pet) || ModComponents.PLAYER_BOND.get(pet).hasOwner()) return;
+            if (petSigning && owner.isCreative() && owner.getInventory().getEmptySlot() < 0) return;
+        } catch (IllegalArgumentException e) { return; }
+
         if (nbt.contains("PetUUID") && !nbt.contains("OwnerUUID")) {
             nbt.putString("OwnerUUID", player.getUuidAsString());
             nbt.putString("OwnerName", player.getName().getString());
@@ -148,9 +157,9 @@ public class ContractItem extends Item {
             if (player.getServer() != null) {
                 ServerPlayerEntity pet = player.getServer().getPlayerManager().getPlayer(UUID.fromString(nbt.getString("PetUUID")));
                 if (pet != null) {
-                    dropOldCollars(pet);
                     pet.sendMessage(Text.translatable("text.bondofthebeast.pet_bound", player.getName().getString()).formatted(Formatting.GREEN), false);
                     ModComponents.PLAYER_BOND.get(pet).setOwner(player.getUuidAsString(), player.getName().getString());
+                    CollarItem.personalizeEquipped(pet, player.getName().getString());
                     ModComponents.PLAYER_BOND.get(player).addPetToRegistry(pet.getUuidAsString(), pet.getName().getString());
 
                     BondOfTheBeast.grantAdvancement((ServerPlayerEntity) player, "owner_story/tame_pet");
@@ -164,8 +173,8 @@ public class ContractItem extends Item {
             nbt.putInt("CustomModelData", 1);
             player.sendMessage(Text.translatable("text.bondofthebeast.pet_accepted_owner", nbt.getString("OwnerName")).formatted(Formatting.RED), false);
 
-            dropOldCollars(player);
             ModComponents.PLAYER_BOND.get(player).setOwner(nbt.getString("OwnerUUID"), nbt.getString("OwnerName"));
+            CollarItem.personalizeEquipped(player, nbt.getString("OwnerName"));
 
             if (player.getServer() != null) {
                 ServerPlayerEntity owner = player.getServer().getPlayerManager().getPlayer(UUID.fromString(nbt.getString("OwnerUUID")));
@@ -175,27 +184,15 @@ public class ContractItem extends Item {
 
                     BondOfTheBeast.grantAdvancement(owner, "owner_story/tame_pet");
                     BondOfTheBeast.grantAdvancement((ServerPlayerEntity) player, "pet_story/root");
+                    ItemStack signed = stack.copyWithCount(1);
+                    stack.decrement(1);
+                    owner.getInventory().offerOrDrop(signed);
+                    owner.currentScreenHandler.sendContentUpdates();
                 }
             }
         }
 
         player.getInventory().markDirty();
-    }
-
-    private void dropOldCollars(PlayerEntity pet) {
-        TrinketsApi.getTrinketComponent(pet).ifPresent(component -> {
-            component.getInventory().values().forEach(group -> {
-                group.values().forEach(inventory -> {
-                    for (int i = 0; i < inventory.size(); i++) {
-                        ItemStack item = inventory.getStack(i);
-                        if (item.getItem() instanceof CollarItem) {
-                            pet.dropItem(item.copy(), true);
-                            inventory.setStack(i, ItemStack.EMPTY);
-                        }
-                    }
-                });
-            });
-        });
     }
 
     private int getFormIndex(PlayerEntity player) {
@@ -219,6 +216,11 @@ public class ContractItem extends Item {
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
         NbtCompound nbt = stack.getNbt();
+        if (BondConfig.get().blockSignedContractsInEnderChests && ContractStorageRules.containsSignedContract(stack))
+            tooltip.add(Text.translatable("tooltip.bondofthebeast.contract_no_ender").formatted(Formatting.GRAY));
+        if (nbt == null || (!nbt.contains("OwnerUUID") && !nbt.contains("PetUUID"))) {
+            tooltip.add(Text.translatable("tooltip.bondofthebeast.contract_voluntary").formatted(Formatting.GRAY));
+        }
         if (nbt == null) {
             tooltip.add(Text.translatable("tooltip.bondofthebeast.empty_contract").formatted(Formatting.DARK_AQUA));
             return;

@@ -1,6 +1,5 @@
 package com.bondofthebeast.block;
 
-import com.bondofthebeast.ModItems;
 import com.bondofthebeast.ModPackets;
 import com.bondofthebeast.component.ModComponents;
 import dev.emi.trinkets.api.TrinketsApi;
@@ -110,17 +109,23 @@ public class PetBedBlock extends BlockWithEntity {
                 buf.writeBlockPos(headPos);
                 buf.writeString(petId == null ? "" : petId);
                 buf.writeInt(bed.getChainRadius());
+                buf.writeLong(bed.remainingChainSeconds());
                 buf.writeInt(pets.size());
                 for (var entry : pets.entrySet()) {
                     buf.writeString(entry.getKey());
                     buf.writeString(entry.getValue());
                     ServerPlayerEntity petEntity = world.getServer().getPlayerManager().getPlayer(UUID.fromString(entry.getKey()));
-                    buf.writeBoolean(petEntity != null && TrinketsApi.getTrinketComponent(petEntity).map(c -> c.isEquipped(ModItems.COLLAR)).orElse(false));
+                    buf.writeBoolean(petEntity != null && TrinketsApi.getTrinketComponent(petEntity).map(c -> c.isEquipped(item -> item.getItem() instanceof com.bondofthebeast.CollarItem)).orElse(false));
+                    buf.writeBoolean(petEntity != null && com.bondofthebeast.CommandControl.temporary(petEntity));
                 }
                 ServerPlayNetworking.send((ServerPlayerEntity) player, ModPackets.OPEN_BED_GUI, buf);
                 return ActionResult.CONSUME;
             }
 
+            if (isPet) {
+                player.sendMessage(Text.translatable("text.bondofthebeast.must_be_bound_by_master").formatted(net.minecraft.util.Formatting.RED), true);
+                return ActionResult.FAIL;
+            }
             if (formCategory == -1) {
                 player.sendMessage(Text.translatable("text.bondofthebeast.humans_sleep_on_beds").formatted(net.minecraft.util.Formatting.RED), true);
                 return ActionResult.FAIL;

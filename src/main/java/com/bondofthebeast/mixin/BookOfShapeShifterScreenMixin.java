@@ -28,8 +28,8 @@ public class BookOfShapeShifterScreenMixin extends Screen {
                 // Изменили путь на новую текстуру для GUI
                 Identifier buttonTexture = new Identifier("bondofthebeast", "textures/gui/pet_diary_button.png");
                 int btnSize = 28;
-                int btnX = this.width / 2 + 82;
-                int btnY = this.height / 2 + 65;
+                int btnX = Math.min(this.width - btnSize - 8, this.width / 2 + 82);
+                int btnY = Math.min(this.height - btnSize - 8, this.height / 2 + 65);
 
                 this.addDrawableChild(new TexturedButtonWidget(
                         btnX, btnY,

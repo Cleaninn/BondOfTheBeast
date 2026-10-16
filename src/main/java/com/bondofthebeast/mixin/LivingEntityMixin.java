@@ -18,6 +18,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
 
+    @Inject(method = "canHaveStatusEffect", at = @At("HEAD"), cancellable = true)
+    private void botb$protectBeforeBook(net.minecraft.entity.effect.StatusEffectInstance effect, CallbackInfoReturnable<Boolean> cir) {
+        if ((Object) this instanceof PlayerEntity player && !com.bondofthebeast.BondRules.hasOpenedBook(player) &&
+                effect.getEffectType() instanceof net.onixary.shapeShifterCurseFabric.status_effects.BaseTransformativeStatusEffect)
+            cir.setReturnValue(false);
+    }
+
+    @Inject(method = "isSleepingInBed", at = @At("HEAD"), cancellable = true)
+    private void botb$recognizePetBed(CallbackInfoReturnable<Boolean> cir) {
+        LivingEntity entity = (LivingEntity) (Object) this;
+        entity.getSleepingPosition().ifPresent(pos -> {
+            if (entity.getWorld().getBlockState(pos).getBlock() instanceof PetBedBlock)
+                cir.setReturnValue(true);
+        });
+    }
+
     @Inject(method = "getSleepingDirection", at = @At("HEAD"), cancellable = true)
     private void fixPetBedRotation(CallbackInfoReturnable<Direction> cir) {
         LivingEntity entity = (LivingEntity) (Object) this;

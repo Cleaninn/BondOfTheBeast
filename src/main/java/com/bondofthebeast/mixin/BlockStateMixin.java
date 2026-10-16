@@ -19,7 +19,7 @@ public class BlockStateMixin {
         if (player != null) {
             try {
                 var bond = ModComponents.PLAYER_BOND.get(player);
-                if (bond.hasOwner()) {
+                if (com.bondofthebeast.BondRules.allows(player, "nobreak")) {
                     net.minecraft.block.BlockState state = world.getBlockState(pos);
 
                     if (state.getBlock() instanceof com.bondofthebeast.block.PetBedBlock) {
@@ -33,9 +33,9 @@ public class BlockStateMixin {
                     }
 
                     String blockId = Registries.BLOCK.getId(state.getBlock()).toString();
-                    if (bond.getBlacklistedBlocks().contains(blockId)) {
+                    if ((com.bondofthebeast.CommandControl.blockListsActive(player) && bond.getBlacklistedBlocks().contains(blockId))) {
                         cir.setReturnValue(0.0F);
-                    } else if (bond.isNoBreakMode() && !bond.getWhitelistedBlocks().contains(blockId)) {
+                    } else if (bond.isNoBreakMode() && !(com.bondofthebeast.CommandControl.blockListsActive(player) && bond.getWhitelistedBlocks().contains(blockId))) {
                         cir.setReturnValue(0.0F);
                     }
                 }

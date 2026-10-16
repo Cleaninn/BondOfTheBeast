@@ -33,34 +33,17 @@ public class WhistleItem extends Item {
                 PlayerBondComponent bond = ModComponents.PLAYER_BOND.get(potentialPet);
 
                 if (bond.hasOwner() && bond.getOwnerUUID().equals(ownerUuid)) {
+                    if (!BondRules.canOwn(user) || !BondRules.canObey(potentialPet) ||
+                            !BondRules.hasCollar(potentialPet) || LeashManager.isTethered(potentialPet) || bond.isAbsorbed()) continue;
                     anyPetsOnline = true;
 
-                    int bondLevel = bond.getBondLevel();
-                    boolean sameDimension = user.getWorld().getRegistryKey() == potentialPet.getWorld().getRegistryKey();
-                    double distanceSq = sameDimension ? user.squaredDistanceTo(potentialPet) : Double.MAX_VALUE;
-                    double distance = sameDimension ? Math.sqrt(distanceSq) : Double.MAX_VALUE;
-
-                    boolean canRecall = false;
-
-                    // Увеличенные требования по уровням связи
-                    if (bondLevel >= 15) {
-                        canRecall = true; // Межизмерение
-                    } else if (bondLevel >= 10) {
-                        canRecall = sameDimension; // Бесконечное расстояние в своём измерении
-                    } else if (bondLevel >= 8) {
-                        canRecall = sameDimension && distance <= 1000.0;
-                    } else if (bondLevel >= 6) {
-                        canRecall = sameDimension && distance <= 256.0;
-                    } else if (bondLevel >= 4) {
-                        canRecall = sameDimension && distance <= 128.0;
-                    } else if (bondLevel >= 2) {
-                        canRecall = sameDimension && distance <= 64.0;
-                    } else {
-                        canRecall = sameDimension && distance <= 32.0;
-                    }
+                    boolean sameDimension = potentialPet.getWorld() == world;
+                    double distance = potentialPet.distanceTo(user);
+                    boolean canRecall = BondRules.allows(potentialPet, "tp") && potentialPet.getWorld() == world && potentialPet.squaredDistanceTo(user) <= 64 * 64;
 
                     if (canRecall) {
-                        potentialPet.teleport((ServerWorld) world, user.getX(), user.getY(), user.getZ(), user.getYaw(), user.getPitch());
+                        if (!LeashManager.teleportSafely(potentialPet, (ServerWorld) world, user.getPos())) continue;
+                        bond.setSitting(false);
                         ((ServerWorld) world).spawnParticles(ParticleTypes.HEART, potentialPet.getX(), potentialPet.getY() + 1, potentialPet.getZ(), 5, 0.5, 0.5, 0.5, 0.1);
 
                         potentialPet.sendMessage(Text.translatable("text.bondofthebeast.recalled_by_owner").formatted(Formatting.GOLD), true);

@@ -10,6 +10,17 @@ import java.util.Set;
 
 public interface PlayerBondComponent extends Component, AutoSyncedComponent {
     boolean hasOwner();
+    ForcedBondState getForcedBond();
+    String getBedDimension();
+    String getLeashHolder();
+    BlockPos getLeashPos();
+    String getLeashDimension();
+    boolean isLeashPaid();
+    void setLeash(String holder, BlockPos pos, String dimension, boolean paid);
+    int getTamingTicks();
+    void setTamingTicks(int ticks);
+    String getAbsorbedGameMode();
+    void setAbsorbedGameMode(String mode);
 
     // Новые методы для системы подчинения
     int getTamingState();
@@ -25,21 +36,6 @@ public interface PlayerBondComponent extends Component, AutoSyncedComponent {
     String getPetNickname();
     void setPetNickname(@Nullable String name);
 
-    int getBondLevel();
-    void setBondLevel(int level);
-    int getBondExperience();
-    void setBondExperience(int exp);
-    void addBondExperience(int exp);
-
-    int getSkillPoints();
-    void setSkillPoints(int points);
-    void addSkillPoints(int points);
-
-    Set<String> getUnlockedSkills();
-    void unlockSkill(String skill);
-    void clearSkills();
-    boolean isSkillUnlocked(String skill);
-
     Map<String, String> getRegisteredPets();
     void addPetToRegistry(String uuid, String name);
     void removePetFromRegistry(String uuid);
@@ -51,20 +47,16 @@ public interface PlayerBondComponent extends Component, AutoSyncedComponent {
     void setSitting(boolean sitting);
     boolean isTeleportEnabled();
     void setTeleportEnabled(boolean teleportEnabled);
-    boolean isProtectionMode();
-    void setProtectionMode(boolean protectionMode);
-    boolean isAuraEnabled();
-    void setAuraEnabled(boolean auraEnabled);
     boolean isPacifistMode();
     void setPacifistMode(boolean pacifistMode);
-    boolean isVampiricMode();
-    void setVampiricMode(boolean vampiricMode);
     boolean isNoBreakMode();
     void setNoBreakMode(boolean noBreakMode);
     boolean isAbsorbed();
     void setAbsorbed(boolean absorbed);
     boolean isNoInteractMode();
     void setNoInteractMode(boolean noInteractMode);
+    boolean isItemForwarding();
+    void setItemForwarding(boolean forwarding);
 
     Set<String> getBlacklistedBlocks();
     void setBlacklistedBlocks(Set<String> blocks);

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "bondofthebeast:item/energy_source_ring"
+  }
+}

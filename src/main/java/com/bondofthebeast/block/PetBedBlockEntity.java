@@ -7,10 +7,8 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,6 +17,7 @@ import java.util.UUID;
 public class PetBedBlockEntity extends BlockEntity {
     private String boundPetUUID = "";
     private int chainRadius = 0;
+    private long chainStartedAt = -1, chainExpiresAt = -1;
     private boolean isWaitingForPet = false;
 
     public PetBedBlockEntity(BlockPos pos, BlockState state) {
@@ -26,13 +25,23 @@ public class PetBedBlockEntity extends BlockEntity {
     }
 
     public static void tick(World world, BlockPos pos, BlockState state, PetBedBlockEntity be) {
+        if (!world.isClient && be.chainRadius > 0) {
+            ServerPlayerEntity pet = null;
+            try { pet = world.getServer().getPlayerManager().getPlayer(UUID.fromString(be.boundPetUUID)); }
+            catch (IllegalArgumentException ignored) {}
+            if (pet != null && !com.bondofthebeast.CommandControl.temporary(pet) && be.chainExpiresAt >= 0)
+                be.configureChain(pet, be.chainRadius, -1);
+            else if (pet != null && com.bondofthebeast.CommandControl.temporary(pet) && be.chainExpiresAt < 0)
+                be.configureChain(pet, be.chainRadius, -1);
+            if (be.chainExpiresAt >= 0 && world.getTime() >= be.chainExpiresAt) be.setChainRadius(0);
+        }
         if (!world.isClient && be.isWaitingForPet && world.getTime() % 40 == 0) {
             try {
                 PlayerEntity pet = world.getPlayerByUuid(UUID.fromString(be.boundPetUUID));
                 if (pet instanceof ServerPlayerEntity sp) {
                     var bond = com.bondofthebeast.component.ModComponents.PLAYER_BOND.get(sp);
 
-                    if (bond.hasOwner()) {
+                    if (bond.hasOwner() && (bond.getBedPos() == null || (bond.getBedPos().equals(pos) && bond.getBedDimension().equals(world.getRegistryKey().getValue().toString())))) {
                         BlockPos currentBed = bond.getBedPos();
 
                         // Проверяем, не была ли эта лежанка уже привязана через пакет из меню
@@ -49,49 +58,15 @@ public class PetBedBlockEntity extends BlockEntity {
             } catch (Exception ignored) {}
         }
 
-        // КЛИЕНТ: Отрисовка цепи (визуал)
-        if (world.isClient && !be.boundPetUUID.isEmpty() && be.chainRadius > 0) {
-            try {
-                UUID petUUID = UUID.fromString(be.boundPetUUID);
-                PlayerEntity pet = world.getPlayerByUuid(petUUID);
-                if (pet != null) {
-                    boolean isWildEnough = true;
-                    try {
-                        var sscComp = net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(pet);
-                        if (sscComp != null && sscComp.getCurrentForm() != null) {
-                            if (sscComp.getCurrentForm().FormID != null && sscComp.getCurrentForm().FormID.getPath().toLowerCase().contains("allay")) {
-                                isWildEnough = false;
-                            } else {
-                                int index = sscComp.getCurrentForm().getIndex();
-                                boolean isFeral = sscComp.getCurrentForm().getBodyType() == net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType.FERAL;
-                                isWildEnough = index >= 3 || isFeral;
-                            }
-                        }
-                    } catch (Exception ignored) {}
-                    if (!isWildEnough) return;
-
-                    Vec3d bedPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.4, pos.getZ() + 0.5);
-                    Vec3d petPos = pet.getPos().add(0, pet.getHeight() / 2.0, 0);
-                    Vec3d vector = bedPos.subtract(petPos);
-                    double distance = vector.length();
-
-                    if (distance > be.chainRadius) {
-                        Vec3d step = vector.normalize().multiply(0.5);
-                        for (double d = 0; d < distance; d += 0.5) {
-                            Vec3d particlePos = petPos.add(step.multiply(d));
-                            world.addParticle(ParticleTypes.SMOKE, particlePos.x, particlePos.y, particlePos.z, 0, 0, 0);
-                        }
-                    }
-                }
-            } catch (IllegalArgumentException ignored) {}
-        }
     }
 
     @Override
     public void readNbt(NbtCompound nbt) {
         super.readNbt(nbt);
         this.boundPetUUID = nbt.getString("BoundPetUUID");
-        this.chainRadius = nbt.getInt("ChainRadius");
+        this.chainRadius = Math.max(0, nbt.getInt("ChainRadius"));
+        this.chainStartedAt = nbt.contains("ChainStartedAt") ? nbt.getLong("ChainStartedAt") : -1;
+        this.chainExpiresAt = nbt.contains("ChainExpiresAt") ? nbt.getLong("ChainExpiresAt") : -1;
         if (nbt.contains("IsWaitingForPet")) {
             this.isWaitingForPet = nbt.getBoolean("IsWaitingForPet");
         } else {
@@ -104,6 +79,8 @@ public class PetBedBlockEntity extends BlockEntity {
         super.writeNbt(nbt);
         nbt.putString("BoundPetUUID", this.boundPetUUID);
         nbt.putInt("ChainRadius", this.chainRadius);
+        nbt.putLong("ChainStartedAt", chainStartedAt);
+        nbt.putLong("ChainExpiresAt", chainExpiresAt);
         nbt.putBoolean("IsWaitingForPet", this.isWaitingForPet);
     }
 
@@ -120,5 +97,25 @@ public class PetBedBlockEntity extends BlockEntity {
     }
 
     public int getChainRadius() { return chainRadius; }
-    public void setChainRadius(int radius) { this.chainRadius = radius; markDirty(); world.updateListeners(pos, getCachedState(), getCachedState(), 3); }
+    public long getChainStartedAt() { return chainStartedAt; }
+    public static long chainDurationSeconds(int radius) { return 300L + Math.max(1, radius) * 60L; }
+    public long remainingChainSeconds() {
+        return chainRadius == 0 ? 0 : chainExpiresAt < 0 ? -1 : Math.max(0, (chainExpiresAt - world.getTime() + 19) / 20);
+    }
+    public boolean isChainActive() { return chainRadius > 0 && (chainExpiresAt < 0 || world.getTime() < chainExpiresAt); }
+    public void configureChain(@Nullable ServerPlayerEntity pet, int radius, long previousStart) {
+        chainRadius = Math.max(0, radius);
+        if (chainRadius > 0 && pet != null && com.bondofthebeast.CommandControl.temporary(pet)) {
+            chainStartedAt = previousStart >= 0 ? previousStart : world.getTime();
+            chainExpiresAt = chainStartedAt + chainDurationSeconds(chainRadius) * 20L;
+        } else { chainStartedAt = -1; chainExpiresAt = -1; }
+        markDirty();
+        world.updateListeners(pos, getCachedState(), getCachedState(), 3);
+    }
+    public void setChainRadius(int radius) {
+        this.chainRadius = Math.max(0, radius);
+        if (chainRadius == 0) { chainStartedAt = -1; chainExpiresAt = -1; }
+        markDirty();
+        world.updateListeners(pos, getCachedState(), getCachedState(), 3);
+    }
 }

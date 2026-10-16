@@ -21,8 +21,14 @@ public class ModItemGroups {
                         entries.add(ModItems.WHISTLE);
                         entries.add(ModItems.COLLAR);
                         entries.add(ModItems.PET_TREAT);
+                        entries.add(ModItems.LUNAR_OBLIVION_DUST);
+                        entries.add(ModItems.INFUSED_COLLAR);
                         entries.add(ModBlocks.PET_BED);
                         entries.add(ModItems.NECKLACE_OF_CLARITY);
+                        entries.add(ModItems.DUSTGUARD_AMULET);
+                        entries.add(ModItems.ENERGY_SOURCE_RING);
+                        entries.add(ModItems.CATALYST_COOKIE);
+                        entries.add(ModItems.ECHO_CATALYST_COOKIE);
                     })
                     .build());
 

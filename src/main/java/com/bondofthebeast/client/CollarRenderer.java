@@ -21,7 +21,9 @@ import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 public class CollarRenderer implements TrinketRenderer {
     private static final Identifier TEXTURE = new Identifier(BondOfTheBeast.MOD_ID, "textures/entity/collar.png");
 
+    private final InfusedCollarModel infusedModel = new InfusedCollarModel();
     private final CollarModel normalModel;
+    private final CollarWildModel wildModel = new CollarWildModel();
     private final CollarSnowFoxModel fox0Model;
     private final CollarSnowFox1Model fox1Model;
     private final CollarSnowFox2Model fox2Model;
@@ -48,37 +50,44 @@ public class CollarRenderer implements TrinketRenderer {
             }
 
             matrices.push();
+            boolean infused = stack.getItem() instanceof com.bondofthebeast.item.InfusedCollarItem;
+            float green = infused ? 0.5f : 1.0f;
             VertexConsumer vertexConsumer = vertexConsumers.getBuffer(this.normalModel.getLayer(TEXTURE));
 
-            if (formId.contains("spider_3") || formId.contains("spider_2")) {
+            if (infused) {
+                vertexConsumer = vertexConsumers.getBuffer(this.infusedModel.getLayer(new Identifier("minecraft", "textures/block/white_concrete.png")));
+                if (isFeral) playerModel.head.rotate(matrices); else playerModel.body.rotate(matrices);
+                this.infusedModel.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 0.65f, 0.3f, 0.85f, 1.0f);
+            }
+            else if (formId.contains("spider_3") || formId.contains("spider_2")) {
                 playerModel.body.rotate(matrices);
-                this.spiderModel.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
+                this.spiderModel.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, green, 1.0f, 1.0f);
             }
             else if (formId.contains("snow_fox")) {
                 if (formId.equals("shape-shifter-curse:snow_fox_0")) {
                     playerModel.body.rotate(matrices);
-                    this.fox0Model.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
+                    this.fox0Model.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, green, 1.0f, 1.0f);
                 }
                 else if (formId.equals("shape-shifter-curse:snow_fox_1")) {
                     playerModel.body.rotate(matrices);
-                    this.fox1Model.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
+                    this.fox1Model.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, green, 1.0f, 1.0f);
                 }
                 else if (formId.equals("shape-shifter-curse:snow_fox_2")) {
                     playerModel.body.rotate(matrices);
-                    this.fox2Model.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
+                    this.fox2Model.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, green, 1.0f, 1.0f);
                 }
                 else {
                     playerModel.head.rotate(matrices);
-                    this.fox0Model.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
+                    this.fox0Model.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, green, 1.0f, 1.0f);
                 }
             }
             else if (isFeral || formId.equals("shape-shifter-curse:feral_cat_sp") || formId.equals("shape-shifter-curse:anubis_wolf_3")) {
                 playerModel.head.rotate(matrices);
-                this.normalModel.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
+                this.wildModel.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, green, 1.0f, 1.0f);
             }
             else {
                 playerModel.body.rotate(matrices);
-                this.normalModel.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
+                this.normalModel.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, green, 1.0f, 1.0f);
             }
 
             matrices.pop();
