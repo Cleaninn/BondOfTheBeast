@@ -252,6 +252,7 @@ public final class ForcedTamingService {
                 return ActionResult.FAIL;
             }
             net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager.handleDirectTransform(pet, form.getGroup().getForm(3), false);
+            PetFeedingEffects.play(pet, stack);
             if (!owner.isCreative()) stack.decrement(1);
             pet.getHungerManager().add(2, 0.1f);
             return ActionResult.SUCCESS;
@@ -272,6 +273,7 @@ public final class ForcedTamingService {
                 InstinctManager.applyEffect(pet, "FORM_USE_CATALYST", 0.975f, 40);
             else InstinctManager.applyImmediateEffect(pet, "botb_owner_cookie", 25);
         }
+        if (cookieItem) PetFeedingEffects.play(pet, stack);
         if (!owner.isCreative()) stack.decrement(1);
         pet.getHungerManager().add(2, 0.1f);
         if (!cookieItem)

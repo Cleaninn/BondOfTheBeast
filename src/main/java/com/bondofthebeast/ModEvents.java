@@ -17,8 +17,6 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
@@ -98,13 +96,12 @@ public class ModEvents {
 
                 if (!foodStack.isEmpty() && foodStack.isOf(ModItems.PET_TREAT)) {
                     if (world.isClient) return ActionResult.SUCCESS;
+                    if (pet instanceof ServerPlayerEntity sp) PetFeedingEffects.play(sp, foodStack);
                     if (!player.getAbilities().creativeMode) foodStack.decrement(1);
                     pet.getHungerManager().add(6, 0.6f);
 
                     ModComponents.PLAYER_BOND.sync(pet);
                     ModComponents.PLAYER_BOND.sync(player);
-                    world.playSound(null, pet.getX(), pet.getY(), pet.getZ(), SoundEvents.ENTITY_GENERIC_EAT, SoundCategory.PLAYERS, 1.0f, 1.1f);
-                    if (pet instanceof ServerPlayerEntity sp) sp.getServerWorld().spawnParticles(ParticleTypes.HEART, pet.getX(), pet.getY() + 1.2, pet.getZ(), 12, 0.4, 0.4, 0.4, 0.15);
                     String petName = bond.getPetNickname() != null ? bond.getPetNickname() : pet.getGameProfile().getName();
                     player.sendMessage(Text.translatable("text.bondofthebeast.event.feed_treat_owner", petName).formatted(Formatting.AQUA), true);
                     pet.sendMessage(Text.translatable("text.bondofthebeast.event.feed_treat_pet", player.getGameProfile().getName()).formatted(Formatting.AQUA), true);
@@ -122,14 +119,12 @@ public class ModEvents {
                     var foodComponent = foodStack.getItem().getFoodComponent();
                     if (foodComponent != null) {
                         int hungerValue = foodComponent.getHunger();
+                        if (pet instanceof ServerPlayerEntity sp) PetFeedingEffects.play(sp, foodStack);
                         if (!player.getAbilities().creativeMode) foodStack.decrement(1);
                         pet.getHungerManager().add(hungerValue, foodComponent.getSaturationModifier());
 
                         ModComponents.PLAYER_BOND.sync(pet);
                         ModComponents.PLAYER_BOND.sync(player);
-                        world.playSound(null, pet.getX(), pet.getY(), pet.getZ(), SoundEvents.ENTITY_GENERIC_EAT, SoundCategory.PLAYERS, 1.0f, 1.0f);
-                        world.playSound(null, pet.getX(), pet.getY(), pet.getZ(), SoundEvents.ENTITY_PLAYER_BURP, SoundCategory.PLAYERS, 0.5f, 1.0f);
-                        if (pet instanceof ServerPlayerEntity sp) sp.getServerWorld().spawnParticles(ParticleTypes.HEART, pet.getX(), pet.getY() + 1.2, pet.getZ(), 6, 0.3, 0.3, 0.3, 0.1);
                         String petName = bond.getPetNickname() != null ? bond.getPetNickname() : pet.getGameProfile().getName();
                         player.sendMessage(Text.translatable("text.bondofthebeast.event.feed_food_owner", petName).formatted(Formatting.GREEN), true);
                         pet.sendMessage(Text.translatable("text.bondofthebeast.event.feed_food_pet", player.getGameProfile().getName()).formatted(Formatting.GOLD), true);

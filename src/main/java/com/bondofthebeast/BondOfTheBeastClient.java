@@ -16,6 +16,11 @@ import java.util.*;
 public class BondOfTheBeastClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.PET_FEEDING_S2C, (client, handler, buffer, sender) -> {
+            UUID pet = buffer.readUuid();
+            var food = buffer.readItemStack();
+            client.execute(() -> PetFeedingVisual.play(pet, food));
+        });
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.PET_INSTINCT_S2C, (client, handler, buffer, sender) -> {
             int count = buffer.readVarInt();
             var pets = new ArrayList<PetInstinctHud.Pet>();
@@ -49,18 +54,20 @@ public class BondOfTheBeastClient implements ClientModInitializer {
             boolean victim = buffer.readBoolean();
             client.execute(() -> BondHud.updateCollaring(ticks, victim));
         });
-        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { BondHud.reset(); BondConfig.load(); });
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { BondHud.reset(); PetFeedingVisual.reset(); BondConfig.load(); });
         net.minecraft.client.gui.screen.ingame.HandledScreens.register(PetArmorScreenHandler.TYPE, com.bondofthebeast.client.PetArmorScreen::new);
         var statusKey = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(
                 new net.minecraft.client.option.KeyBinding("key.bondofthebeast.status", org.lwjgl.glfw.GLFW.GLFW_KEY_G, "category.bondofthebeast"));
 
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            PetFeedingVisual.tick(client);
             while (statusKey.wasPressed()) if (client.player != null && ModComponents.PLAYER_BOND.get(client.player).hasOwner()) client.setScreen(new PetStatusScreen());
         });
         net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register(com.bondofthebeast.client.BondHud::render);
         TrinketRendererRegistry.registerRenderer(ModItems.COLLAR, new CollarRenderer());
         TrinketRendererRegistry.registerRenderer(ModItems.INFUSED_COLLAR, new CollarRenderer());
         net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(PetLeashRenderer::render);
+        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(PetFeedingVisual::render);
 
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.OPEN_OWNER_GUI, (c, h, b, rs) -> c.execute(() -> c.setScreen(new ContractScreen(false))));
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.OPEN_PET_GUI, (c, h, b, rs) -> c.execute(() -> c.setScreen(new ContractScreen(true))));

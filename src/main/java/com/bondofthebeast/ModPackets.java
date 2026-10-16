@@ -22,6 +22,7 @@ public class ModPackets {
     public static final Identifier SYNC_CONFIG_S2C = new Identifier(BondOfTheBeast.MOD_ID, "sync_config_s2c");
     public static final Identifier STAGE_NOTICE_S2C = new Identifier(BondOfTheBeast.MOD_ID, "stage_notice_s2c");
     public static final Identifier PET_INSTINCT_S2C = new Identifier(BondOfTheBeast.MOD_ID, "pet_instinct_s2c");
+    public static final Identifier PET_FEEDING_S2C = new Identifier(BondOfTheBeast.MOD_ID, "pet_feeding_s2c");
 
     public static void syncPetInstinct(MinecraftServer server) {
         var byOwner = new java.util.HashMap<UUID, java.util.List<ServerPlayerEntity>>();
