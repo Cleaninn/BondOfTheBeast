@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "minecraft:cookie" },
+    { "item": "shape-shifter-curse:catalyst" }
+  ],
+  "result": { "item": "bondofthebeast:catalyst_cookie", "count": 1 }
+}
