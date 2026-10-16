@@ -27,6 +27,8 @@ public class ModItemGroups {
                         entries.add(ModItems.NECKLACE_OF_CLARITY);
                         entries.add(ModItems.DUSTGUARD_AMULET);
                         entries.add(ModItems.ENERGY_SOURCE_RING);
+                        entries.add(ModItems.CATALYST_COOKIE);
+                        entries.add(ModItems.ECHO_CATALYST_COOKIE);
                     })
                     .build());
 

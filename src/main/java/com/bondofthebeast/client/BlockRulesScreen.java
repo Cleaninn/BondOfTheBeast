@@ -28,7 +28,7 @@ public final class BlockRulesScreen extends Screen {
             var button = addDrawableChild(new GrimoireAbilityButton(x(18 + type * 106), y(38), size(90), size(44),
                     label, null, type == 0 ? "blacklist" : "whitelist",
                     b -> client.setScreen(new BlockSelectionScreen(this, pet, listType))));
-            button.active = pet.isOnline && pet.hasCollar && pet.escapeTicks == 0 && pet.unlockedSkills.contains("nobreak");
+            button.active = pet.isOnline && pet.hasCollar && pet.escapeTicks == 0 && pet.unlockedSkills.contains("blocks");
             button.setTooltip(Tooltip.of(Text.empty().append(label.copy().formatted(net.minecraft.util.Formatting.GOLD))
                     .append(Text.literal("\n")).append(Text.translatable(type == 0 ?
                             "gui.bondofthebeast.staff.blacklist.desc" : "gui.bondofthebeast.staff.whitelist.desc"))));

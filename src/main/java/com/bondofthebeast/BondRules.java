@@ -13,7 +13,7 @@ import java.util.List;
 
 /** Shared rules used by both server actions and client presentation. */
 public final class BondRules {
-    public static final List<String> COMMANDS = List.of("sit", "tp", "nobreak", "absorb", "armor", "inventory");
+    public static final List<String> COMMANDS = List.of("sit", "tp", "nobreak", "absorb", "armor", "inventory", "blocks");
 
     private BondRules() {}
 
@@ -74,8 +74,8 @@ public final class BondRules {
         return switch (command) {
             case "sit", "nobreak" -> 0;
             case "tp", "inventory" -> 1;
-            case "armor" -> 2;
-            case "absorb" -> 3;
+            case "armor", "absorb" -> 2;
+            case "blocks" -> 3;
             default -> 99;
         };
     }

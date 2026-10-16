@@ -121,7 +121,7 @@ public class ModPackets {
                 ServerPlayerEntity pet = controlledPet(player, id);
                 if (pet == null) return;
                 var bond = ModComponents.PLAYER_BOND.get(pet);
-                if (!BondRules.allows(pet, "nobreak")) return;
+                if (!BondRules.allows(pet, "blocks")) return;
                 if (type == 0) bond.setBlacklistedBlocks(blocks); else bond.setWhitelistedBlocks(blocks);
                 CommandControl.start(pet, "blocks");
                 refresh(player, pet);
@@ -183,14 +183,14 @@ public class ModPackets {
         if (!bed.getBoundPetUUID().isEmpty() && !ownerBond.getRegisteredPets().containsKey(bed.getBoundPetUUID())) return;
         ServerPlayerEntity pet = null;
         if (!petId.isEmpty()) {
-            try { pet = controlledPet(owner, UUID.fromString(petId)); }
+            try { pet = owner.getServer().getPlayerManager().getPlayer(UUID.fromString(petId)); }
             catch (IllegalArgumentException ignored) { return; }
-            if (pet == null || pet.getWorld() != owner.getWorld() || pet.squaredDistanceTo(pos.toCenterPos()) > 2500) {
+            if (pet == null || !pet.isAlive() || !BondRules.owns(owner, pet) || !BondRules.hasCollar(pet) || ForcedTamingService.freeWindow(pet) ||
+                    pet.getWorld() != owner.getWorld() || pet.squaredDistanceTo(pos.toCenterPos()) > 2500) {
                 owner.sendMessage(Text.translatable("text.bondofthebeast.packet.pet_offline_chain"), true);
                 return;
             }
             var bond = ModComponents.PLAYER_BOND.get(pet);
-            if (radius > 0 && !BondRules.allows(pet, "sit")) return;
             if (radius > 0 && (bond.isTeleportEnabled() || bond.isAbsorbed() ||
                     bond.getLeashPos() != null || !bond.getLeashHolder().isEmpty())) {
                 owner.sendMessage(Text.translatable("text.bondofthebeast.conflict_teleport_absorb"), true);
@@ -198,6 +198,7 @@ public class ModPackets {
             }
         }
         String previousId = bed.getBoundPetUUID();
+        long chainStartedAt = previousId.equals(petId) ? bed.getChainStartedAt() : -1;
         if (!previousId.isEmpty()) {
             try {
                 ServerPlayerEntity previous = owner.getServer().getPlayerManager().getPlayer(UUID.fromString(previousId));
@@ -210,7 +211,7 @@ public class ModPackets {
             pet.setSpawnPoint(owner.getServerWorld().getRegistryKey(), pos.up(), 0, true, true);
         }
         bed.setBoundPetUUID(petId);
-        bed.setChainRadius(petId.isEmpty() ? 0 : radius);
+        bed.configureChain(pet, petId.isEmpty() ? 0 : radius, chainStartedAt);
         owner.sendMessage(Text.translatable("text.bondofthebeast.packet.bed_setup_success"), true);
     }
 

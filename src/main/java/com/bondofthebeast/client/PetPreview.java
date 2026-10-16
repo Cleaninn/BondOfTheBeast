@@ -55,9 +55,13 @@ final class PetPreview {
         if (form != null) {
             // Display entities are outside the world tick loop. Install the form's idle
             // animation explicitly: feral geometry relies on it for the four-legged pose.
+            var bondData = new NbtCompound();
+            bondData.putBoolean("IsSitting", pet.isSitting);
+            com.bondofthebeast.component.ModComponents.PLAYER_BOND.get(entity).readFromNbt(bondData);
+            entity.setOnGround(true);
             var data = new AnimSystem.AnimSystemData(entity);
             data.playerForm = form;
-            var controller = form.getAnimStateController(entity, data, AnimRegistries.ANIM_STATE_IDLE);
+            var controller = form.getAnimStateController(entity, data, pet.isSitting ? AnimRegistries.ANIM_STATE_RIDE : AnimRegistries.ANIM_STATE_IDLE);
             if (controller != null) {
                 if (!controller.isRegistered(entity, data)) controller.registerAnim(entity, data);
                 var holder = controller.getAnimation(entity, data);

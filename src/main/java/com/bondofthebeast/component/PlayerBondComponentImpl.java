@@ -165,7 +165,9 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
         if (com.bondofthebeast.BondRules.isAllay(provider)) return;
         if (!uuid.equals(this.ownerUUID)) {
             itemForwarding = false;
+            long reachedAt = forcedBond.thirdStageReachedAt;
             forcedBond.read(new NbtCompound());
+            forcedBond.thirdStageReachedAt = reachedAt;
         }
         this.ownerUUID = uuid;
         this.ownerName = name;
@@ -175,7 +177,9 @@ public class PlayerBondComponentImpl implements PlayerBondComponent {
 
     @Override public void clearOwner() {
         itemForwarding = false;
+        long reachedAt = forcedBond.thirdStageReachedAt;
         forcedBond.read(new NbtCompound());
+        forcedBond.thirdStageReachedAt = reachedAt;
         this.ownerUUID = "";
         this.ownerName = "";
         this.petNickname = null;

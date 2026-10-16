@@ -37,7 +37,7 @@ public final class PetLeashRenderer {
                 anchor = bond.getLeashPos().toCenterPos().add(0, 0.1, 0);
             } else if (bond.getBedPos() != null && dimension.equals(bond.getBedDimension()) &&
                     world.getBlockEntity(bond.getBedPos()) instanceof PetBedBlockEntity bed &&
-                    pet.getUuidAsString().equals(bed.getBoundPetUUID()) && bed.getChainRadius() > 0) {
+                    pet.getUuidAsString().equals(bed.getBoundPetUUID()) && bed.isChainActive()) {
                 anchor = bond.getBedPos().toCenterPos().add(0, -0.25, 0);
                 chain = true;
             }

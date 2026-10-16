@@ -118,7 +118,7 @@ public final class BondService {
                                 item.getNbt().remove("ForcedCollar");
                             }
                             inv.setStack(i, ItemStack.EMPTY);
-                            pet.dropItem(item, false);
+                            pet.getInventory().offerOrDrop(item);
                         }
                     }
                 })));
@@ -131,6 +131,7 @@ public final class BondService {
         LeashManager.detach(pet);
         releaseAbsorption(pet);
         clearBed(pet);
+        b.setItemForwarding(false);
         removeCollars(pet);
         b.clearOwner();
     }

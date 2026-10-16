@@ -25,6 +25,8 @@
     "ItemForwardingScreenMixin"
   ],
   "client": [
+    "PetSitAnimationMixin",
+    "PetSitModelMixin",
     "CollaringHudMixin",
     "KeyboardInputMixin",
     "PlayerEntityRendererMixin",

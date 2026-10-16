@@ -17,6 +17,7 @@ import java.util.UUID;
 public class PetBedBlockEntity extends BlockEntity {
     private String boundPetUUID = "";
     private int chainRadius = 0;
+    private long chainStartedAt = -1, chainExpiresAt = -1;
     private boolean isWaitingForPet = false;
 
     public PetBedBlockEntity(BlockPos pos, BlockState state) {
@@ -24,6 +25,16 @@ public class PetBedBlockEntity extends BlockEntity {
     }
 
     public static void tick(World world, BlockPos pos, BlockState state, PetBedBlockEntity be) {
+        if (!world.isClient && be.chainRadius > 0) {
+            ServerPlayerEntity pet = null;
+            try { pet = world.getServer().getPlayerManager().getPlayer(UUID.fromString(be.boundPetUUID)); }
+            catch (IllegalArgumentException ignored) {}
+            if (pet != null && !com.bondofthebeast.CommandControl.temporary(pet) && be.chainExpiresAt >= 0)
+                be.configureChain(pet, be.chainRadius, -1);
+            else if (pet != null && com.bondofthebeast.CommandControl.temporary(pet) && be.chainExpiresAt < 0)
+                be.configureChain(pet, be.chainRadius, -1);
+            if (be.chainExpiresAt >= 0 && world.getTime() >= be.chainExpiresAt) be.setChainRadius(0);
+        }
         if (!world.isClient && be.isWaitingForPet && world.getTime() % 40 == 0) {
             try {
                 PlayerEntity pet = world.getPlayerByUuid(UUID.fromString(be.boundPetUUID));
@@ -54,6 +65,8 @@ public class PetBedBlockEntity extends BlockEntity {
         super.readNbt(nbt);
         this.boundPetUUID = nbt.getString("BoundPetUUID");
         this.chainRadius = Math.max(0, Math.min(50, nbt.getInt("ChainRadius")));
+        this.chainStartedAt = nbt.contains("ChainStartedAt") ? nbt.getLong("ChainStartedAt") : -1;
+        this.chainExpiresAt = nbt.contains("ChainExpiresAt") ? nbt.getLong("ChainExpiresAt") : -1;
         if (nbt.contains("IsWaitingForPet")) {
             this.isWaitingForPet = nbt.getBoolean("IsWaitingForPet");
         } else {
@@ -66,6 +79,8 @@ public class PetBedBlockEntity extends BlockEntity {
         super.writeNbt(nbt);
         nbt.putString("BoundPetUUID", this.boundPetUUID);
         nbt.putInt("ChainRadius", this.chainRadius);
+        nbt.putLong("ChainStartedAt", chainStartedAt);
+        nbt.putLong("ChainExpiresAt", chainExpiresAt);
         nbt.putBoolean("IsWaitingForPet", this.isWaitingForPet);
     }
 
@@ -82,5 +97,25 @@ public class PetBedBlockEntity extends BlockEntity {
     }
 
     public int getChainRadius() { return chainRadius; }
-    public void setChainRadius(int radius) { this.chainRadius = Math.max(0, Math.min(50, radius)); markDirty(); world.updateListeners(pos, getCachedState(), getCachedState(), 3); }
+    public long getChainStartedAt() { return chainStartedAt; }
+    public static int chainDurationSeconds(int radius) { return 300 + Math.max(1, Math.min(50, radius)) * 60; }
+    public int remainingChainSeconds() {
+        return chainRadius == 0 ? 0 : chainExpiresAt < 0 ? -1 : (int) Math.max(0, (chainExpiresAt - world.getTime() + 19) / 20);
+    }
+    public boolean isChainActive() { return chainRadius > 0 && (chainExpiresAt < 0 || world.getTime() < chainExpiresAt); }
+    public void configureChain(@Nullable ServerPlayerEntity pet, int radius, long previousStart) {
+        chainRadius = Math.max(0, Math.min(50, radius));
+        if (chainRadius > 0 && pet != null && com.bondofthebeast.CommandControl.temporary(pet)) {
+            chainStartedAt = previousStart >= 0 ? previousStart : world.getTime();
+            chainExpiresAt = chainStartedAt + chainDurationSeconds(chainRadius) * 20L;
+        } else { chainStartedAt = -1; chainExpiresAt = -1; }
+        markDirty();
+        world.updateListeners(pos, getCachedState(), getCachedState(), 3);
+    }
+    public void setChainRadius(int radius) {
+        this.chainRadius = Math.max(0, Math.min(50, radius));
+        if (chainRadius == 0) { chainStartedAt = -1; chainExpiresAt = -1; }
+        markDirty();
+        world.updateListeners(pos, getCachedState(), getCachedState(), 3);
+    }
 }

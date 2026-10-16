@@ -10,6 +10,7 @@ public final class ForcedBondState {
     public boolean catalystWarningFromCookie;
     public int finalWarningTicks = -1;
     public int catalystStages;
+    public long thirdStageReachedAt = -1;
     public int escapeTicks;
     public int resistanceCooldownTicks;
     public int lastStage = -99;
@@ -26,6 +27,7 @@ public final class ForcedBondState {
         tag.putBoolean("CatalystWarningFromCookie", catalystWarningFromCookie);
         tag.putInt("FinalWarningTicks", finalWarningTicks);
         tag.putInt("CatalystStages", catalystStages);
+        tag.putLong("ThirdStageReachedAt", thirdStageReachedAt);
         tag.putInt("EscapeTicks", escapeTicks);
         tag.putInt("ResistanceCooldownTicks", resistanceCooldownTicks);
         tag.putInt("LastStage", lastStage);
@@ -45,6 +47,7 @@ public final class ForcedBondState {
         catalystWarningFromCookie = tag.getBoolean("CatalystWarningFromCookie");
         finalWarningTicks = tag.contains("FinalWarningTicks") ? Math.max(-1, Math.min(200, tag.getInt("FinalWarningTicks"))) : -1;
         catalystStages = tag.getInt("CatalystStages");
+        thirdStageReachedAt = tag.contains("ThirdStageReachedAt") ? Math.max(-1, tag.getLong("ThirdStageReachedAt")) : -1;
         escapeTicks = Math.max(0, Math.min(2400, tag.getInt("EscapeTicks")));
         resistanceCooldownTicks = Math.max(0, Math.min(6000, tag.getInt("ResistanceCooldownTicks")));
         lastStage = tag.contains("LastStage") ? tag.getInt("LastStage") : -99;

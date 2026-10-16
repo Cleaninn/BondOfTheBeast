@@ -106,9 +106,9 @@ public final class LeashManager {
     public static boolean hasBedChain(ServerPlayerEntity pet) {
         var b = ModComponents.PLAYER_BOND.get(pet);
         ServerWorld world = dimension(pet, b.getBedDimension());
-        return BondRules.allows(pet, "sit") && b.getBedPos() != null && world != null &&
+        return b.hasOwner() && !ForcedTamingService.freeWindow(pet) && BondRules.hasCollar(pet) && b.getBedPos() != null && world != null &&
                 world.getBlockEntity(b.getBedPos()) instanceof PetBedBlockEntity bed &&
-                pet.getUuidAsString().equals(bed.getBoundPetUUID()) && bed.getChainRadius() > 0;
+                pet.getUuidAsString().equals(bed.getBoundPetUUID()) && bed.isChainActive();
     }
 
     public static boolean isTethered(ServerPlayerEntity pet) {
@@ -130,7 +130,7 @@ public final class LeashManager {
 
     public static void tick(ServerPlayerEntity pet) {
         var b = ModComponents.PLAYER_BOND.get(pet);
-        if (!BondRules.canObey(pet) || !BondRules.hasCollar(pet) || !pet.isAlive()) {
+        if ((!BondRules.canObey(pet) && !hasBedChain(pet)) || !BondRules.hasCollar(pet) || !pet.isAlive()) {
             if (!b.getLeashHolder().isEmpty() || b.getLeashPos() != null) detach(pet);
             return;
         }

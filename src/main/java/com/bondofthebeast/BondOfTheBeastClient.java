@@ -82,15 +82,16 @@ public class BondOfTheBeastClient implements ClientModInitializer {
             BlockPos pos = b.readBlockPos();
             String petUUID = b.readString();
             int radius = b.readInt();
+            int chainSeconds = b.readInt();
             int petCount = b.readInt();
             Map<String, PetBedScreen.PetOption> pets = new HashMap<>();
             for (int i = 0; i < petCount; i++) {
                 String uuid = b.readString();
                 String name = b.readString();
                 boolean hasCollar = b.readBoolean();
-                pets.put(uuid, new PetBedScreen.PetOption(name, hasCollar));
+                pets.put(uuid, new PetBedScreen.PetOption(name, hasCollar, b.readBoolean()));
             }
-            c.execute(() -> c.setScreen(new PetBedScreen(pos, petUUID, radius, pets)));
+            c.execute(() -> c.setScreen(new PetBedScreen(pos, petUUID, radius, chainSeconds, pets)));
         });
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             var bond = ModComponents.PLAYER_BOND.get(player);

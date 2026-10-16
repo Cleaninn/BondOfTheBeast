@@ -37,7 +37,7 @@ public class StaffPetScreen extends Screen {
         action(12, "nobreak", pet.isNoBreakMode, ModPackets.TOGGLE_NO_BREAK_C2S, "nobreak");
         action(13, "nobreak", pet.isNoInteractMode, ModPackets.TOGGLE_NO_INTERACT_C2S, "interact", "interact");
         action(14, "nobreak", pet.isPacifistMode, ModPackets.TOGGLE_PACIFIST_C2S, "pacifist", "pacifist");
-        utility(15, "block_rules", "nobreak", "blocks", b -> client.setScreen(new BlockRulesScreen(this, pet)));
+        utility(15, "block_rules", "blocks", "blocks", b -> client.setScreen(new BlockRulesScreen(this, pet)));
         addDrawableChild(new GrimoireBackButton(book.x(344), book.y(16), book.size(22),
                 Text.translatable(parent == null ? "gui.bondofthebeast.staff.back_tooltip" :
                         "gui.bondofthebeast.back_to_pets"), b -> close()));

@@ -17,7 +17,7 @@ public final class CommandControl {
     public static boolean active(PlayerEntity pet, String command) {
         return !temporary(pet) || ModComponents.PLAYER_BOND.get(pet).getForcedBond().commandTicks.getOrDefault(command, 0) > 0;
     }
-    public static boolean blockListsActive(PlayerEntity pet) { return active(pet, "blocks"); }
+    public static boolean blockListsActive(PlayerEntity pet) { return BondRules.allows(pet, "blocks") && active(pet, "blocks"); }
     public static void start(ServerPlayerEntity pet, String command) {
         var state = ModComponents.PLAYER_BOND.get(pet).getForcedBond();
         if (temporary(pet) && enabled(pet, command)) state.commandTicks.put(command, durationTicks(pet));
