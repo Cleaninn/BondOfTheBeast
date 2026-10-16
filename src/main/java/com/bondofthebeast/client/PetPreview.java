@@ -1,6 +1,7 @@
 package com.bondofthebeast.client;
 
 import com.mojang.authlib.GameProfile;
+import dev.emi.trinkets.api.TrinketsApi;
 import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
 import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess;
 import net.minecraft.client.MinecraftClient;
@@ -30,7 +31,13 @@ final class PetPreview {
         var id = Identifier.tryParse(pet.formId);
         var form = id == null ? null : RegPlayerForms.playerForms.get(id);
         if (form != null) {
-            RegPlayerFormComponent.PLAYER_FORM.get(entity).setCurrentForm(form);
+            // Restore the display appearance like a synchronized component. A fresh
+            // preview has not activated a book, so normal form transitions are blocked.
+            var appearance = new NbtCompound();
+            var formComponent = RegPlayerFormComponent.PLAYER_FORM.get(entity);
+            formComponent.writeToNbt(appearance);
+            appearance.putString("currentForm", form.FormID.toString());
+            formComponent.readFromNbt(appearance);
             // The geometry renderer reads Origins as well as the SSC form component.
             for (var layer : OriginLayers.getLayers()) {
                 if (layer.getIdentifier().equals(form.getFormOriginLayerID()) && OriginRegistry.contains(form.getFormOriginID())) {
@@ -42,6 +49,12 @@ final class PetPreview {
         var live = client.world.getPlayerByUuid(pet.uuid);
         if (live != null) {
             for (var slot : EquipmentSlot.values()) entity.equipStack(slot, live.getEquippedStack(slot).copy());
+            TrinketsApi.getTrinketComponent(live).ifPresent(source ->
+                    TrinketsApi.getTrinketComponent(entity).ifPresent(target -> {
+                        var accessories = new NbtCompound();
+                        source.writeToNbt(accessories);
+                        target.readFromNbt(accessories);
+                    }));
             var skin = new NbtCompound();
             RegPlayerSkinComponent.SKIN_SETTINGS.get(live).writeToNbt(skin);
             RegPlayerSkinComponent.SKIN_SETTINGS.get(entity).readFromNbt(skin);
