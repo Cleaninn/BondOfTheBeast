@@ -163,7 +163,8 @@ java {
 publishMods {
 	file = remapJar.archiveFile
 	changelog = file("CHANGELOG.md").text
-	type = BETA
+	type = STABLE
+	displayName = "Bond of the Beast ${project.mod_version}"
 	modLoaders.add("fabric")
 
 	modrinth {
@@ -185,6 +186,7 @@ publishMods {
 
 	curseforge {
 		projectId = "1666459"
+		projectSlug = "bond-of-the-beast"
 		accessToken = providers.gradleProperty("CURSEFORGE_TOKEN")
 		minecraftVersions.add(project.minecraft_version)
 
