@@ -7,8 +7,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -58,9 +58,9 @@ public abstract class LivingEntityMixin {
 
         if (entity instanceof PlayerEntity player) {
             try {
-                PlayerFormBase form = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm();
+                IForm form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
                 if (form != null) {
-                    String path = form.FormID.getPath().toLowerCase();
+                    String path = form.getFormID().getPath().toLowerCase();
 
                     // КАТЕГОРИЯ 1: ЧЕТВЕРОНОГИЕ (Стадия 3 + Ферал) — Ровно по центру, низко
                     if ((path.contains("wolf") && path.endsWith("_3")) ||

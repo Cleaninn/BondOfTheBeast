@@ -13,6 +13,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.GameMode;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -41,7 +42,7 @@ public class ModPackets {
                 var bond = ModComponents.PLAYER_BOND.get(pet);
                 buffer.writeUuid(pet.getUuid());
                 buffer.writeString(bond.getPetNickname() == null ? pet.getGameProfile().getName() : bond.getPetNickname());
-                buffer.writeFloat(net.onixary.shapeShifterCurseFabric.player_form.instinct.RegPlayerInstinctComponent.PLAYER_INSTINCT_COMP.get(pet).instinctValue);
+                buffer.writeFloat(PlayerFormComponent.COMPONENT.get(pet).instinctValue);
             }
             ServerPlayNetworking.send(owner, PET_INSTINCT_S2C, buffer);
         }
@@ -289,7 +290,7 @@ public class ModPackets {
         buf.writeInt(onlinePet == null ? -2 : ForcedTamingService.stage(onlinePet));
         var state = onlinePet == null ? new com.bondofthebeast.component.ForcedBondState() : ModComponents.PLAYER_BOND.get(onlinePet).getForcedBond();
         buf.writeBoolean(state.forced); buf.writeBoolean(state.armorLocked); buf.writeInt(state.escapeTicks);
-        buf.writeFloat(onlinePet == null ? 0 : net.onixary.shapeShifterCurseFabric.player_form.instinct.RegPlayerInstinctComponent.PLAYER_INSTINCT_COMP.get(onlinePet).instinctValue);
+        buf.writeFloat(onlinePet == null ? 0 : PlayerFormComponent.COMPONENT.get(onlinePet).instinctValue);
         buf.writeString(PetPreviewState.get(server).form(petUuid));
         buf.writeBoolean(onlinePet != null && ModComponents.PLAYER_BOND.get(onlinePet).isItemForwarding());
         buf.writeBoolean(state.contractSigned);

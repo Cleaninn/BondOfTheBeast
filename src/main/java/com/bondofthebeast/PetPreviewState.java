@@ -4,7 +4,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.PersistentState;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -30,9 +30,9 @@ public final class PetPreviewState extends PersistentState {
     }
 
     public void update(ServerPlayerEntity pet) {
-        var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).getCurrentForm();
+        var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).nowForm;
         if (form == null) return;
-        String value = form.FormID.toString();
+        String value = form.getFormID().toString();
         if (!value.equals(forms.put(pet.getUuidAsString(), value))) markDirty();
     }
 

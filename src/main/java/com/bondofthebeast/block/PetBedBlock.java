@@ -52,11 +52,11 @@ public class PetBedBlock extends BlockWithEntity {
         int stage = -1;
         String formIdStr = "";
         try {
-            var sscComp = net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(player);
-            if (sscComp != null && sscComp.getCurrentForm() != null) {
-                stage = sscComp.getCurrentForm().getIndex();
-                if (sscComp.getCurrentForm().FormID != null) {
-                    formIdStr = sscComp.getCurrentForm().FormID.toString().toLowerCase();
+            var sscComp = net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(player);
+            if (sscComp != null && sscComp.nowForm != null) {
+                stage = sscComp.nowForm.getFormTier();
+                if (sscComp.nowForm.getFormID() != null) {
+                    formIdStr = sscComp.nowForm.getFormID().toString().toLowerCase();
                 }
             }
         } catch (Exception ignored) {}

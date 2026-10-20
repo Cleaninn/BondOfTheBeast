@@ -6,8 +6,8 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -33,9 +33,9 @@ public abstract class EntityMixin {
                 BlockPos pos = player.getSleepingPosition().get();
                 if (player.getWorld().getBlockState(pos).getBlock() instanceof PetBedBlock) {
                     try {
-                        PlayerFormBase form = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm();
+                        IForm form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
                         if (form != null) {
-                            String path = form.FormID.getPath().toLowerCase();
+                            String path = form.getFormID().getPath().toLowerCase();
                             if ((path.contains("wolf") && path.endsWith("_3")) ||
                                     (path.contains("ocelot") && path.endsWith("_3")) ||
                                     (path.contains("fox") && path.endsWith("_3")) ||

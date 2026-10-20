@@ -3,40 +3,45 @@ package com.bondofthebeast.mixin;
 import com.bondofthebeast.ForcedTamingService;
 import com.bondofthebeast.CollarCatalystService;
 import com.bondofthebeast.component.ModComponents;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.instinct.InstinctTicker;
-import net.onixary.shapeShifterCurseFabric.player_form.instinct.PlayerInstinctComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.InstinctUtils;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = InstinctTicker.class, remap = false)
+import java.util.HashMap;
+import java.util.UUID;
+
+
+@Mixin(value = InstinctUtils.class, remap = false)
 public class ForcedInstinctMixin {
-    @Inject(method = "calculateCurrentRate", at = @At("RETURN"), cancellable = true)
-    private static void botb$slowReservoir(PlayerEntity player, PlayerInstinctComponent comp, CallbackInfoReturnable<Float> cir) {
-        int stage = ForcedTamingService.stage(player);
-        float rate = cir.getReturnValue();
-        boolean forced = ModComponents.PLAYER_BOND.get(player).getForcedBond().forced;
-        if (stage >= 0 && stage < 3 && ForcedTamingService.sleepingOnPetBed(player) && player.isAlive() &&
-                !player.isCreative() && !player.isSpectator()) rate += ForcedTamingService.BED_RATE_PER_TICK;
-        // SSC fills the native stage-2 bar immediately. Forced bonds need a real escape period.
-        if (CollarCatalystService.gradualFinalStage(player)) rate -= 100;
-        if (forced && ForcedTamingService.freeWindow(player)) rate = 0;
-        else if (stage >= 0 && stage < 3 && CollarCatalystService.active(player))
-            rate += ForcedTamingService.INFUSED_RATE_PER_TICK;
-        cir.setReturnValue(rate);
+
+    @WrapOperation(method = "serverTick", at = @At(value = "FIELD", target = "Lnet/onixary/shapeShifterCurseFabric/player_form/utils/InstinctUtils;playerInstinctLock:Ljava/util/HashMap;"))
+    private static HashMap<UUID, Boolean> botb$slowReservoir(Operation<HashMap<UUID, Boolean>> original, @Local ServerPlayerEntity player) {
+        if (ForcedTamingService.infused(player) && !ForcedTamingService.freeWindow(player)) {
+            HashMap hash = original.call();
+            hash.put(player.getUuid(), false);
+            return hash;
+        }
+        return original.call();
     }
 
     @Inject(method = "checkThreshold", at = @At("HEAD"), cancellable = true)
-    private static void botb$finalStage(ServerPlayerEntity player, PlayerInstinctComponent comp, CallbackInfo ci) {
+    private static void botb$finalStage(ServerPlayerEntity player, float instinctValue, CallbackInfo ci) {
         if (!CollarCatalystService.gradualFinalStage(player)) return;
-        if (comp.instinctValue >= 100 && !ForcedTamingService.freeWindow(player)) {
-            var group = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm().getGroup();
-            if (group != null && group.hasForm(3)) {
+        if (instinctValue >= 100 && !ForcedTamingService.freeWindow(player)) {
+            var group = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm.getFormGroup();
+            if (group != null && group.getFormList(3) != null) {
                 var state = ModComponents.PLAYER_BOND.get(player).getForcedBond();
                 if (state.finalWarningTicks < 0) state.finalWarningTicks = ForcedTamingService.WARNING_TICKS;
             }

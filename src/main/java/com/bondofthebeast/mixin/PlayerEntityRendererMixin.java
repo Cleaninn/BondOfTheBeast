@@ -6,7 +6,7 @@ import net.minecraft.client.render.entity.PlayerEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.RotationAxis;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,8 +20,8 @@ public abstract class PlayerEntityRendererMixin {
         if (player.isSleeping()) {
             try {
                 var sscComp = RegPlayerFormComponent.PLAYER_FORM.get(player);
-                if (sscComp != null && sscComp.getCurrentForm() != null) {
-                    String path = sscComp.getCurrentForm().FormID.getPath().toLowerCase();
+                if (sscComp != null && sscComp.nowForm != null) {
+                    String path = sscComp.nowForm.getFormID().getPath().toLowerCase();
 
                     // Если это летучая мышь 2 или 3 стадии
                     if (path.contains("bat") && (path.endsWith("_2") || path.endsWith("_3"))) {

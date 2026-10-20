@@ -61,7 +61,7 @@ public class PetStatusScreen extends Screen {
             var uuid = java.util.UUID.fromString(bond.getOwnerUUID());
             var data = new StaffMainScreen.PetData(uuid, bond.getOwnerName(), false, false, false, false, false, false, false, java.util.Set.of(), java.util.Set.of(), java.util.Set.of(), true);
             var live = client.world.getPlayerByUuid(uuid);
-            if (live != null) data.formId = net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(live).getCurrentForm().getIDString();
+            if (live != null) data.formId = net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(live).nowForm.getFormID().toString();
             return PetPreview.create(client, data);
         } catch (IllegalArgumentException e) { return null; }
     }

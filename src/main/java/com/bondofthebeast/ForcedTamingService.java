@@ -11,14 +11,17 @@ import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.Vec3d;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.instinct.InstinctManager;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.InstinctUtils;
 import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
 import net.onixary.shapeShifterCurseFabric.status_effects.attachment.EffectManager;
 
 import java.util.UUID;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public final class ForcedTamingService {
     public static final int WARNING_TICKS = 200;
@@ -61,9 +64,9 @@ public final class ForcedTamingService {
     }
 
     public static int stage(PlayerEntity pet) {
-        var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).getCurrentForm();
-        if (form != null && form.getIDString().contains("allay")) return 0;
-        return form == null ? -2 : form.getIndex();
+        var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).nowForm;
+        if (form != null && form.getFormID().getPath().contains("allay")) return 0;
+        return form == null ? -2 : form.getFormTier();
     }
 
     public static boolean infused(PlayerEntity pet) {
@@ -171,7 +174,7 @@ public final class ForcedTamingService {
     }
 
     public static boolean canFinalizeForced(PlayerEntity pet) {
-        var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).getCurrentForm();
+        var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).nowForm;
         return BondRules.canBePet(pet) && form != null &&
                 form.getBodyType() == net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType.FERAL;
     }
@@ -211,9 +214,8 @@ public final class ForcedTamingService {
         forced.resistanceCooldownTicks = RESISTANCE_COOLDOWN_TICKS;
         forced.commandTicks.clear();
         forced.finalWarningTicks = -1;
-        var instinct = net.onixary.shapeShifterCurseFabric.player_form.instinct.RegPlayerInstinctComponent.PLAYER_INSTINCT_COMP.get(pet);
+        var instinct = PlayerFormComponent.COMPONENT.get(pet);
         instinct.instinctValue = Math.min(95, instinct.instinctValue);
-        net.onixary.shapeShifterCurseFabric.player_form.instinct.RegPlayerInstinctComponent.PLAYER_INSTINCT_COMP.sync(pet);
         bond.setSitting(false);
         bond.setTeleportEnabled(false);
         bond.setItemForwarding(false);
@@ -242,8 +244,8 @@ public final class ForcedTamingService {
         if (stage < -1 || stage >= 3) return ActionResult.FAIL;
         var state = ModComponents.PLAYER_BOND.get(pet).getForcedBond();
         if (stack.getItem() instanceof com.bondofthebeast.item.CatalystCookieItem cookie && cookie.isEcho()) {
-            var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).getCurrentForm();
-            if (stage != 2 || form.getGroup() == null || !form.getGroup().hasForm(3)) {
+            var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).nowForm;
+            if (stage != 2 || form.getFormGroup() == null || form.getFormGroup().getFormList(3) == null) {
                 return ActionResult.FAIL;
             }
             long now = pet.getServer().getOverworld().getTime();
@@ -251,7 +253,12 @@ public final class ForcedTamingService {
             if (remaining > 0) {
                 return ActionResult.FAIL;
             }
-            net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager.handleDirectTransform(pet, form.getGroup().getForm(3), false);
+            net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager.startTransform(pet, form.getFormGroup().getFormList(3).get(0), new Consumer<TransformManager.PlayerTransformData>() {
+                @Override
+                public void accept(TransformManager.PlayerTransformData playerTransformData) {
+
+                }
+            });
             PetFeedingEffects.play(pet, stack);
             if (!owner.isCreative()) stack.decrement(1);
             pet.getHungerManager().add(2, 0.1f);
@@ -270,8 +277,8 @@ public final class ForcedTamingService {
             state.catalystWarningFromCookie = true;
         } else {
             if (cookieItem)
-                InstinctManager.applyEffect(pet, "FORM_USE_CATALYST", 0.975f, 40);
-            else InstinctManager.applyImmediateEffect(pet, "botb_owner_cookie", 25);
+                InstinctUtils.addInstinctEffect(pet, BondOfTheBeast.identifier("FORM_USE_CATALYST"), 0.975f, 40, false);
+            //else InstinctUtils.addInstinctEffect(pet, BondOfTheBeast.identifier("botb_owner_cookie"), true);
         }
         if (cookieItem) PetFeedingEffects.play(pet, stack);
         if (!owner.isCreative()) stack.decrement(1);

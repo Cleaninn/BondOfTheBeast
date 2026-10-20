@@ -5,9 +5,10 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.instinct.RegPlayerInstinctComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.InstinctUtils;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
 import net.onixary.shapeShifterCurseFabric.status_effects.attachment.EffectManager;
 
 /** The reservoir changes the wearer's form independently of ownership or bond type. */
@@ -20,8 +21,8 @@ public final class CollarCatalystService {
     }
 
     public static boolean gradualFinalStage(PlayerEntity player) {
-        var form = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm();
-        return form != null && form.getIndex() == 2 && form.getGroup() != null && form.getGroup().hasForm(3) &&
+        var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
+        return form != null && form.getFormTier() == 2 && form.getFormGroup() != null && form.getFormGroup().getFormList(3) != null &&
                 (ModComponents.PLAYER_BOND.get(player).getForcedBond().forced || active(player));
     }
 
@@ -49,7 +50,7 @@ public final class CollarCatalystService {
             state.warningTicks = -1;
             state.catalystWarningFromCookie = false;
         }
-        if (!gradualFinalStage(player) || RegPlayerInstinctComponent.PLAYER_INSTINCT_COMP.get(player).instinctValue < 100) {
+        if (!gradualFinalStage(player) || InstinctUtils.getNowInstinct() < 100) {
             state.finalWarningTicks = -1;
             syncWarningChanges(player, previousWarning, previousFinal);
             return;
@@ -62,10 +63,10 @@ public final class CollarCatalystService {
             state.finalWarningTicks--;
             if (state.finalWarningTicks % 20 == 0) showCountdownPulse(player);
         } else {
-            var form = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm();
+            var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
             state.finalWarningTicks = -1;
-            RegPlayerInstinctComponent.PLAYER_INSTINCT_COMP.get(player).instinctValue = 0;
-            TransformManager.handleDirectTransform(player, form.getGroup().getForm(3), false);
+            InstinctUtils.clearInstinct(player);
+            TransformManager.startTransform(player, form.getFormGroup().getFormList(3).get(0), playerTransformData -> {});
         }
         syncWarningChanges(player, previousWarning, previousFinal);
     }

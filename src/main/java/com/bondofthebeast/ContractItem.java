@@ -17,8 +17,8 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 import java.util.List;
 import java.util.UUID;
@@ -197,18 +197,18 @@ public class ContractItem extends Item {
 
     private int getFormIndex(PlayerEntity player) {
         PlayerFormComponent component = (PlayerFormComponent) RegPlayerFormComponent.PLAYER_FORM.get(player);
-        if (component != null && component.getCurrentForm() != null) {
-            if (component.getCurrentForm().FormID != null && component.getCurrentForm().FormID.getPath().toLowerCase().contains("allay")) return 0;
-            return component.getCurrentForm().getIndex();
+        if (component != null && component.nowForm != null) {
+            if (component.nowForm.getFormID().getPath().toLowerCase().contains("allay")) return 0;
+            return component.nowForm.getFormTier();
         }
         return -2;
     }
 
     private boolean isPlayerFeral(PlayerEntity player) {
         PlayerFormComponent component = (PlayerFormComponent) RegPlayerFormComponent.PLAYER_FORM.get(player);
-        if (component != null && component.getCurrentForm() != null) {
-            if (component.getCurrentForm().FormID != null && component.getCurrentForm().FormID.getPath().toLowerCase().contains("allay")) return false;
-            return component.getCurrentForm().getBodyType() == PlayerFormBodyType.FERAL;
+        if (component != null && component.nowForm != null) {
+            if (component.nowForm.getFormID() != null && component.nowForm.getFormID().getPath().toLowerCase().contains("allay")) return false;
+            return component.nowForm.getBodyType() == PlayerFormBodyType.FERAL;
         }
         return false;
     }

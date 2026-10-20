@@ -14,8 +14,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 
 public class CollarRenderer implements TrinketRenderer {
@@ -44,9 +44,9 @@ public class CollarRenderer implements TrinketRenderer {
             String formId = "none";
             boolean isFeral = false;
 
-            if (formComponent != null && formComponent.getCurrentForm() != null) {
-                formId = formComponent.getCurrentForm().getIDString();
-                isFeral = formComponent.getCurrentForm().getBodyType() == PlayerFormBodyType.FERAL;
+            if (formComponent != null && formComponent.nowForm != null) {
+                formId = formComponent.nowForm.getFormID().toString();
+                isFeral = formComponent.nowForm.getBodyType() == PlayerFormBodyType.FERAL;
             }
 
             matrices.push();

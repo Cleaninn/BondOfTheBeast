@@ -17,7 +17,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimRegistries;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimSystem;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.skin.RegPlayerSkinComponent;
 
 /** Isolated display entity: configure SSC appearance without changing the real player. */
@@ -36,13 +36,13 @@ final class PetPreview {
             var appearance = new NbtCompound();
             var formComponent = RegPlayerFormComponent.PLAYER_FORM.get(entity);
             formComponent.writeToNbt(appearance);
-            appearance.putString("currentForm", form.FormID.toString());
+            appearance.putString("currentForm", form.getFormID().toString());
             formComponent.readFromNbt(appearance);
             // The geometry renderer reads Origins as well as the SSC form component.
             for (var layer : OriginLayers.getLayers()) {
-                if (layer.getIdentifier().equals(form.getFormOriginLayerID()) && OriginRegistry.contains(form.getFormOriginID())) {
+                if (layer.getIdentifier().equals(form.getFormLayer().getLeft()) && OriginRegistry.contains(form.getFormLayer().getLeft())) {
                     net.onixary.shapeShifterCurseFabric.integration.origins.registry.ModComponents.ORIGIN.get(entity)
-                            .setOrigin(layer, OriginRegistry.get(form.getFormOriginID()));
+                            .setOrigin(layer, OriginRegistry.get(form.getFormLayer().getLeft()));
                 }
             }
         }
@@ -95,7 +95,7 @@ final class PetPreview {
     }
 
     static boolean isFeral(OtherClientPlayerEntity entity) {
-        return RegPlayerFormComponent.PLAYER_FORM.get(entity).getCurrentForm().getBodyType() == PlayerFormBodyType.FERAL;
+        return RegPlayerFormComponent.PLAYER_FORM.get(entity).nowForm.getBodyType() == PlayerFormBodyType.FERAL;
     }
 
     static void draw(DrawContext context, OtherClientPlayerEntity entity, int x, int y, int scale, float lookX, float lookY) {

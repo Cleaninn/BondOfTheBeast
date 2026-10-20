@@ -102,7 +102,6 @@ dependencies {
 
 	// Reach Entity Attributes
 	modImplementation "com.jamieswhiteshirt:reach-entity-attributes:${project.reach_version}"
-
 	// Apoli
 	modImplementation "io.github.apace100:apoli:${project.apoli_version}"
 

@@ -1,5 +1,6 @@
 package com.bondofthebeast.mixin;
 
+import com.bondofthebeast.BondOfTheBeast;
 import com.bondofthebeast.CollarItem;
 import com.bondofthebeast.BondRules;
 import com.bondofthebeast.block.PetBedBlock;
@@ -20,8 +21,9 @@ import net.minecraft.util.Unit;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.InstinctUtils;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -43,12 +45,11 @@ public abstract class ServerPlayerEntityMixin {
         int stage = -1;
         String formIdStr = "";
         try {
-            var sscComp = net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(player);
-            if (sscComp != null && sscComp.getCurrentForm() != null) {
-                stage = sscComp.getCurrentForm().getIndex();
-                if (sscComp.getCurrentForm().FormID != null) {
-                    formIdStr = sscComp.getCurrentForm().FormID.toString().toLowerCase();
-                }
+            var sscComp = net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(player);
+            if (sscComp != null && sscComp.nowForm != null) {
+                stage = sscComp.nowForm.getFormTier();
+                formIdStr = sscComp.nowForm.getFormID().toString().toLowerCase();
+
             }
         } catch (Exception ignored) {}
         if (formIdStr.contains("original_before_enable") || formIdStr.contains("original_shifter") || formIdStr.contains("allay")) {
@@ -139,7 +140,8 @@ public abstract class ServerPlayerEntityMixin {
             if (block instanceof PetBedBlock) {
                 if (formCategory == 0 && !com.bondofthebeast.ForcedTamingService.freeWindow(player)) {
                     try {
-                        net.onixary.shapeShifterCurseFabric.player_form.instinct.InstinctManager.applyImmediateEffect(player, "pet_bed_sleep", 15.0f);
+                        var effect = new InstinctUtils.InstinctEffect(BondOfTheBeast.identifier("pet_bed_sleep"), 0.15f, 1);
+                        net.onixary.shapeShifterCurseFabric.player_form.utils.InstinctUtils.addInstinctEffect(player, effect, true);
                     } catch (Exception ignored) {}
                     player.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, 20 * 60 * 2, 0));
                     player.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 20 * 60 * 2, 0));
@@ -184,11 +186,11 @@ public abstract class ServerPlayerEntityMixin {
         var bond = ModComponents.PLAYER_BOND.get(player);
         PlayerFormComponent formComponent = (PlayerFormComponent) RegPlayerFormComponent.PLAYER_FORM.get(player);
 
-        if (formComponent != null && formComponent.getCurrentForm() != null) {
-            if (formComponent.getCurrentForm().FormID != null && formComponent.getCurrentForm().FormID.getPath().toLowerCase().contains("allay")) return;
+        if (formComponent != null && formComponent.nowForm != null) {
+            if (formComponent.nowForm.getFormID() != null && formComponent.nowForm.getFormID().getPath().toLowerCase().contains("allay")) return;
 
-            int index = formComponent.getCurrentForm().getIndex();
-            boolean isFeral = formComponent.getCurrentForm().getBodyType() == PlayerFormBodyType.FERAL;
+            int index = formComponent.nowForm.getFormTier();
+            boolean isFeral = formComponent.nowForm.getBodyType() == PlayerFormBodyType.FERAL;
 
             if (!bond.getRegisteredPets().isEmpty() && (index >= 3 || isFeral)) {
                 for (String petId : new ArrayList<>(bond.getRegisteredPets().keySet()))

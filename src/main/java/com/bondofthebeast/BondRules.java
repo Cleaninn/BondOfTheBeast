@@ -4,10 +4,10 @@ import com.bondofthebeast.component.ModComponents;
 import dev.emi.trinkets.api.TrinketsApi;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 
 import java.util.List;
 
@@ -18,8 +18,8 @@ public final class BondRules {
     private BondRules() {}
 
     public static boolean isAllay(PlayerEntity player) {
-        var form = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm();
-        return form != null && form.FormID.getPath().contains("allay");
+        var form = RegPlayerFormComponent.PLAYER_FORM.get(player);
+        return form != null && form.nowForm.getFormID().getPath().contains("allay");
     }
 
     public static boolean protectedFromForcedTaming(PlayerEntity player) {
@@ -31,22 +31,22 @@ public final class BondRules {
                 .map(c -> c.isEquipped(ModItems.DUSTGUARD_AMULET)).orElse(false);
     }
 
-    public static boolean blocksHumanReturn(PlayerEntity player, PlayerFormBase target) {
+    public static boolean blocksHumanReturn(PlayerEntity player, IForm target) {
         return ModComponents.PLAYER_BOND.get(player).hasOwner() &&
-                RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm() == RegPlayerForms.FERAL_CAT_SP &&
+                RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm == RegPlayerForms.FERAL_CAT_SP &&
                 (target == RegPlayerForms.ORIGINAL_SHIFTER || target == RegPlayerForms.ORIGINAL_BEFORE_ENABLE);
     }
 
     public static boolean hasOpenedBook(PlayerEntity player) {
-        var form = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm();
-        return form != null && !form.FormID.getPath().equals("original_before_enable");
+        var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
+        return form != null && !form.getFormID().getPath().equals("original_before_enable");
     }
 
     public static boolean canOwn(PlayerEntity player) {
-        var form = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm();
+        var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
         return !ModComponents.PLAYER_BOND.get(player).hasOwner() && form != null && (isAllay(player) ||
                 (form.getBodyType() != PlayerFormBodyType.FERAL &&
-                        (form.getIndex() < 2 || (form.getIndex() == 2 && hasClarity(player)))));
+                        (form.getFormTier() < 2 || (form.getFormTier() == 2 && hasClarity(player)))));
     }
 
     public static boolean hasClarity(PlayerEntity player) {
@@ -56,11 +56,11 @@ public final class BondRules {
 
     public static boolean canBePet(PlayerEntity player) {
         if (!hasOpenedBook(player)) return false;
-        var form = RegPlayerFormComponent.PLAYER_FORM.get(player).getCurrentForm();
-        if (form == null || isAllay(player) || form.getIndex() < 2) return false;
-        var group = form.getGroup();
-        if (group == null) return form.getIndex() >= 3;
-        for (int next = form.getIndex() + 1; next <= 5; next++) if (group.hasForm(next)) return false;
+        var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
+        if (form == null || isAllay(player) || form.getFormTier() < 2) return false;
+        var group = form.getFormGroup();
+        if (group == null) return form.getFormTier() >= 3;
+        for (int next = form.getFormTier() + 1; next <= 5; next++) if (group.getFormList(form.getFormTier()+1) != null) return false;
         return true;
     }
 
