@@ -3,6 +3,7 @@ package com.bondofthebeast;
 import com.bondofthebeast.additional_power.HasOwnerCondition;
 import com.bondofthebeast.additional_power.HasEnergySourceCondition;
 import com.bondofthebeast.additional_power.IsAllowedAnAction;
+import com.bondofthebeast.additional_power.IsInfusedCondition;
 import io.github.apace100.apoli.power.factory.condition.ConditionFactory;
 import io.github.apace100.apoli.registry.ApoliRegistries;
 import net.minecraft.entity.Entity;
@@ -14,6 +15,7 @@ public class EntityConditions {
         register(HasOwnerCondition.getFactory());
         register(HasEnergySourceCondition.getFactory());
         register(IsAllowedAnAction.getFactory());
+        register(IsInfusedCondition.getFactory());
     }
     private static void register(ConditionFactory<Entity> conditionFactory) {
         Registry.register(ApoliRegistries.ENTITY_CONDITION, conditionFactory.getSerializerId(), conditionFactory);

@@ -241,11 +241,11 @@ public final class ForcedTamingService {
         boolean cookieItem = stack.getItem() instanceof com.bondofthebeast.item.CatalystCookieItem;
         if (!BondRules.hasOpenedBook(pet) || !BondRules.owns(owner, pet) || !BondRules.canOwn(owner) || !BondRules.hasCollar(pet) || freeWindow(pet)) return ActionResult.FAIL;
         int stage = stage(pet);
-        if (stage < -1 || stage >= 3) return ActionResult.FAIL;
+        if (stage < -1 || stage >= 4) return ActionResult.FAIL;
         var state = ModComponents.PLAYER_BOND.get(pet).getForcedBond();
         if (stack.getItem() instanceof com.bondofthebeast.item.CatalystCookieItem cookie && cookie.isEcho()) {
             var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).nowForm;
-            if (stage != 2 || form.getFormGroup() == null || form.getFormGroup().getFormList(3) == null) {
+            if (stage != 3 || form.getFormGroup() == null || form.getFormGroup().getFormList(4) == null) {
                 return ActionResult.FAIL;
             }
             long now = pet.getServer().getOverworld().getTime();

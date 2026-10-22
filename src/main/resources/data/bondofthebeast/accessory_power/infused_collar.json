@@ -2,7 +2,7 @@
   "bondofthebeast:infused_collar": {
     "accessory_powers": [],
     "all_form": {
-      "add": [],
+      "add": ["bondofthebeast:infused_collar_instinct"],
       "remove": []
     },
     "forms": {

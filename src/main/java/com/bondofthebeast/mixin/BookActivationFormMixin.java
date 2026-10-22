@@ -21,3 +21,5 @@ public abstract class BookActivationFormMixin {
             ci.cancel();
     }
 }
+
+

@@ -6,6 +6,7 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.InstinctUtils;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
@@ -22,7 +23,7 @@ public final class CollarCatalystService {
 
     public static boolean gradualFinalStage(PlayerEntity player) {
         var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        return form != null && form.getFormTier() == 2 && form.getFormGroup() != null && form.getFormGroup().getFormList(3) != null &&
+        return form != null && form.getFormTier() == 3 && form.getFormGroup() != null && form.getFormGroup().getFormList(4) != null &&
                 (ModComponents.PLAYER_BOND.get(player).getForcedBond().forced || active(player));
     }
 
@@ -36,7 +37,7 @@ public final class CollarCatalystService {
             return;
         }
         int stage = ForcedTamingService.stage(player);
-        if (stage < 0 && EffectManager.hasTransformativeEffect(player) && (active(player) || state.catalystWarningFromCookie)) {
+        if (stage < 1 && EffectManager.hasTransformativeEffect(player) && (active(player) || state.catalystWarningFromCookie)) {
             if (state.warningTicks < 0) state.warningTicks = ForcedTamingService.WARNING_TICKS;
             if (state.warningTicks > 0) {
                 state.warningTicks--;
@@ -50,7 +51,7 @@ public final class CollarCatalystService {
             state.warningTicks = -1;
             state.catalystWarningFromCookie = false;
         }
-        if (!gradualFinalStage(player) || InstinctUtils.getNowInstinct() < 100) {
+        if (!gradualFinalStage(player) || PlayerFormComponent.COMPONENT.get(player).instinctValue < 100) {
             state.finalWarningTicks = -1;
             syncWarningChanges(player, previousWarning, previousFinal);
             return;
@@ -66,7 +67,7 @@ public final class CollarCatalystService {
             var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
             state.finalWarningTicks = -1;
             InstinctUtils.clearInstinct(player);
-            TransformManager.startTransform(player, form.getFormGroup().getFormList(3).get(0), playerTransformData -> {});
+            TransformManager.startTransform(player, form.getFormGroup().getFormList(4).get(0), playerTransformData -> {});
         }
         syncWarningChanges(player, previousWarning, previousFinal);
     }

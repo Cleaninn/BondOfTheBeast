@@ -46,7 +46,7 @@ public final class BondRules {
         var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
         return !ModComponents.PLAYER_BOND.get(player).hasOwner() && form != null && (isAllay(player) ||
                 (form.getBodyType() != PlayerFormBodyType.FERAL &&
-                        (form.getFormTier() < 2 || (form.getFormTier() == 2 && hasClarity(player)))));
+                        (form.getFormTier() < 3 || (form.getFormTier() == 3 && hasClarity(player)))));
     }
 
     public static boolean hasClarity(PlayerEntity player) {
@@ -57,9 +57,9 @@ public final class BondRules {
     public static boolean canBePet(PlayerEntity player) {
         if (!hasOpenedBook(player)) return false;
         var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        if (form == null || isAllay(player) || form.getFormTier() < 2) return false;
+        if (form == null || isAllay(player) || form.getFormTier() < 3) return false;
         var group = form.getFormGroup();
-        if (group == null) return form.getFormTier() >= 3;
+        if (group == null) return form.getFormTier() >= 4;
         for (int next = form.getFormTier() + 1; next <= 5; next++) if (group.getFormList(form.getFormTier()+1) != null) return false;
         return true;
     }
