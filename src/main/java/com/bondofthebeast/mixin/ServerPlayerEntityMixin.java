@@ -55,13 +55,13 @@ public abstract class ServerPlayerEntityMixin {
         if (formIdStr.contains("original_before_enable") || formIdStr.contains("original_shifter") || formIdStr.contains("allay")) {
             return -1;
         }
-        if (formIdStr.contains("_sp") || stage == 3) {
+        if (formIdStr.contains("_sp") || stage == 4) {
             return 3;
         }
-        if (stage == 0 || stage == 1 || (stage == 2 && BondRules.canOwn(player))) {
+        if (stage == 0 || stage == 1 || stage == 2 || (stage == 3 && BondRules.canOwn(player))) {
             return 0;
         }
-        if (stage == 2) {
+        if (stage == 3) {
             return 2;
         }
         return -1;
@@ -184,7 +184,7 @@ public abstract class ServerPlayerEntityMixin {
     private void onTickCheckForm(CallbackInfo ci) {
         ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
         var bond = ModComponents.PLAYER_BOND.get(player);
-        PlayerFormComponent formComponent = (PlayerFormComponent) RegPlayerFormComponent.PLAYER_FORM.get(player);
+        PlayerFormComponent formComponent = RegPlayerFormComponent.PLAYER_FORM.get(player);
 
         if (formComponent != null && formComponent.nowForm != null) {
             if (formComponent.nowForm.getFormID() != null && formComponent.nowForm.getFormID().getPath().toLowerCase().contains("allay")) return;
@@ -192,7 +192,7 @@ public abstract class ServerPlayerEntityMixin {
             int index = formComponent.nowForm.getFormTier();
             boolean isFeral = formComponent.nowForm.getBodyType() == PlayerFormBodyType.FERAL;
 
-            if (!bond.getRegisteredPets().isEmpty() && (index >= 3 || isFeral)) {
+            if (!bond.getRegisteredPets().isEmpty() && (index >= 4 || isFeral)) {
                 for (String petId : new ArrayList<>(bond.getRegisteredPets().keySet()))
                     com.bondofthebeast.BondService.release(player.getServer(), petId, player.getUuidAsString());
                 player.sendMessage(Text.translatable("text.bondofthebeast.owner_went_feral_owner"), false);

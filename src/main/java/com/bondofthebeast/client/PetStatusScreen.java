@@ -91,7 +91,7 @@ public class PetStatusScreen extends Screen {
         GrimoireStyle.fittedText(context, textRenderer, Text.translatable("gui.bondofthebeast.diary.commands"), 120, 122, 170, 0xFFB8C3D9, 0.7F);
         Text hint = Text.translatable("gui.bondofthebeast.escape_rule." +
                 (!bond.getForcedBond().forced || bond.getForcedBond().contractSigned ? "contract" :
-                        ForcedTamingService.stage(client.player) >= 2 ? "enchanted" : "apple"));
+                        ForcedTamingService.stage(client.player) >= 3 ? "enchanted" : "apple"));
         GrimoireStyle.fittedText(context, textRenderer, hint, 120, 212, 175, 0xFFBCC6D9, 0.55F);
         context.getMatrices().pop();
         super.render(context, mouseX, mouseY, delta);

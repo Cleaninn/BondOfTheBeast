@@ -60,7 +60,7 @@ public class ModPackets {
             if (viewer == null) continue;
             var buffer = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
             buffer.writeString(pet.getGameProfile().getName());
-            buffer.writeInt(ForcedTamingService.stage(pet) + 1);
+            buffer.writeInt(ForcedTamingService.stage(pet));
             buffer.writeInt(CommandControl.durationTicks(pet) / 20);
             buffer.writeBoolean(viewer == owner);
             ServerPlayNetworking.send(viewer, STAGE_NOTICE_S2C, buffer);

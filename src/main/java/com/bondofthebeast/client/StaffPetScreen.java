@@ -68,7 +68,7 @@ public class StaffPetScreen extends Screen {
             Text state = Text.translatable(value ? "gui.bondofthebeast.on" : "gui.bondofthebeast.off");
             Text fullLabel = Text.empty().append(label.copy().formatted(net.minecraft.util.Formatting.GOLD)).append(Text.literal(" — ")).append(state);
             Text lockedReason = Text.translatable("gui.bondofthebeast.requires_stage",
-                    BondRules.requiredStage(skill) + 1);
+                    BondRules.requiredStage(skill));
             if (!pet.forced) lockedReason = Text.translatable("gui.bondofthebeast.requires_full_form");
             if (pet.escapeTicks > 0) lockedReason = Text.translatable("gui.bondofthebeast.escape_seconds", (pet.escapeTicks + 19) / 20);
             if (!pet.hasCollar) lockedReason = Text.translatable("gui.bondofthebeast.staff.no_collar_suffix");
@@ -100,7 +100,7 @@ public class StaffPetScreen extends Screen {
                 Text reason = !pet.isOnline ? Text.translatable("gui.bondofthebeast.staff.offline") :
                         !pet.hasCollar ? Text.translatable("gui.bondofthebeast.staff.no_collar_suffix") :
                         pet.escapeTicks > 0 ? Text.translatable("gui.bondofthebeast.escape_seconds", (pet.escapeTicks + 19) / 20) :
-                        pet.forced ? Text.translatable("gui.bondofthebeast.requires_stage", BondRules.requiredStage(skill) + 1) :
+                        pet.forced ? Text.translatable("gui.bondofthebeast.requires_stage", BondRules.requiredStage(skill)) :
                         Text.translatable("gui.bondofthebeast.requires_full_form");
                 tooltip = tooltip.copy().append(Text.literal("\n")).append(reason.copy().formatted(net.minecraft.util.Formatting.GRAY));
             }
@@ -169,14 +169,14 @@ public class StaffPetScreen extends Screen {
         }
         boolean bound = pet.contractSigned || !pet.forced;
         Text status = !pet.isOnline ? Text.translatable("gui.bondofthebeast.staff.offline") : bound ?
-                Text.translatable("gui.bondofthebeast.contract_bound.title") : pet.formStage < 0 ?
-                Text.translatable("gui.bondofthebeast.collar_only") : Text.translatable("gui.bondofthebeast.stage", pet.formStage + 1);
+                Text.translatable("gui.bondofthebeast.contract_bound.title") : pet.formStage < 1 ?
+                Text.translatable("gui.bondofthebeast.collar_only") : Text.translatable("gui.bondofthebeast.stage", pet.formStage);
         GrimoireStyle.fittedText(context, textRenderer, status, 100, 160, 132, 0xFFEAD4A2, 0.95F);
         context.fill(58, 173, 142, 174, 0xFF936B50);
         context.fill(96, 172, 104, 175, 0xFFD1B279);
         Text guidance = Text.translatable(bound ? "gui.bondofthebeast.contract_bound.description" :
-                pet.formStage < 0 ? "gui.bondofthebeast.transform_to_command" :
-                pet.formStage >= 3 ? "gui.bondofthebeast.contract_to_complete" : "gui.bondofthebeast.transform_for_control");
+                pet.formStage < 1 ? "gui.bondofthebeast.transform_to_command" :
+                pet.formStage >= 4 ? "gui.bondofthebeast.contract_to_complete" : "gui.bondofthebeast.transform_for_control");
         if (pet.isOnline) GrimoireStyle.wrappedText(context, textRenderer, guidance, 100, 181, 130, 25, 0xFFBDA783);
         if (pet.escapeTicks > 0) GrimoireStyle.fittedText(context, textRenderer,
                 Text.translatable("gui.bondofthebeast.escape_seconds", (pet.escapeTicks + 19) / 20), 274, 130, 180, 0xFFEAD4A2, 0.8F);
