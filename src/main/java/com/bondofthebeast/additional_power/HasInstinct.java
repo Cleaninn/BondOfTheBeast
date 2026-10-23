@@ -13,7 +13,6 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent
 public class HasInstinct {
     public static boolean condition(SerializableData.Instance data, Entity entity) {
         if (entity instanceof PlayerEntity player) {
-            BondOfTheBeast.LOGGER.info("Instinct {}",!FormUtils.NoInstinct.hasFlag(PlayerFormComponent.COMPONENT.get(player).nowForm));
             return !FormUtils.NoInstinct.hasFlag(PlayerFormComponent.COMPONENT.get(player).nowForm);
         }
         return false;
