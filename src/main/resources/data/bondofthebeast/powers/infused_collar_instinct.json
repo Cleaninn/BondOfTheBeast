@@ -1,9 +1,17 @@
 {
   "type": "shape-shifter-curse:add_sustained_instinct",
-  "instinct_effect_id": "shape-shifter-curse:form_anubis_wolf_biome",
+  "instinct_effect_id": "bondofthebeast:infused_collar",
   "value": 0.015,
   "duration": 1,
   "condition": {
-    "type": "bondofthebeast:infused"
+    "type": "apoli:and",
+    "conditions": [
+      {
+        "type": "bondofthebeast:infused"
+      },
+      {
+        "type": "bondofthebeast:has_instinct"
+      }
+    ]
   }
 }

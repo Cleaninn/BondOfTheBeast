@@ -57,6 +57,7 @@ public final class BondRules {
     public static boolean canBePet(PlayerEntity player) {
         if (!hasOpenedBook(player)) return false;
         var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
+        if (form.getBodyType().equals(PlayerFormBodyType.FERAL)) return true;
         if (form == null || isAllay(player) || form.getFormTier() < 3) return false;
         var group = form.getFormGroup();
         if (group == null) return form.getFormTier() >= 4;
