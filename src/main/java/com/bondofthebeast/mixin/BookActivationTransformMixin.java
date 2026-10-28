@@ -21,7 +21,13 @@ public class BookActivationTransformMixin {
     private static void botb$requireBook(PlayerEntity player, IForm form, @Nullable Consumer<TransformManager.PlayerTransformData> onTransformComplete, CallbackInfoReturnable<Boolean> cir) {
         // Keep the introductory book's transition to the enabled human form available.
         if (!BondRules.hasOpenedBook(player) && form != RegPlayerForms.ORIGINAL_SHIFTER && form != RegPlayerForms.ORIGINAL_BEFORE_ENABLE)
-            cir.cancel();
+            cir.setReturnValue(false);
+    }
+
+    @Inject(method = "immediatelyTransform", at = @At("HEAD"), cancellable = true)
+    private static void botb$requireBookForDirectForm(PlayerEntity player, IForm form, CallbackInfoReturnable<Boolean> cir) {
+        if (!BondRules.hasOpenedBook(player) && form != RegPlayerForms.ORIGINAL_SHIFTER && form != RegPlayerForms.ORIGINAL_BEFORE_ENABLE)
+            cir.setReturnValue(false);
     }
 }
 

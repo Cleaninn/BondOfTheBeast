@@ -63,7 +63,8 @@ public abstract class LivingEntityMixin {
                     String path = form.getFormID().getPath().toLowerCase();
 
                     // КАТЕГОРИЯ 1: ЧЕТВЕРОНОГИЕ (Стадия 3 + Ферал) — Ровно по центру, низко
-                    if ((path.contains("wolf") && path.endsWith("_3")) ||
+                    if (form.getBodyType() == net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType.FERAL ||
+                            (path.contains("wolf") && path.endsWith("_3")) ||
                             (path.contains("ocelot") && path.endsWith("_3")) ||
                             (path.contains("fox") && path.endsWith("_3")) ||
                             path.contains("feral")) {

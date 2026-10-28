@@ -5,9 +5,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.InstinctUtils;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
 import net.onixary.shapeShifterCurseFabric.status_effects.attachment.EffectManager;
@@ -17,13 +15,12 @@ public final class CollarCatalystService {
     private CollarCatalystService() {}
 
     public static boolean active(PlayerEntity player) {
-        return BondRules.hasOpenedBook(player) && player.isAlive() && !player.isCreative() && !player.isSpectator() &&
+        return BondRules.hasOpenedBook(player) && !BondRules.isAllay(player) && player.isAlive() && !player.isCreative() && !player.isSpectator() &&
                 ForcedTamingService.infused(player) && !ForcedTamingService.freeWindow(player);
     }
 
     public static boolean gradualFinalStage(PlayerEntity player) {
-        var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        return form != null && form.getFormTier() == 3 && form.getFormGroup() != null && form.getFormGroup().getFormList(4) != null &&
+        return ForcedTamingService.canAdvanceToFinal(player) &&
                 (ModComponents.PLAYER_BOND.get(player).getForcedBond().forced || active(player));
     }
 
@@ -64,10 +61,9 @@ public final class CollarCatalystService {
             state.finalWarningTicks--;
             if (state.finalWarningTicks % 20 == 0) showCountdownPulse(player);
         } else {
-            var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
+            var target = ForcedTamingService.finalForm(player);
             state.finalWarningTicks = -1;
-            InstinctUtils.clearInstinct(player);
-            TransformManager.startTransform(player, form.getFormGroup().getFormList(4).get(0), playerTransformData -> {});
+            if (target != null && TransformManager.startTransform(player, target, null)) InstinctUtils.clearInstinct(player);
         }
         syncWarningChanges(player, previousWarning, previousFinal);
     }

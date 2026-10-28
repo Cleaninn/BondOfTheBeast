@@ -64,13 +64,13 @@ public class PetBedBlock extends BlockWithEntity {
         if (formIdStr.contains("original_before_enable") || formIdStr.contains("original_shifter") || formIdStr.contains("allay")) {
             return -1;
         }
-        if (formIdStr.contains("_sp") || stage == 3) {
+        if (com.bondofthebeast.BondRules.canBePet(player)) {
             return 3;
         }
-        if (stage == 0 || stage == 1) {
+        if (stage == 1 || stage == 2) {
             return 0;
         }
-        if (stage == 2) {
+        if (stage == 3) {
             return 2;
         }
         return -1;

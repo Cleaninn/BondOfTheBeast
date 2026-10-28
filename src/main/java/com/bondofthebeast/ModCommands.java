@@ -73,13 +73,13 @@ public class ModCommands {
         MutableText response = Text.literal("\n=== ").append(target.getName()).append(" ===\n").formatted(Formatting.GOLD);
         if (targetBond.hasOwner()) {
             response.append(Text.translatable("command.bondofthebeast.info.master").formatted(Formatting.WHITE)).append(Text.literal(targetBond.getOwnerName()).formatted(Formatting.AQUA)).append("\n");
-            response.append(Text.translatable(ForcedTamingService.stage(target) < 0 ? "gui.bondofthebeast.human_stage.short" : "gui.bondofthebeast.stage", ForcedTamingService.stage(target) + 1).formatted(Formatting.WHITE)).append("\n");
+            response.append(Text.translatable(ForcedTamingService.stage(target) < 1 ? "gui.bondofthebeast.human_stage.short" : "gui.bondofthebeast.stage", ForcedTamingService.stage(target)).formatted(Formatting.WHITE)).append("\n");
         } else response.append(Text.translatable("command.bondofthebeast.info.no_master").formatted(Formatting.GRAY)).append("\n");
 
         List<String> pets = new ArrayList<>();
         for (ServerPlayerEntity p : context.getSource().getServer().getPlayerManager().getPlayerList()) {
             PlayerBondComponent pBond = ModComponents.PLAYER_BOND.get(p);
-            if (pBond.hasOwner() && pBond.getOwnerUUID().equals(target.getUuidAsString())) pets.add(p.getName().getString() + " (" + (ForcedTamingService.stage(p) + 1) + ")");
+            if (pBond.hasOwner() && pBond.getOwnerUUID().equals(target.getUuidAsString())) pets.add(p.getName().getString() + " (" + ForcedTamingService.stage(p) + ")");
         }
         if (!pets.isEmpty()) response.append(Text.translatable("command.bondofthebeast.info.pets").formatted(Formatting.WHITE)).append(Text.literal(String.join(", ", pets)).formatted(Formatting.YELLOW));
         else response.append(Text.translatable("command.bondofthebeast.info.no_pets").formatted(Formatting.GRAY));

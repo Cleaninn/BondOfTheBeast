@@ -8,6 +8,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ public final class BondRules {
 
     public static boolean isAllay(PlayerEntity player) {
         var form = RegPlayerFormComponent.PLAYER_FORM.get(player);
-        return form != null && form.nowForm.getFormID().getPath().contains("allay");
+        return form != null && form.nowForm != null && form.nowForm.isSoftEquals(RegPlayerForms.ALLAY_SP);
     }
 
     public static boolean protectedFromForcedTaming(PlayerEntity player) {
@@ -33,19 +34,19 @@ public final class BondRules {
 
     public static boolean blocksHumanReturn(PlayerEntity player, IForm target) {
         return ModComponents.PLAYER_BOND.get(player).hasOwner() &&
-                RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm == RegPlayerForms.FERAL_CAT_SP &&
-                (target == RegPlayerForms.ORIGINAL_SHIFTER || target == RegPlayerForms.ORIGINAL_BEFORE_ENABLE);
+                RegPlayerForms.FERAL_CAT_SP.isSoftEquals(RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm) &&
+                (RegPlayerForms.ORIGINAL_SHIFTER.isSoftEquals(target) || RegPlayerForms.ORIGINAL_BEFORE_ENABLE.isSoftEquals(target));
     }
 
     public static boolean hasOpenedBook(PlayerEntity player) {
         var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        return form != null && !form.getFormID().getPath().equals("original_before_enable");
+        return form != null && !RegPlayerForms.ORIGINAL_BEFORE_ENABLE.isSoftEquals(form);
     }
 
     public static boolean canOwn(PlayerEntity player) {
         var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
         return !ModComponents.PLAYER_BOND.get(player).hasOwner() && form != null && (isAllay(player) ||
-                (form.getBodyType() != PlayerFormBodyType.FERAL &&
+                (!canBePet(player) && form.getBodyType() != PlayerFormBodyType.FERAL &&
                         (form.getFormTier() < 3 || (form.getFormTier() == 3 && hasClarity(player)))));
     }
 
@@ -57,18 +58,14 @@ public final class BondRules {
     public static boolean canBePet(PlayerEntity player) {
         if (!hasOpenedBook(player)) return false;
         var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        if (form.getBodyType().equals(PlayerFormBodyType.FERAL)) return true;
-        if (form == null || isAllay(player) || form.getFormTier() < 3) return false;
-        var group = form.getFormGroup();
-        if (group == null) return form.getFormTier() >= 4;
-        for (int next = form.getFormTier() + 1; next <= 5; next++) if (group.getFormList(form.getFormTier()+1) != null) return false;
-        return true;
+        if (form == null || isAllay(player)) return false;
+        return FormUtils.FinalForm.hasFlag(form) || FormUtils.SpecialForm.hasFlag(form) || form.getFormTier() >= 4;
     }
 
     public static boolean canObey(PlayerEntity player) {
         var bond = ModComponents.PLAYER_BOND.get(player);
         return bond.hasOwner() && !ForcedTamingService.freeWindow(player) &&
-                (!CommandControl.temporary(player) || ForcedTamingService.stage(player) >= 0);
+                (!CommandControl.temporary(player) || ForcedTamingService.stage(player) >= 1);
     }
 
     public static int requiredStage(String command) {

@@ -16,6 +16,7 @@ import java.util.*;
 public class BondOfTheBeastClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        com.bondofthebeast.client.FormCollarLayer.register();
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.PET_FEEDING_S2C, (client, handler, buffer, sender) -> {
             UUID pet = buffer.readUuid();
             var food = buffer.readItemStack();

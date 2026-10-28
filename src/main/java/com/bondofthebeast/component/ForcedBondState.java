@@ -31,6 +31,7 @@ public final class ForcedBondState {
         tag.putInt("EscapeTicks", escapeTicks);
         tag.putInt("ResistanceCooldownTicks", resistanceCooldownTicks);
         tag.putInt("LastStage", lastStage);
+        tag.putInt("StageSchema", 2);
         tag.putBoolean("ArmorLocked", armorLocked);
         tag.putBoolean("ContractSigned", contractSigned);
         tag.putBoolean("ContractPending", contractPending);
@@ -51,6 +52,7 @@ public final class ForcedBondState {
         escapeTicks = Math.max(0, Math.min(2400, tag.getInt("EscapeTicks")));
         resistanceCooldownTicks = Math.max(0, Math.min(6000, tag.getInt("ResistanceCooldownTicks")));
         lastStage = tag.contains("LastStage") ? tag.getInt("LastStage") : -99;
+        if (tag.getInt("StageSchema") < 2 && lastStage >= -1 && lastStage <= 3) lastStage++;
         armorLocked = tag.getBoolean("ArmorLocked");
         contractSigned = tag.getBoolean("ContractSigned");
         contractPending = tag.getBoolean("ContractPending") && !contractSigned;

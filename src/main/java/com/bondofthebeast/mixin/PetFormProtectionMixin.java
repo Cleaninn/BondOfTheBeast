@@ -11,9 +11,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = FormUtils.class, remap = false)
 public abstract class PetFormProtectionMixin {
-    @Inject(method = "setForm", at = @At("HEAD"), cancellable = true)
+    @Inject(method = {"setForm", "_setForm"}, at = @At("HEAD"), cancellable = true)
     private static void botb$keepOwnedCatForm(PlayerEntity player, IForm form, CallbackInfo ci) {
         // Stop before powers, scale, or accessory effects change as well as the form itself.
+        if (BondRules.blocksHumanReturn(player, form)) ci.cancel();
+    }
+
+    @Inject(method = "_loadForm", at = @At("HEAD"), cancellable = true)
+    private static void botb$keepOwnedCatPowers(PlayerEntity player, IForm form, boolean shouldReload, CallbackInfo ci) {
         if (BondRules.blocksHumanReturn(player, form)) ci.cancel();
     }
 }

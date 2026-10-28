@@ -16,12 +16,14 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormCompon
 import net.onixary.shapeShifterCurseFabric.player_form.utils.InstinctUtils;
 import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.ITransformReason;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 import net.onixary.shapeShifterCurseFabric.status_effects.attachment.EffectManager;
 
 import java.util.UUID;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
 public final class ForcedTamingService {
     public static final int WARNING_TICKS = 200;
@@ -30,7 +32,6 @@ public final class ForcedTamingService {
     public static final int COLLARING_TICKS = 40;
     public static final int STUN_TICKS = 50;
     public static final double STUN_DODGE_SPEED = 0.035;
-    public static final float INFUSED_RATE_PER_TICK = 0.15f / 20;
     public static final float BED_RATE_PER_TICK = 0.10f / 20;
     private static final Map<UUID, CollaringAttempt> COLLARING = new HashMap<>();
     private ForcedTamingService() {}
@@ -65,9 +66,9 @@ public final class ForcedTamingService {
 
     public static int stage(PlayerEntity pet) {
         var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).nowForm;
-        if (form != null && form.getFormID().getPath().contains("allay")) return 0;
-        if (form.getFormID().getPath().contains("Feral")) return 4;
-        return form == null ? -2 : form.getFormTier();
+        if (form == null) return -2;
+        if (BondRules.isAllay(pet)) return 0;
+        return FormUtils.FinalForm.hasFlag(form) || FormUtils.SpecialForm.hasFlag(form) ? 4 : form.getFormTier();
     }
 
     public static boolean infused(PlayerEntity pet) {
@@ -175,9 +176,23 @@ public final class ForcedTamingService {
     }
 
     public static boolean canFinalizeForced(PlayerEntity pet) {
+        return BondRules.canBePet(pet);
+    }
+
+    /** Respect SSC form overrides, subforms and weighted final-form choices. */
+    public static boolean canAdvanceToFinal(PlayerEntity pet) {
         var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).nowForm;
-        return BondRules.canBePet(pet) && form != null &&
-                form.getBodyType() == net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType.FERAL;
+        if (form == null || form.getFormTier() != 3 || !FormUtils.CanTFToFinalForm.hasFlag(form) || form.getFormGroup() == null) return false;
+        var candidates = form.getFormGroup().getFormWeightList(4);
+        return candidates != null && candidates.stream().anyMatch(candidate ->
+                candidate.getLeft() != null && candidate.getLeft() > 0 && FormUtils.FinalForm.hasFlag(candidate.getRight()));
+    }
+
+    public static IForm finalForm(PlayerEntity pet) {
+        var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).nowForm;
+        if (!canAdvanceToFinal(pet)) return null;
+        var target = form._getNextForm(pet, ITransformReason.ItemReasonBuilder.apply(new ItemStack(RegCustomItem.POWERFUL_CATALYST)));
+        return target != null && !form.isEquals(target) && FormUtils.FinalForm.hasFlag(target) ? target : null;
     }
 
     public static ActionResult startFromContract(ItemStack contract, ServerPlayerEntity user, ServerPlayerEntity pet) {
@@ -200,7 +215,7 @@ public final class ForcedTamingService {
         var bond = ModComponents.PLAYER_BOND.get(pet);
         if (bond.hasOwner() && (!bond.getForcedBond().forced || bond.getForcedBond().contractSigned)) return false;
         if (!bond.getForcedBond().forced && !CollarItem.hasForcedCollar(pet)) return false;
-        return food.isOf(Items.ENCHANTED_GOLDEN_APPLE) || (stage(pet) < 2 && food.isOf(Items.GOLDEN_APPLE));
+        return food.isOf(Items.ENCHANTED_GOLDEN_APPLE) || (stage(pet) < 3 && food.isOf(Items.GOLDEN_APPLE));
     }
 
     public static void determination(ServerPlayerEntity pet) {
@@ -242,44 +257,38 @@ public final class ForcedTamingService {
         boolean cookieItem = stack.getItem() instanceof com.bondofthebeast.item.CatalystCookieItem;
         if (!BondRules.hasOpenedBook(pet) || !BondRules.owns(owner, pet) || !BondRules.canOwn(owner) || !BondRules.hasCollar(pet) || freeWindow(pet)) return ActionResult.FAIL;
         int stage = stage(pet);
-        if (stage < -1 || stage >= 4) return ActionResult.FAIL;
+        if (stage < 0 || stage >= 4 || BondRules.isAllay(pet) || PlayerFormComponent.COMPONENT.get(pet).transformTargetForm != null) return ActionResult.FAIL;
         var state = ModComponents.PLAYER_BOND.get(pet).getForcedBond();
         if (stack.getItem() instanceof com.bondofthebeast.item.CatalystCookieItem cookie && cookie.isEcho()) {
-            var form = RegPlayerFormComponent.PLAYER_FORM.get(pet).nowForm;
-            if (stage != 3 || form.getFormGroup() == null || form.getFormGroup().getFormList(4) == null) {
-                return ActionResult.FAIL;
-            }
+            var target = finalForm(pet);
+            if (target == null) return ActionResult.FAIL;
             long now = pet.getServer().getOverworld().getTime();
             long remaining = state.thirdStageReachedAt < 0 ? 12000 : Math.max(0, 12000 - (now - state.thirdStageReachedAt));
             if (remaining > 0) {
                 return ActionResult.FAIL;
             }
-            net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager.startTransform(pet, form.getFormGroup().getFormList(3).get(0), new Consumer<TransformManager.PlayerTransformData>() {
-                @Override
-                public void accept(TransformManager.PlayerTransformData playerTransformData) {
-
-                }
-            });
+            if (!TransformManager.startTransform(pet, target, null)) return ActionResult.FAIL;
             PetFeedingEffects.play(pet, stack);
             if (!owner.isCreative()) stack.decrement(1);
             pet.getHungerManager().add(2, 0.1f);
             return ActionResult.SUCCESS;
         }
-        int bit = 1 << (stage + 2);
+        // Preserve the bit layout used by SSC 1.9 saves (human=1, first form=2).
+        int bit = 1 << (stage + 1);
         if ((state.catalystStages & bit) != 0) {
             if (!cookieItem)
                 owner.sendMessage(Text.translatable("text.bondofthebeast.catalyst_stage_used"), true);
             return ActionResult.FAIL;
         }
-        if (stage < 0 && !EffectManager.hasTransformativeEffect(pet)) return ActionResult.FAIL;
+        if (stage == 0 && !EffectManager.hasTransformativeEffect(pet)) return ActionResult.FAIL;
         state.catalystStages |= bit;
-        if (stage < 0) {
+        if (stage == 0) {
             state.warningTicks = WARNING_TICKS;
             state.catalystWarningFromCookie = true;
         } else {
             if (cookieItem)
-                InstinctUtils.addInstinctEffect(pet, BondOfTheBeast.identifier("FORM_USE_CATALYST"), 0.975f, 40, false);
-            //else InstinctUtils.addInstinctEffect(pet, BondOfTheBeast.identifier("botb_owner_cookie"), true);
+                InstinctUtils.addInstinctEffect(pet, BondOfTheBeast.identifier("owner_catalyst_cookie"), 0.975f, 40, false);
+            else InstinctUtils.addInstinctEffect(pet, BondOfTheBeast.identifier("owner_catalyst"), 25, 1, true);
         }
         if (cookieItem) PetFeedingEffects.play(pet, stack);
         if (!owner.isCreative()) stack.decrement(1);
@@ -319,7 +328,7 @@ public final class ForcedTamingService {
         var state = bond.getForcedBond();
         int stage = stage(pet);
         long now = pet.getServer().getOverworld().getTime();
-        if (stage == 2) {
+        if (stage == 3) {
             if (state.thirdStageReachedAt < 0 || state.thirdStageReachedAt > now) {
                 state.thirdStageReachedAt = now;
                 ModComponents.PLAYER_BOND.sync(pet);
@@ -340,7 +349,7 @@ public final class ForcedTamingService {
             state.warningTicks = -1;
             state.catalystWarningFromCookie = false;
             state.finalWarningTicks = -1;
-            if (stage > previousStage && stage >= 0 && !state.contractSigned) ModPackets.notifyStage(pet);
+            if (stage > previousStage && stage >= 1 && !state.contractSigned) ModPackets.notifyStage(pet);
         }
         if (state.contractPending) issueContract(pet);
         if (pet.age % 20 == 0) ModComponents.PLAYER_BOND.sync(pet);

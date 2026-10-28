@@ -11,8 +11,6 @@ import net.minecraft.client.network.OtherClientPlayerEntity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.integration.origins.origin.OriginLayers;
-import net.onixary.shapeShifterCurseFabric.integration.origins.origin.OriginRegistry;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimRegistries;
@@ -36,15 +34,8 @@ final class PetPreview {
             var appearance = new NbtCompound();
             var formComponent = RegPlayerFormComponent.PLAYER_FORM.get(entity);
             formComponent.writeToNbt(appearance);
-            appearance.putString("currentForm", form.getFormID().toString());
+            appearance.putString("nowFormID", form.getFormID().toString());
             formComponent.readFromNbt(appearance);
-            // The geometry renderer reads Origins as well as the SSC form component.
-            for (var layer : OriginLayers.getLayers()) {
-                if (layer.getIdentifier().equals(form.getFormLayer().getLeft()) && OriginRegistry.contains(form.getFormLayer().getLeft())) {
-                    net.onixary.shapeShifterCurseFabric.integration.origins.registry.ModComponents.ORIGIN.get(entity)
-                            .setOrigin(layer, OriginRegistry.get(form.getFormLayer().getLeft()));
-                }
-            }
         }
         var live = client.world.getPlayerByUuid(pet.uuid);
         if (live != null) {
@@ -58,12 +49,6 @@ final class PetPreview {
             var skin = new NbtCompound();
             RegPlayerSkinComponent.SKIN_SETTINGS.get(live).writeToNbt(skin);
             RegPlayerSkinComponent.SKIN_SETTINGS.get(entity).readFromNbt(skin);
-            var sourceOrigins = net.onixary.shapeShifterCurseFabric.integration.origins.registry.ModComponents.ORIGIN.get(live);
-            var targetOrigins = net.onixary.shapeShifterCurseFabric.integration.origins.registry.ModComponents.ORIGIN.get(entity);
-            for (var layer : OriginLayers.getLayers()) {
-                var origin = sourceOrigins.getOrigin(layer);
-                if (origin != null) targetOrigins.setOrigin(layer, origin);
-            }
         }
         if (form != null) {
             // Display entities are outside the world tick loop. Install the form's idle

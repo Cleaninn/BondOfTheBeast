@@ -41,6 +41,7 @@ public class CollarRenderer implements TrinketRenderer {
     public void render(ItemStack stack, SlotReference slotReference, EntityModel<? extends LivingEntity> contextModel, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, LivingEntity entity, float limbAngle, float limbDistance, float tickDelta, float animationProgress, float headYaw, float headPitch) {
         if (entity instanceof PlayerEntity player && contextModel instanceof PlayerEntityModel<?> playerModel) {
             PlayerFormComponent formComponent = (PlayerFormComponent) RegPlayerFormComponent.PLAYER_FORM.get(player);
+            if (formComponent != null && FormCollarLayer.supports(formComponent.nowForm)) return;
             String formId = "none";
             boolean isFeral = false;
 

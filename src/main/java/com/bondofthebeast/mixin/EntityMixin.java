@@ -36,7 +36,8 @@ public abstract class EntityMixin {
                         IForm form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
                         if (form != null) {
                             String path = form.getFormID().getPath().toLowerCase();
-                            if ((path.contains("wolf") && path.endsWith("_3")) ||
+                            if (form.getBodyType() == net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType.FERAL ||
+                                    (path.contains("wolf") && path.endsWith("_3")) ||
                                     (path.contains("ocelot") && path.endsWith("_3")) ||
                                     (path.contains("fox") && path.endsWith("_3")) ||
                                     path.contains("feral") ||

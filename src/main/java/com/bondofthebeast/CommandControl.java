@@ -12,7 +12,7 @@ public final class CommandControl {
         return bond.hasOwner() && bond.getForcedBond().forced && !bond.getForcedBond().contractSigned;
     }
     public static int durationTicks(PlayerEntity pet) {
-        return temporary(pet) ? BondConfig.durationTicks(ForcedTamingService.canFinalizeForced(pet) ? 3 : ForcedTamingService.stage(pet)) : 0;
+        return temporary(pet) ? BondConfig.durationTicks(ForcedTamingService.stage(pet) - 1) : 0;
     }
     public static boolean active(PlayerEntity pet, String command) {
         return !temporary(pet) || ModComponents.PLAYER_BOND.get(pet).getForcedBond().commandTicks.getOrDefault(command, 0) > 0;
@@ -69,7 +69,7 @@ public final class CommandControl {
     }
     public static void stageChanged(ServerPlayerEntity pet, int previousStage) {
         if (!temporary(pet)) return;
-        int difference = durationTicks(pet) - BondConfig.durationTicks(previousStage);
+        int difference = durationTicks(pet) - BondConfig.durationTicks(previousStage - 1);
         if (difference > 0) ModComponents.PLAYER_BOND.get(pet).getForcedBond().commandTicks.replaceAll((key, ticks) -> ticks + difference);
     }
 }
