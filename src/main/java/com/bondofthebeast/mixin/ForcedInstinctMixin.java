@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = InstinctTicker.class, remap = false)
 public class ForcedInstinctMixin {
-    @Inject(method = "calculateCurrentRate", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "calculateCurrentRate", at = @At("RETURN"), cancellable = true, order = 1100)
     private static void botb$slowReservoir(PlayerEntity player, PlayerInstinctComponent comp, CallbackInfoReturnable<Float> cir) {
         int stage = ForcedTamingService.stage(player);
         float rate = cir.getReturnValue();
