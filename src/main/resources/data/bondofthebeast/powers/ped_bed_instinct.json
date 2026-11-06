@@ -11,6 +11,9 @@
       },
       {
         "type": "bondofthebeast:in_pet_bed"
+      },
+      {
+        "type": "bondofthebeast:has_instinct"
       }
     ]
   }
