@@ -45,9 +45,8 @@ public final class LeashManager {
                 if (changed || occupied) return ActionResult.SUCCESS;
             }
             if (!(entity instanceof ServerPlayerEntity pet)) {
-                if (FabricLoaderImpl.INSTANCE.isModLoaded("playercollars")) return ActionResult.PASS;
                 if (world.isClient && entity instanceof net.minecraft.entity.player.PlayerEntity &&
-                        player.getStackInHand(hand).isOf(Items.LEAD)) return ActionResult.SUCCESS;
+                        player.getStackInHand(hand).isOf(Items.LEAD) && ModComponents.PLAYER_BOND.get(entity).hasOwner()) return ActionResult.SUCCESS;
                 return ActionResult.PASS;
             }
             if (!BondRules.owns(player, pet) || !BondRules.canOwn(player)) return ActionResult.PASS;
