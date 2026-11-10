@@ -2,7 +2,7 @@
   "bondofthebeast:infused_collar": {
     "accessory_powers": [],
     "all_form": {
-      "add": [],
+      "add": ["bondofthebeast:fallback_infused_collar","bondofthebeast:fallback_infused_pet_bed"],
       "remove": []
     },
     "forms": {

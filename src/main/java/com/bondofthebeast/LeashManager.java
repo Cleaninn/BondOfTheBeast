@@ -4,6 +4,7 @@ import com.bondofthebeast.block.PetBedBlockEntity;
 import com.bondofthebeast.component.ModComponents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.fabricmc.loader.impl.FabricLoaderImpl;
 import net.minecraft.entity.decoration.LeashKnotEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -45,7 +46,7 @@ public final class LeashManager {
             }
             if (!(entity instanceof ServerPlayerEntity pet)) {
                 if (world.isClient && entity instanceof net.minecraft.entity.player.PlayerEntity &&
-                        player.getStackInHand(hand).isOf(Items.LEAD)) return ActionResult.SUCCESS;
+                        player.getStackInHand(hand).isOf(Items.LEAD) && ModComponents.PLAYER_BOND.get(entity).hasOwner()) return ActionResult.SUCCESS;
                 return ActionResult.PASS;
             }
             if (!BondRules.owns(player, pet) || !BondRules.canOwn(player)) return ActionResult.PASS;
