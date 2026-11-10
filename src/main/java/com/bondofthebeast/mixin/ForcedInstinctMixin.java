@@ -8,6 +8,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.InstinctUtils;
@@ -22,20 +23,12 @@ import java.util.HashMap;
 
 @Mixin(value = InstinctUtils.class, remap = false)
 public class ForcedInstinctMixin {
-    @Inject(method = "getBaseInstinctRate", at = @At("RETURN"), cancellable = true)
-    private static void botb$slowReservoir(PlayerEntity player, CallbackInfoReturnable<Float> cir) {
-        var form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        if (form == null || FormUtils.NoInstinct.hasFlag(form)) return;
-        if (ForcedTamingService.freeWindow(player)) {
-            cir.setReturnValue(0.0f);
-            return;
+    @WrapOperation(method = "getBaseInstinctRate", at = @At(value = "INVOKE", target = "Lnet/onixary/shapeShifterCurseFabric/player_form/utils/FormUtils$FlagData;hasFlag(Lnet/onixary/shapeShifterCurseFabric/player_form/IForm;)Z"))
+    private static boolean botb$allowhighformInstinct(FormUtils.FlagData instance, IForm form, Operation<Boolean> original, @Local(name = "player") PlayerEntity player) {
+        if (ForcedTamingService.infused(player)) {
+            return false;
         }
-        float rate = cir.getReturnValue();
-        if (FormUtils.LockInstinct.hasFlag(form) && CollarCatalystService.gradualFinalStage(player)) rate = 0;
-        if (player.isAlive() && !player.isCreative() && !player.isSpectator()) {
-            if (ForcedTamingService.sleepingOnPetBed(player)) rate += ForcedTamingService.BED_RATE_PER_TICK;
-        }
-        cir.setReturnValue(rate);
+        return original.call(instance, form);
     }
 
     @WrapOperation(method = "serverTick", at = @At(value = "INVOKE", target = "Lnet/onixary/shapeShifterCurseFabric/player_form/utils/InstinctUtils;calcRate(Ljava/util/HashMap;Z)F"))

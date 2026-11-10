@@ -14,6 +14,7 @@ public class EntityConditions {
         register(IsAllowedAnAction.getFactory());
         register(IsInfusedCondition.getFactory());
         register(HasInstinct.getFactory());
+        register(IsInPetBed.getFactory());
     }
     private static void register(ConditionFactory<Entity> conditionFactory) {
         Registry.register(ApoliRegistries.ENTITY_CONDITION, conditionFactory.getSerializerId(), conditionFactory);
